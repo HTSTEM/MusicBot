@@ -388,7 +388,7 @@ class MusicBot(discord.Client):
 
                 async for lmsg in self.logs_from(channel, limit=1):
                     if lmsg != last_np_msg and last_np_msg:
-                        await self.safe_delete_message(last_np_msg)
+                        # await self.safe_delete_message(last_np_msg)
                         self.server_specific_data[channel.server]['last_np_msg'] = None
                     break  # This is probably redundant
 
@@ -464,7 +464,7 @@ class MusicBot(discord.Client):
             name = u'{}{}'.format(prefix, entry.title)[:128]
             game = discord.Game(name=name)
 
-        await self.change_status(game)
+        # await self.change_status(game)
 
 
     async def safe_send_message(self, dest, content, *, tts=False, expire_in=0, also_delete=None, quiet=False):
@@ -898,6 +898,7 @@ class MusicBot(discord.Client):
 
             song_url = info['entries'][0]['webpage_url']
             info = await self.downloader.extract_info(player.playlist.loop, song_url, download=False, process=False)
+            
             # Now I could just do: return await self.cmd_play(player, channel, author, song_url)
             # But this is probably fine
 
@@ -1094,7 +1095,7 @@ class MusicBot(discord.Client):
                 print("Dropped %s songs" % drop_count)
 
             if player.current_entry and player.current_entry.duration > permissions.max_song_length:
-                await self.safe_delete_message(self.server_specific_data[channel.server]['last_np_msg'])
+                # await self.safe_delete_message(self.server_specific_data[channel.server]['last_np_msg'])
                 self.server_specific_data[channel.server]['last_np_msg'] = None
                 skipped = True
                 player.skip()
@@ -1268,7 +1269,7 @@ class MusicBot(discord.Client):
 
         if player.current_entry:
             if self.server_specific_data[server]['last_np_msg']:
-                await self.safe_delete_message(self.server_specific_data[server]['last_np_msg'])
+                # await self.safe_delete_message(self.server_specific_data[server]['last_np_msg'])
                 self.server_specific_data[server]['last_np_msg'] = None
 
             song_progress = str(timedelta(seconds=player.progress)).lstrip('0').lstrip(':')
@@ -1282,7 +1283,7 @@ class MusicBot(discord.Client):
                 np_text = "Now Playing: **%s** %s\n" % (player.current_entry.title, prog_str)
 
             self.server_specific_data[server]['last_np_msg'] = await self.safe_send_message(channel, np_text)
-            await self._manual_delete_check(message)
+            # await self._manual_delete_check(message)
         else:
             return Response(
                 'There are no songs queued! Queue something with {}play.'.format(self.config.command_prefix),
@@ -1417,13 +1418,14 @@ class MusicBot(discord.Client):
                 print("Something strange is happening.  "
                       "You might want to restart the bot if it doesn't start working.")
 
-        if author.id == self.config.owner_id \
-                or permissions.instaskip \
-                or author == player.current_entry.meta.get('author', None):
+        if author == player.current_entry.meta.get('author', None) \
+                or author == player.current_entry.meta['author']:
 
             player.skip()  # check autopause stuff here
             await self._manual_delete_check(message)
-            return
+            return Response(
+                'The current song has been force-skipped by the queuer.'
+            )
 
         # TODO: ignore person if they're deaf or take them out of the list or something?
         # Currently is recounted if they vote, deafen, then vote
@@ -1439,13 +1441,7 @@ class MusicBot(discord.Client):
         if skips_remaining <= 0:
             player.skip()  # check autopause stuff here
             return Response(
-                'your skip for **{}** was acknowledged.'
-                '\nThe vote to skip has been passed.{}'.format(
-                    player.current_entry.title,
-                    ' Next song coming up!' if player.playlist.peek() else ''
-                ),
-                reply=True,
-                delete_after=20
+                'The skip ratio has been reached, skipping song...'
             )
 
         else:
@@ -1459,6 +1455,41 @@ class MusicBot(discord.Client):
                 ),
                 reply=True,
                 delete_after=20
+            )
+
+    async def cmd_forceskip(self, player, channel, author, message, permissions, voice_channel):
+        """
+        Usage:
+            {command_prefix}forceskip
+
+        Force skips the current song if user running command has enough permissions.
+        """
+
+        if player.is_stopped:
+            raise exceptions.CommandError("Can't skip! The player is not playing!", expire_in=20)
+
+        if not player.current_entry:
+            if player.playlist.peek():
+                if player.playlist.peek()._is_downloading:
+                    # print(player.playlist.peek()._waiting_futures[0].__dict__)
+                    return Response("The next song (%s) is downloading, please wait." % player.playlist.peek().title)
+
+                elif player.playlist.peek().is_downloaded:
+                    print("The next song will be played shortly.  Please wait.")
+                else:
+                    print("Something odd is happening.  "
+                          "You might want to restart the bot if it doesn't start working.")
+            else:
+                print("Something strange is happening.  "
+                      "You might want to restart the bot if it doesn't start working.")
+
+        if author.id == self.config.owner_id \
+                or permissions.instaskip:
+
+            player.skip()  # check autopause stuff here
+            await self._manual_delete_check(message)
+            return Response(
+                'The current song has been force-skipped.'
             )
 
     async def cmd_volume(self, message, player, new_volume=None):
@@ -1711,6 +1742,17 @@ class MusicBot(discord.Client):
 
         return Response(":mailbox_with_mail:", delete_after=20)
 
+    async def cmd_bldump(self, server, author, leftover_args):
+        """
+        Usage:
+            {command_prefix}bldump
+
+        Lists the ids for blacklisted users.
+        """
+
+        await self.send_file(author, "/home/noahkiq/Desktop/Bots/RhinoMusicBot/config/blacklist.txt")
+
+        return Response(":mailbox_with_mail:", delete_after=20)
 
     async def cmd_perms(self, author, channel, server, permissions):
         """
@@ -1835,7 +1877,7 @@ class MusicBot(discord.Client):
 
         if message.channel.is_private:
             if not (message.author.id == self.config.owner_id and command == 'joinserver'):
-                await self.send_message(message.channel, 'You cannot use this bot in private messages.')
+                # await self.send_message(message.channel, 'You cannot use this bot in private messages.')
                 return
 
         if message.author.id in self.blacklist and message.author.id != self.config.owner_id:
