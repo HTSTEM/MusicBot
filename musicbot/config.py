@@ -191,6 +191,7 @@ class ConfigDefaults:
     options_file = 'config/options.ini'
     blacklist_file = 'config/blacklist.txt'
     auto_playlist_file = 'config/autoplaylist.txt' # this will change when I add playlists
+    auto_jingles_file = 'config/jingles.txt'
 
 # These two are going to be wrappers for the id lists, with add/remove/load/save functions
 # and id/object conversion so types aren't an issue
