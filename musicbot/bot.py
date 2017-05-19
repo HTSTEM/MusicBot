@@ -77,13 +77,11 @@ class MusicBot(discord.Client):
 
         self.blacklist = set(load_file(self.config.blacklist_file))
         self.autoplaylist = load_file(self.config.auto_playlist_file)
-        self.autojingles = load_file(self.config.auto_jingles_file)
         self.downloader = downloader.Downloader(download_folder='audio_cache')
 
         self.exit_signal = None
         self.init_ok = False
         self.cached_client_id = None
-        self.was_jingle_last = False
 
         if not self.autoplaylist:
             print("Warning: Autoplaylist is empty, disabling.")
@@ -418,12 +416,7 @@ class MusicBot(discord.Client):
     async def on_player_finished_playing(self, player, **_):
         if not player.playlist.entries and not player.current_entry and self.config.auto_playlist:
             while self.autoplaylist:
-                if random.randint(0, 4) == 0 and not self.was_jingle_last:
-                    song_url = choice(self.autojingles)
-                    self.was_jingle_last = True
-                else:
-                    song_url = choice(self.autoplaylist)
-                    self.was_jingle_last = False
+                song_url = choice(self.autoplaylist)
                 info = await self.downloader.safe_extract_info(player.playlist.loop, song_url, download=False, process=False)
 
                 if not info:
