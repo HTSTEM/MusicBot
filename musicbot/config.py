@@ -81,6 +81,7 @@ class Config:
 
         self.blacklist_file = config.get('Files', 'BlacklistFile', fallback=ConfigDefaults.blacklist_file)
         self.auto_playlist_file = config.get('Files', 'AutoPlaylistFile', fallback=ConfigDefaults.auto_playlist_file)
+        self.auto_jingles_file = config.get('Files', 'AutoJinglesFile', fallback=ConfigDefaults.auto_playlist_file)
 
         self.run_checks()
 
