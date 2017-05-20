@@ -8,6 +8,7 @@ import aiohttp
 import discord
 import asyncio
 import traceback
+import random
 
 from discord import utils
 from discord.object import Object
@@ -418,7 +419,7 @@ class MusicBot(discord.Client):
     async def on_player_finished_playing(self, player, **_):
         if not player.playlist.entries and not player.current_entry and self.config.auto_playlist:
             while self.autoplaylist:
-                if random.randint(0, 4) == 0 and not self.was_jingle_last:
+                if random.randint(1, self.config.auto_jingles_chance) == 1 and not self.was_jingle_last:
                     song_url = choice(self.autojingles)
                     self.was_jingle_last = True
                 else:
