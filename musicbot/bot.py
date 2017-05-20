@@ -422,7 +422,7 @@ class MusicBot(discord.Client):
                     self.was_jingle_last = True
                 else:
                     song_url = choice(self.autoplaylist)
-                    self.was_jingle_last = Fals
+                    self.was_jingle_last = False
                 info = await self.downloader.safe_extract_info(player.playlist.loop, song_url, download=False, process=False)
 
                 if not info:
