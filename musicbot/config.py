@@ -78,10 +78,12 @@ class Config:
         self.delete_messages  = config.getboolean('MusicBot', 'DeleteMessages', fallback=ConfigDefaults.delete_messages)
         self.delete_invoking = config.getboolean('MusicBot', 'DeleteInvoking', fallback=ConfigDefaults.delete_invoking)
         self.debug_mode = config.getboolean('MusicBot', 'DebugMode', fallback=ConfigDefaults.debug_mode)
-
+        
+        self.auto_jingles_chance = config.getint('MusicBot', 'AutoJinglesChance', fallback=ConfigDefaults.auto_jingles_chance)
+        
         self.blacklist_file = config.get('Files', 'BlacklistFile', fallback=ConfigDefaults.blacklist_file)
         self.auto_playlist_file = config.get('Files', 'AutoPlaylistFile', fallback=ConfigDefaults.auto_playlist_file)
-        self.auto_jingles_file = config.get('Files', 'AutoJinglesFile', fallback=ConfigDefaults.auto_playlist_file)
+        self.auto_jingles_file = config.get('Files', 'AutoJinglesFile', fallback=ConfigDefaults.auto_jingles_file)
 
         self.run_checks()
 
@@ -192,6 +194,8 @@ class ConfigDefaults:
     options_file = 'config/options.ini'
     blacklist_file = 'config/blacklist.txt'
     auto_playlist_file = 'config/autoplaylist.txt' # this will change when I add playlists
+    auto_jingles_file = 'config/jingles.txt'
+    auto_jingles_chance = 4 # 1 in x
 
 # These two are going to be wrappers for the id lists, with add/remove/load/save functions
 # and id/object conversion so types aren't an issue
