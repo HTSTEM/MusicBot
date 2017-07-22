@@ -1507,21 +1507,36 @@ class MusicBot(discord.Client):
     async def cmd_remsong(self, player, channel, author, message, permissions, voice_channel, leftover_args, song_name):
         """
         Usage:
-            {command_prefix}remsong <song name>
+            {command_prefix}remsong <song name|position in queue>
         
         Removes any song from the queue by name.
         """
 
         if leftover_args:
             song_name = ' '.join([song_name, *leftover_args])
-    
-        for e in player.playlist.entries.copy():                
-            if song_name.lower() in e.title.lower():
-                player.playlist.entries.remove(e)
-            
-                return Response('The song **{}** was force-removed by {}!'.format(e.title, author.mention), delete_after=20)
         
-        return Response('no song found matching `{}`'.format(song_name.replace('@', '@\u200b')), reply=True, delete_after=20)
+        try:
+            song_name = int(song_name)
+            name_is_int = True
+        except ValueError:
+            name_is_int = False
+    
+        for n, e in enumerate(player.playlist.entries.copy()):
+            if name_is_int:
+                if n == song_name - 1:
+                    player.playlist.entries.remove(e)
+                
+                    return Response('The song **{}** was force-removed by {}!'.format(e.title, author.mention), delete_after=20)
+            else:
+                if song_name.lower() in e.title.lower():
+                    player.playlist.entries.remove(e)
+                
+                    return Response('The song **{}** was force-removed by {}!'.format(e.title, author.mention), delete_after=20)
+        
+        if name_is_int:
+            return Response('there doesn\'t appear to be a song number `{}` in the queue.'.format(song_name), reply=True, delete_after=20)
+        else:
+            return Response('no song found matching `{}`'.format(song_name.replace('@', '@\u200b')), reply=True, delete_after=20)
 
         
             
