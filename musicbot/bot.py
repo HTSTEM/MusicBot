@@ -84,6 +84,7 @@ class MusicBot(discord.Client):
         self.exit_signal = None
         self.init_ok = False
         self.cached_client_id = None
+        self.was_jingle_last = False
 
         if not self.autoplaylist:
             print("Warning: Autoplaylist is empty, disabling.")
@@ -742,8 +743,7 @@ class MusicBot(discord.Client):
             if cmd:
                 return Response(
                     "```\n{}```".format(
-                        dedent(cmd.__doc__),
-                        command_prefix=self.config.command_prefix
+                        dedent(cmd.__doc__).format(command_prefix=self.config.command_prefix)
                     ),
                     delete_after=60
                 )
@@ -1464,6 +1464,67 @@ class MusicBot(discord.Client):
                 delete_after=20
             )
 
+    async def cmd_dequeue(self, player, channel, author, message, permissions, voice_channel, leftover_args):
+        """
+        Usage:
+            {command_prefix}dequeue [song name]
+        
+        Removes your song from the queue.
+        If no name is given, it will remove all of your songs.
+        """
+        
+        if leftover_args:
+            song_name = ' '.join(leftover_args)
+            print(song_name)
+        else:
+            song_name = None
+            
+        removed = []
+        
+        for e in player.playlist.entries.copy():                
+            if author == e.meta.get('author', None) \
+                or author == e.meta['author']:
+                
+                if song_name is None:
+                    player.playlist.entries.remove(e)
+                    
+                    removed.append(e.title)
+                elif song_name.lower() in e.title.lower():
+                    player.playlist.entries.remove(e)
+                    
+                    removed.append(e.title)
+                
+        if len(removed) == 1:
+            return Response('you have removed your song **{}**!'.format(removed[0]), reply=True, delete_after=20)
+        if len(removed) > 1:
+            return Response('you have removed your songs:\n{}'.format('\n'.join(map(lambda x:'**{}**'.format(x), removed))), reply=True, delete_after=20)
+        
+        if song_name:
+            return Response('no song found matching `{}`'.format(song_name.replace('@', '@\u200b')), reply=True, delete_after=20)
+        else:
+            return Response('you have no songs queued', reply=True, delete_after=20)
+    
+    async def cmd_remsong(self, player, channel, author, message, permissions, voice_channel, leftover_args, song_name):
+        """
+        Usage:
+            {command_prefix}remsong <song name>
+        
+        Removes any song from the queue by name.
+        """
+
+        if leftover_args:
+            song_name = ' '.join([song_name, *leftover_args])
+    
+        for e in player.playlist.entries.copy():                
+            if song_name.lower() in e.title.lower():
+                player.playlist.entries.remove(e)
+            
+                return Response('The song **{}** was force-removed by {}!'.format(e.title, author.mention), delete_after=20)
+        
+        return Response('no song found matching `{}`'.format(song_name.replace('@', '@\u200b')), reply=True, delete_after=20)
+
+        
+            
     async def cmd_forceskip(self, player, channel, author, message, permissions, voice_channel):
         """
         Usage:
