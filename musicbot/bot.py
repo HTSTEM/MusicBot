@@ -1481,20 +1481,19 @@ class MusicBot(discord.Client):
             
         removed = []
         
-        if permissions.max_song_length:
-            for e in player.playlist.entries.copy():                
-                if author == e.meta.get('author', None) \
-                    or author == e.meta['author']:
+        for e in player.playlist.entries.copy():                
+            if author == e.meta.get('author', None) \
+                or author == e.meta['author']:
+                
+                if song_name is None:
+                    player.playlist.entries.remove(e)
                     
-                    if song_name is None:
-                        player.playlist.entries.remove(e)
-                        
-                        removed.append(e.title)
-                    elif song_name.lower() in e.title.lower():
-                        player.playlist.entries.remove(e)
-                        
-                        removed.append(e.title)
+                    removed.append(e.title)
+                elif song_name.lower() in e.title.lower():
+                    player.playlist.entries.remove(e)
                     
+                    removed.append(e.title)
+                
         if len(removed) == 1:
             return Response('you have removed your song **{}**!'.format(removed[0]), reply=True, delete_after=20)
         if len(removed) > 1:
@@ -1515,14 +1514,13 @@ class MusicBot(discord.Client):
 
         if leftover_args:
             song_name = ' '.join([song_name, *leftover_args])
-        
-        if permissions.max_song_length:
-            for e in player.playlist.entries.copy():                
-                if song_name.lower() in e.title.lower():
-                    player.playlist.entries.remove(e)
-                
-                    return Response('The song **{}** was force-removed by {}!'.format(e.title, author.mention), delete_after=20)
+    
+        for e in player.playlist.entries.copy():                
+            if song_name.lower() in e.title.lower():
+                player.playlist.entries.remove(e)
             
+                return Response('The song **{}** was force-removed by {}!'.format(e.title, author.mention), delete_after=20)
+        
         return Response('no song found matching `{}`'.format(song_name.replace('@', '@\u200b')), reply=True, delete_after=20)
 
         
