@@ -1174,9 +1174,9 @@ class Commands:
             "Click here to invite me: \n<https://discordapp.com/oauth2/authorize?client_id={}&scope=bot&permissions=0>".format(ctx.bot.user.id),
         )
 
-
+    #TODO: this one needs major rework.
     @commands.command()
-    async def play(self, player, channel, author, permissions, leftover_args, song_url):
+    async def play(self, ctx, song_url, *leftover_args):
         """
         Usage:
             {command_prefix}play song_link
@@ -1188,18 +1188,18 @@ class Commands:
 
         song_url = song_url.strip('<>')
 
-        if permissions.max_songs and player.playlist.count_for_user(author) >= permissions.max_songs:
+        if ctx.bot.permissions.max_songs and player.playlist.count_for_user(author) >= ctx.bot.permissions.max_songs:
             raise exceptions.PermissionsError(
-                "You have reached your enqueued song limit (%s)" % permissions.max_songs, expire_in=30
+                "You have reached your enqueued song limit (%s)" % ctx.bot.permissions.max_songs, expire_in=30
             )
 
-        await self.send_typing(channel)
+        await ctx.channel.send_typing()
 
         if leftover_args:
             song_url = ' '.join([song_url, *leftover_args])
 
         try:
-            info = await self.downloader.extract_info(player.playlist.loop, song_url, download=False, process=False)
+            info = await ctx.bot.downloader.extract_info(ctx.bot.player.playlist.loop, song_url, download=False, process=False)
         except Exception as e:
             raise exceptions.CommandError(e, expire_in=30)
 
@@ -1210,8 +1210,8 @@ class Commands:
         # our ytdl options allow us to use search strings as input urls
         if info.get('url', '').startswith('ytsearch'):
             # print("[Command:play] Searching for \"%s\"" % song_url)
-            info = await self.downloader.extract_info(
-                player.playlist.loop,
+            info = await ctx.bot.downloader.extract_info(
+                ctx.bot.player.playlist.loop,
                 song_url,
                 download=False,
                 process=True,    # ASYNC LAMBDAS WHEN
