@@ -1027,7 +1027,7 @@ class Commands:
     def owner_only():
         async def predicate(ctx):
             # Only allow the owner to use these commands
-            if ctx.author.id == self.config.owner_id:
+            if ctx.author.id == int(ctx.bot.config.owner_id):
                 return True
             else:
                 raise exceptions.PermissionsError("only the owner can use this command", expire_in=30)
@@ -1162,7 +1162,7 @@ class Commands:
 
     @owner_only()
     @commands.command()
-    async def joinguild(self, message, guild_link=None):
+    async def joinguild(self, ctx):
         """
         Usage:
             {command_prefix}joinguild invite_link
@@ -1170,20 +1170,10 @@ class Commands:
         Asks the bot to join a guild.  Note: Bot accounts cannot use invite links.
         """
 
-        if self.user.bot:
-            url = await self.generate_invite_link()
-            return Response(
-                "Bot accounts can't use invite links!  Click here to invite me: \n{}".format(url),
-                reply=True, delete_after=30
-            )
+        await ctx.bot.send_message(ctx.channel,
+            "Click here to invite me: \n<https://discordapp.com/oauth2/authorize?client_id={}&scope=bot&permissions=0>".format(ctx.bot.user.id),
+        )
 
-        try:
-            if guild_link:
-                await self.accept_invite(guild_link)
-                return Response(":+1:")
-
-        except:
-            raise exceptions.CommandError('Invalid URL provided:\n{}\n'.format(guild_link), expire_in=30)
 
     @commands.command()
     async def play(self, player, channel, author, permissions, leftover_args, song_url):
