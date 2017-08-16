@@ -2,6 +2,7 @@ import os
 import asyncio
 import audioop
 import traceback
+import discord
 
 from enum import Enum
 from array import array
@@ -248,21 +249,12 @@ class MusicPlayer(EventEmitter):
                 # In-case there was a player, kill it. RIP.
                 self._kill_current_player()
 
-                self._current_player = self._monkeypatch_player(self.voice_client.create_ffmpeg_player(
-                    entry.filename,
-                    before_options="-nostdin",
-                    options="-vn -b:a 128k",
-                    # Threadsafe call soon, b/c after will be called from the voice playback thread.
-                    after=lambda: self.loop.call_soon_threadsafe(self._playback_finished)
-                ))
-                self._current_player.setDaemon(True)
-                self._current_player.buff.volume = self.volume
+                self.voice_client.play(discord.FFmpegPCMAudio(entry.filename))
 
                 # I need to add ytdl hooks
                 self.state = MusicPlayerState.PLAYING
                 self._current_entry = entry
 
-                self._current_player.start()
                 self.emit('play', player=self, entry=entry)
 
     def _monkeypatch_player(self, player):

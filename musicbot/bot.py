@@ -218,6 +218,8 @@ class MusicBot(commands.Bot):
         return discord.utils.oauth_url(self.cached_client_id, permissions=permissions, guild=guild)
 
     async def get_voice_client(self, channel):
+        return await channel.connect()
+    
         if isinstance(channel, Object):
             channel = self.get_channel(channel.id)
 
@@ -470,7 +472,7 @@ class MusicBot(commands.Bot):
             name = u'{}{}'.format(prefix, entry.title)[:128]
             game = discord.Game(name=name)
 
-        await self.change_status(game)
+        await self.change_presence(game=game)
 
 
     async def safe_send_message(self, dest, content, *, tts=False, expire_in=0, also_delete=None, quiet=False):
