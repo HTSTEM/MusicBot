@@ -221,7 +221,7 @@ class MusicBot(commands.Bot):
         if isinstance(channel, Object):
             channel = self.get_channel(channel.id)
 
-        if getattr(channel, 'type', ChannelType.text) != ChannelType.voice:
+        if not isinstance(channel, discord.VoiceChannel):
             raise AttributeError('Channel passed must be a voice channel')
 
         with await self.voice_client_connect_lock:
@@ -233,10 +233,11 @@ class MusicBot(commands.Bot):
             _voice_data = self.ws.wait_for('VOICE_SERVER_UPDATE', lambda d: True)
 
             await self.ws.voice_state(guild.id, channel.id)
-
             s_id_data = await asyncio.wait_for(s_id, timeout=10, loop=self.loop)
             voice_data = await asyncio.wait_for(_voice_data, timeout=10, loop=self.loop)
             session_id = s_id_data.get('session_id')
+            print('hello')
+            print(s_id_data)
 
             kwargs = {
                 'user': self.user,
@@ -351,6 +352,7 @@ class MusicBot(commands.Bot):
             self.the_voice_clients[guild.id].channel = channel
 
     async def get_player(self, channel, create=False) -> MusicPlayer:
+        print(channel)
         guild = channel.guild
 
         if guild.id not in self.players:
@@ -372,7 +374,6 @@ class MusicBot(commands.Bot):
 
             player.skip_state = SkipState()
             self.players[guild.id] = player
-
         return self.players[guild.id]
 
     async def on_player_play(self, player, entry):
@@ -1185,12 +1186,13 @@ class Commands:
         Adds the song to the playlist.  If a link is not provided, the first
         result from a youtube search is added to the queue.
         """
-
+        permissions = ctx.bot.permissions.for_user(ctx.author)
         song_url = song_url.strip('<>')
+        player = await ctx.bot.get_player(ctx.channel)
 
-        if ctx.bot.permissions.max_songs and player.playlist.count_for_user(author) >= ctx.bot.permissions.max_songs:
+        if permissions.max_songs and player.playlist.count_for_user(author) >= permissions.max_songs:
             raise exceptions.PermissionsError(
-                "You have reached your enqueued song limit (%s)" % ctx.bot.permissions.max_songs, expire_in=30
+                "You have reached your enqueued song limit (%s)" % permissions.max_songs, expire_in=30
             )
 
         await ctx.channel.send_typing()
@@ -1199,7 +1201,7 @@ class Commands:
             song_url = ' '.join([song_url, *leftover_args])
 
         try:
-            info = await ctx.bot.downloader.extract_info(ctx.bot.player.playlist.loop, song_url, download=False, process=False)
+            info = await ctx.bot.downloader.extract_info(player.playlist.loop, song_url, download=False, process=False)
         except Exception as e:
             raise exceptions.CommandError(e, expire_in=30)
 
@@ -1216,7 +1218,7 @@ class Commands:
                 download=False,
                 process=True,    # ASYNC LAMBDAS WHEN
                 on_error=lambda e: asyncio.ensure_future(
-                    self.safe_send_message(channel, "```\n%s\n```" % e, expire_in=120), loop=self.loop),
+                    ctx.bot.safe_send_message(channel, "```\n%s\n```" % e, expire_in=120), loop=self.loop),
                 retry_on_error=True
             )
 
@@ -1533,46 +1535,46 @@ class Commands:
             )
 
     @commands.command()
-    async def summon(self, channel, author, voice_channel):
+    async def summon(self, ctx):
         """
         Usage:
             {command_prefix}summon
 
         Call the bot to the summoner's voice channel.
         """
-
+        author = ctx.author.voice
         if not author.channel:
             raise exceptions.CommandError('You are not in a voice channel!')
 
-        voice_client = self.the_voice_clients.get(channel.guild.id, None)
+        voice_client = ctx.bot.the_voice_clients.get(ctx.guild.id, None)
         if voice_client and voice_client.channel.guild == author.channel.guild:
-            await self.move_voice_client(author.channel)
+            await ctx.bot.move_voice_client(author.channel)
             return
 
         # move to _verify_vc_perms?
         chperms = author.channel.permissions_for(author.channel.guild.me)
 
         if not chperms.connect:
-            self.safe_print("Cannot join channel \"%s\", no permission." % author.channel.name)
+            ctx.bot.safe_print("Cannot join channel \"%s\", no permission." % author.channel.name)
             return Response(
                 "```Cannot join channel \"%s\", no permission.```" % author.channel.name,
                 delete_after=25
             )
 
         elif not chperms.speak:
-            self.safe_print("Will not join channel \"%s\", no permission to speak." % author.channel.name)
+            ctx.bot.safe_print("Will not join channel \"%s\", no permission to speak." % author.channel.name)
             return Response(
                 "```Will not join channel \"%s\", no permission to speak.```" % author.channel.name,
                 delete_after=25
             )
 
-        player = await self.get_player(author.channel, create=True)
+        player = await ctx.bot.get_player(author.channel, create=True)
 
         if player.is_stopped:
             player.play()
 
-        if self.config.auto_playlist:
-            await self.on_player_finished_playing(player)
+        if ctx.bot.config.auto_playlist:
+            await ctx.bot.on_player_finished_playing(player)
 
     @commands.command()
     async def pause(self, player):
