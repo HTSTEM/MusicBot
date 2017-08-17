@@ -4,6 +4,7 @@ import discord
 import youtube_dl
 
 from discord.ext import commands
+import checks
 
 # Suppress noise about console usage from errors
 token = open('token.txt','r').read().split('\n')[0]
@@ -59,6 +60,7 @@ class Music:
         self.queue = []
 
     @commands.command()
+    @checks.manage_channels()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
         """Joins a voice channel"""
 
@@ -66,6 +68,16 @@ class Music:
             return await ctx.voice_client.move_to(channel)
         
         await channel.connect()
+        
+    @commands.command()
+    @checks.manage_channels()
+    async def summon(self, ctx):
+        """Join the voice channel you're in."""
+        voice = ctx.author.voice
+        if voice is None:
+            return await ctx.send('You are not in a voice channel!')
+        
+        await voice.channel.connect()
 
     @commands.command()
     async def play(self, ctx, *, query):
@@ -132,6 +144,7 @@ class Music:
             await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.queue) - 1))
 
     @commands.command()
+    @checks.manage_channels()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
 
@@ -140,13 +153,35 @@ class Music:
 
         ctx.voice_client.source.volume = volume/100
         await ctx.send("Changed volume to {}%".format(volume))
+        
+    @commands.command()
+    @checks.manage_channels()
+    async def resume(self, ctx):
+        """Resumes player"""
 
+        ctx.voice_client.resume()
 
     @commands.command()
-    async def stop(self, ctx):
-        """Stops and disconnects the bot from voice"""
+    @checks.manage_channels()
+    async def pause(self, ctx):
+        """Stops player"""
 
-        await ctx.voice_client.disconnect()
+        ctx.voice_client.pause()
+
+    @commands.command()
+    @checks.manage_channels()
+    async def stop(self, ctx):
+        """Stops player"""
+
+        ctx.voice_client.stop()
+        
+    @commands.command()
+    @checks.manage_channels()
+    async def die(self, ctx):
+        """Stops player"""
+
+        await ctx.send(':wave:')
+        await ctx.bot.logout()
 
 
 bot = commands.Bot('!')
