@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 
 from discord.ext import commands
@@ -47,10 +49,53 @@ class Music:
         
         await ctx.send('Now playing: {}'.format(query))
 
+    def music_finished(self, e, ctx):
+        coro = self.read_queue(ctx)
+        fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
+        try:
+            fut.result()
+        except:
+            import traceback
+            traceback.print_exc()
+            print("Fork")
+    
+    async def read_queue(self, ctx):
+        if self.bot.queue:
+            player = self.bot.queue.pop()
+            
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+
+            ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
+            await ctx.send('Now playing: **{}**'.format(player.title))        
+        else:    
+            await ctx.send('Out of songs :\'(')
+
     @commands.command()
     async def yt(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
+        
+        if ctx.voice_client is None:
+            if ctx.author.voice.channel:
+                await ctx.author.voice.channel.connect()
+            else:
+               return await ctx.send("Not connected to a voice channel.")
 
+        player = await YTDLSource.from_url(url, loop=self.bot.loop)
+        
+        if not self.bot.queue:
+            self.bot.queue.append(player)
+            
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            
+            ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
+            await ctx.send('Now playing: **{}**'.format(player.title))
+        else:
+            self.bot.queue.append(player)
+            await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.bot.queue) - 1))
+
+        '''
         if ctx.voice_client is None:
             if ctx.author.voice.channel:
                 await ctx.author.voice.channel.connect()
@@ -61,9 +106,9 @@ class Music:
             ctx.voice_client.stop()
 
         player = await YTDLSource.from_url(url, loop=self.bot.loop)
-        ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
+        ctx.voice_client.play(player, after=lambda e:self.music_finished(e, ctx))
         
-        await ctx.send('Now playing: {}'.format(player.title))
+        await ctx.send('Now playing: {}'.format(player.title))'''
 
     @commands.command()
     @checks.manage_channels()
