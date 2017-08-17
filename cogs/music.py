@@ -1,4 +1,5 @@
 import asyncio
+import time
 
 import discord
 
@@ -60,8 +61,8 @@ class Music:
             print("Fork")
     
     async def read_queue(self, ctx):
+        self.bot.queue.pop(0)
         if self.bot.queue:
-            self.bot.queue.pop(0)
             player = self.bot.queue[0]
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
@@ -83,7 +84,7 @@ class Music:
             else:
                return await ctx.send("Not connected to a voice channel.")
 
-        player = await YTDLSource.from_url(url, loop=self.bot.loop)
+        player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
         
         if not self.bot.queue:
             self.bot.queue.append(player)
@@ -117,9 +118,13 @@ class Music:
     @commands.command()
     async def queue(self, ctx):
         if self.bot.queue:
-            message = 'Now playing: **{}** `[00:00/00:00]`\n\n'.format(self.bot.queue[0].title)
+            playing = self.bot.queue[0]
+            message = 'Now playing: **{}** `[00:00/{}]`\n\n'.format(
+                playing.title, 
+                time.strftime("%M:%S", time.gmtime(playing.duration))
+                )
             message += '\n'.join([
-                '`{}.` **{}** added by **?**'.format(n + 1, i.title) for n, i in enumerate(self.bot.queue[1:])
+                '`{}.` **{}** added by **{}**'.format(n + 1, i.title, i.user.name) for n, i in enumerate(self.bot.queue[1:])
             ])
         else:
             message = 'Not playing anything.'    
