@@ -56,6 +56,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 class Music:
     def __init__(self, bot):
         self.bot = bot
+        self.queue = []
 
     @commands.command()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -69,6 +70,7 @@ class Music:
     @commands.command()
     async def play(self, ctx, *, query):
         """Plays a file from the local filesystem"""
+        return await ctx.send("We need to make this not local. `return`ed.")
 
         if ctx.voice_client is None:
             if ctx.author.voice.channel:
@@ -84,6 +86,27 @@ class Music:
         
         await ctx.send('Now playing: {}'.format(query))
 
+    def song_finished(self, e, ctx):
+        coro = self.read_queue(ctx)
+        fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
+        try:
+            fut.result()
+        except:
+            print("Fork")
+    
+    async def read_queue(self, ctx):
+        print('rq')
+        if self.queue:
+            print(self.queue)
+            player = self.queue.pop()
+            print(player)
+            
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            
+            ctx.voice_client.play(player, after=lambda: self.song_finished(ctx))
+            await ctx.send('Now playing: **{}**'.format(player.title))
+        
     @commands.command()
     async def yt(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
@@ -94,13 +117,19 @@ class Music:
             else:
                 return await ctx.send("Not connected to a voice channel.")
 
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
-
         player = await YTDLSource.from_url(url, loop=self.bot.loop)
-        ctx.voice_client.play(player, after=lambda e: print('Player error: %s' % e) if e else None)
         
-        await ctx.send('Now playing: {}'.format(player.title))
+        if not self.queue:
+            self.queue.append(player)
+            
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            
+            ctx.voice_client.play(player, after=lambda e: self.song_finished(e, ctx))
+            await ctx.send('Now playing: **{}**'.format(player.title))
+        else:
+            self.queue.append(player)
+            await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.queue) - 1))
 
     @commands.command()
     async def volume(self, ctx, volume: int):
