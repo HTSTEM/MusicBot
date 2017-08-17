@@ -6,7 +6,7 @@ import youtube_dl
 from discord.ext import commands
 
 # Suppress noise about console usage from errors
-token = open('token.txt','r').read().split('\n')[0[]
+token = open('token.txt','r').read().split('\n')[0]
 
 
 ytdl_format_options = {
