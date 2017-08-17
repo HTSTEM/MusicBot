@@ -111,6 +111,17 @@ class Music:
         await ctx.send('Now playing: {}'.format(player.title))'''
 
     @commands.command()
+    async def queue(self, ctx):
+        if self.bot.queue:
+            message = 'Now playing: **{}** `[00:00/00:00]`\n\n'.format(self.bot.queue[0].title)
+            message += '\n'.join([
+                '`{}.` **{}** added by **?**'.format(n + 1, i.title) for n, i in enumerate(self.bot.queue[1:])
+            ])
+        else:
+            message = 'Not playing anything.'    
+        await ctx.send(message)
+
+    @commands.command()
     @checks.manage_channels()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
