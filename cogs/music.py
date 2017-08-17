@@ -61,8 +61,8 @@ class Music:
     
     async def read_queue(self, ctx):
         if self.bot.queue:
-            player = self.bot.queue.pop()
-            
+            self.bot.queue.pop(0)
+            player = self.bot.queue[0]
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
 
@@ -116,7 +116,6 @@ class Music:
 
     @commands.command()
     async def queue(self, ctx):
-        print(self.bot.queue)
         if self.bot.queue:
             message = 'Now playing: **{}** `[00:00/00:00]`\n\n'.format(self.bot.queue[0].title)
             message += '\n'.join([
