@@ -130,15 +130,16 @@ class MusicBot(commands.Bot):
 
         return True
     
-    async def send_message(self, to, msg):
+    async def send_message(self, to, msg, tts=False):
         try:
+            sent = None
             if len(msg) > 2000:
-                await to.send('Whoops! Discord won\'t let me send messages over 2000 characters.\nThe message started with: ```\n{}```'.format(msg[:1000].replace('`', '`\u200b')))
+                sent = await to.send('Whoops! Discord won\'t let me send messages over 2000 characters.\nThe message started with: ```\n{}```'.format(msg[:1000].replace('`', '`\u200b')), tts=tts)
             else:
-                await to.send(msg)
-            pass
+                sent = await to.send(msg)
+            return sent
         except discord.errors.Forbidden:
-            pass
+            return None
 
     # TODO: autosummon option to a specific channel
     async def _auto_summon(self):
@@ -208,7 +209,7 @@ class MusicBot(commands.Bot):
             return True
         else:
             raise exceptions.PermissionsError(
-                "you cannot use this command when not in the voice channel (%s)" % vc.name, expire_in=30)
+                "you cannot use this command when not in the voice channel (%s)" % vc.name)
 
     async def generate_invite_link(self, *, permissions=None, guild=None):
         if not self.cached_client_id:
@@ -354,12 +355,11 @@ class MusicBot(commands.Bot):
             self.the_voice_clients[guild.id].channel = channel
 
     async def get_player(self, channel, create=False) -> MusicPlayer:
-        print(channel)
         guild = channel.guild
 
         if guild.id not in self.players:
             if not create:
-                raise exceptions.CommandError(
+                await self.send_message(channel,
                     'The bot is not in a voice channel.  '
                     'Use %ssummon to summon it to your voice channel.' % self.config.command_prefix)
 
@@ -471,7 +471,6 @@ class MusicBot(commands.Bot):
 
             name = u'{}{}'.format(prefix, entry.title)[:128]
             game = discord.Game(name=name)
-
         await self.change_presence(game=game)
 
 
@@ -498,7 +497,7 @@ class MusicBot(commands.Bot):
 
     async def safe_delete_message(self, message, *, quiet=False):
         try:
-            return await self.delete_message(message)
+            return await message.delete()
 
         except discord.Forbidden:
             if not quiet:
@@ -510,8 +509,7 @@ class MusicBot(commands.Bot):
 
     async def safe_edit_message(self, message, new, *, send_if_fail=False, quiet=False):
         try:
-            return await self.edit_message(message, new)
-
+            return await message.edit(content=new)
         except discord.NotFound:
             if not quiet:
                 self.safe_print("Warning: Cannot edit message \"%s\", message not found" % message.clean_content)
@@ -739,7 +737,7 @@ class MusicBot(commands.Bot):
         info = await self.downloader.extract_info(player.playlist.loop, playlist_url, download=False, process=False)
 
         if not info:
-            raise exceptions.CommandError("That playlist cannot be played.")
+            await ctx.bot.send_message(ctx.channel,"That playlist cannot be played.")
 
         num_songs = sum(1 for _ in info['entries'])
         t0 = time.time()
@@ -758,7 +756,7 @@ class MusicBot(commands.Bot):
 
             except Exception:
                 traceback.print_exc()
-                raise exceptions.CommandError('Error handling playlist %s queuing.' % playlist_url, expire_in=30)
+                await ctx.bot.send_message(ctx.channel,'Error handling playlist %s queuing.' % playlist_url)
 
         elif extractor_type.lower() in ['soundcloud:set', 'bandcamp:album']:
             try:
@@ -769,7 +767,7 @@ class MusicBot(commands.Bot):
 
             except Exception:
                 traceback.print_exc()
-                raise exceptions.CommandError('Error handling playlist %s queuing.' % playlist_url, expire_in=30)
+                await ctx.bot.send_message(ctx.channel,'Error handling playlist %s queuing.' % playlist_url)
 
 
         songs_processed = len(entries_added)
@@ -819,7 +817,7 @@ class MusicBot(commands.Bot):
             if skipped:
                 basetext += "\nAdditionally, the current song was skipped for being too long."
 
-            raise exceptions.CommandError(basetext, expire_in=30)
+            await ctx.bot.send_message(ctx.channel,basetext)
 
         return Response("Enqueued {} songs to be played in {} seconds".format(
             songs_added, self._fixg(ttime, 1)), delete_after=30)
@@ -1033,7 +1031,7 @@ class Commands:
             if ctx.author.id == int(ctx.bot.config.owner_id):
                 return True
             else:
-                raise exceptions.PermissionsError("only the owner can use this command", expire_in=30)
+                raise exceptions.PermissionsError("only the owner can use this command")
 
         return commands.check(predicate)
     
@@ -1114,10 +1112,10 @@ class Commands:
         """
         user_mentions = ctx.message.mentions
         if not user_mentions:
-            raise exceptions.CommandError("No users listed.", expire_in=20)
+            await ctx.bot.send_message(ctx.channel,"No users listed.")
 
         if option not in ['+', '-', 'add', 'remove']:
-            raise exceptions.CommandError(
+            await ctx.bot.send_message(ctx.channel,
                 'Invalid option "%s" specified, use +, -, add, or remove' % option, expire_in=20
             )
 
@@ -1192,12 +1190,13 @@ class Commands:
         song_url = song_url.strip('<>')
         player = await ctx.bot.get_player(ctx.channel)
 
-        if permissions.max_songs and player.playlist.count_for_user(author) >= permissions.max_songs:
-            raise exceptions.PermissionsError(
-                "You have reached your enqueued song limit (%s)" % permissions.max_songs, expire_in=30
+        if permissions.max_songs and player.playlist.count_for_user(ctx.author) >= permissions.max_songs:
+            await ctx.bot.send_message(ctx.channel,
+                "You have reached your enqueued song limit (%s)" % permissions.max_song
             )
+            return
 
-        await ctx.channel.send_typing()
+        await ctx.channel.trigger_typing()
 
         if leftover_args:
             song_url = ' '.join([song_url, *leftover_args])
@@ -1205,37 +1204,38 @@ class Commands:
         try:
             info = await ctx.bot.downloader.extract_info(player.playlist.loop, song_url, download=False, process=False)
         except Exception as e:
-            raise exceptions.CommandError(e, expire_in=30)
+            await ctx.bot.send_message(ctx.channel,e)
 
         if not info:
-            raise exceptions.CommandError("That video cannot be played.", expire_in=30)
+            await ctx.bot.send_message(ctx.channel,"That video cannot be played.")
 
         # abstract the search handling away from the user
         # our ytdl options allow us to use search strings as input urls
         if info.get('url', '').startswith('ytsearch'):
             # print("[Command:play] Searching for \"%s\"" % song_url)
             info = await ctx.bot.downloader.extract_info(
-                ctx.bot.player.playlist.loop,
+                player.playlist.loop,
                 song_url,
                 download=False,
                 process=True,    # ASYNC LAMBDAS WHEN
                 on_error=lambda e: asyncio.ensure_future(
-                    ctx.bot.safe_send_message(channel, "```\n%s\n```" % e, expire_in=120), loop=self.loop),
+                    ctx.bot.safe_send_message(channel, "```\n%s\n```" % e), loop=self.loop),
                 retry_on_error=True
             )
 
             if not info:
-                raise exceptions.CommandError(
+                await ctx.bot.send_message(ctx.channel,
                     "Error extracting info from search string, youtubedl returned no data.  "
-                    "You may need to restart the bot if this continues to happen.", expire_in=30
+                    "You may need to restart the bot if this continues to happen."
                 )
+                return
 
             if not all(info.get('entries', [])):
                 # empty list, no data
                 return
 
             song_url = info['entries'][0]['webpage_url']
-            info = await self.downloader.extract_info(player.playlist.loop, song_url, download=False, process=False)
+            info = await ctx.bot.downloader.extract_info(player.playlist.loop, song_url, download=False, process=False)
             
             # Now I could just do: return await self.cmd_play(player, channel, author, song_url)
             # But this is probably fine
@@ -1246,24 +1246,26 @@ class Commands:
         if 'entries' in info:
             # I have to do exe extra checks anyways because you can request an arbitrary number of search results
             if not permissions.allow_playlists and ':search' in info['extractor'] and len(info['entries']) > 1:
-                raise exceptions.PermissionsError("You are not allowed to request playlists", expire_in=30)
+                await ctx.bot.send_message(ctx.channel, "You are not allowed to request playlists")
+                return
 
             # The only reason we would use this over `len(info['entries'])` is if we add `if _` to this one
             num_songs = sum(1 for _ in info['entries'])
 
             if permissions.max_playlist_length and num_songs > permissions.max_playlist_length:
-                raise exceptions.PermissionsError(
+                await ctx.bot.send_message(ctx.channel,
                     "Playlist has too many entries (%s > %s)" % (num_songs, permissions.max_playlist_length),
                     expire_in=30
                 )
+                return
 
             # This is a little bit weird when it says (x + 0 > y), I might add the other check back in
             if permissions.max_songs and player.playlist.count_for_user(author) + num_songs > permissions.max_songs:
-                raise exceptions.PermissionsError(
+                await ctx.bot.send_message(ctx.channel,
                     "Playlist entries + your already queued songs reached limit (%s + %s > %s)" % (
-                        num_songs, player.playlist.count_for_user(author), permissions.max_songs),
-                    expire_in=30
+                        num_songs, player.playlist.count_for_user(author), permissions.max_songs)
                 )
+                return
 
             if info['extractor'].lower() in ['youtube:playlist', 'soundcloud:set', 'bandcamp:album']:
                 try:
@@ -1272,7 +1274,7 @@ class Commands:
                     raise
                 except Exception as e:
                     traceback.print_exc()
-                    raise exceptions.CommandError("Error queuing playlist:\n%s" % e, expire_in=30)
+                    await ctx.bot.send_message(ctx.channel,"Error queuing playlist:\n%s" % e)
 
             t0 = time.time()
 
@@ -1326,9 +1328,8 @@ class Commands:
             await self.safe_delete_message(procmesg)
 
             if not listlen - drop_count:
-                raise exceptions.CommandError(
-                    "No songs were added, all songs were over max duration (%ss)" % permissions.max_song_length,
-                    expire_in=30
+                await ctx.bot.send_message(ctx.channel,
+                    "No songs were added, all songs were over max duration (%ss)" % permissions.max_song_length
                 )
 
             reply_text = "Enqueued **%s** songs to be played. Position in queue: %s"
@@ -1342,7 +1343,7 @@ class Commands:
                 )
 
             try:
-                entry, position = await player.playlist.add_entry(song_url, channel=channel, author=author)
+                entry, position = await player.playlist.add_entry(song_url, channel=ctx.channel, author=ctx.author)
 
             except exceptions.WrongEntryTypeError as e:
                 if e.use_url == song_url:
@@ -1365,16 +1366,17 @@ class Commands:
             try:
                 time_until = await player.playlist.estimate_time_until(position, player)
                 reply_text += ' - estimated time until playing: %s'
+                reply_text %= (btext, position, time_until)
             except:
                 traceback.print_exc()
                 time_until = ''
+                reply_text %= (btext, position)
+            
 
-            reply_text %= (btext, position, time_until)
-
-        return Response(reply_text, delete_after=30)
+        await ctx.bot.send_message(ctx.channel,reply_text)
     
     @commands.command()
-    async def search(self, player, channel, author, permissions, leftover_args):
+    async def search(self, ctx, *leftover_args):
         """
         Usage:
             {command_prefix}search [service] [number] query
@@ -1390,27 +1392,29 @@ class Commands:
                   you must put your query in quotes
             - ex: {command_prefix}search 2 "I ran seagulls"
         """
-
+        permissions = ctx.bot.permissions.for_user(ctx.author)
+        player = await ctx.bot.get_player(ctx.channel)
+        author = ctx.author.voice
+        
         if permissions.max_songs and player.playlist.count_for_user(author) > permissions.max_songs:
-            raise exceptions.PermissionsError(
+            await ctx.send_message(
                 "You have reached your playlist item limit (%s)" % permissions.max_songs,
                 expire_in=30
             )
 
-        def argcheck():
+        async def argcheck():
             if not leftover_args:
-                raise exceptions.CommandError(
+                await ctx.bot.send_message(ctx.channel,
                     "Please specify a search query.\n%s" % dedent(
                         self.cmd_search.__doc__.format(command_prefix=self.config.command_prefix)),
-                    expire_in=60
                 )
 
-        argcheck()
+        await argcheck()
 
         try:
             leftover_args = shlex.split(' '.join(leftover_args))
         except ValueError:
-            raise exceptions.CommandError("Please quote your search query properly.", expire_in=30)
+            await ctx.bot.send_message(ctx.channel,"Please quote your search query properly.")
 
         service = 'youtube'
         items_requested = 3
@@ -1433,7 +1437,7 @@ class Commands:
             argcheck()
 
             if items_requested > max_items:
-                raise exceptions.CommandError("You cannot search for more than %s videos" % max_items)
+                await ctx.bot.send_message(ctx.channel,"You cannot search for more than %s videos" % max_items)
 
         # Look jake, if you see this and go "what the fuck are you doing"
         # and have a better idea on how to do this, i'd be delighted to know.
@@ -1447,64 +1451,65 @@ class Commands:
 
         search_query = '%s%s:%s' % (services[service], items_requested, ' '.join(leftover_args))
 
-        search_msg = await self.send_message(channel, "Searching for videos...")
-        await self.send_typing(channel)
-
+        search_msg = await ctx.bot.send_message(ctx.channel, "Searching for videos...")
+        await ctx.channel.trigger_typing()
         try:
-            info = await self.downloader.extract_info(player.playlist.loop, search_query, download=False, process=True)
+            info = await ctx.bot.downloader.extract_info(player.playlist.loop, search_query, download=False, process=True)
 
         except Exception as e:
-            await self.safe_edit_message(search_msg, str(e), send_if_fail=True)
+            await ctx.bot.safe_edit_message(search_msg, str(e), send_if_fail=True)
             return
         else:
-            await self.safe_delete_message(search_msg)
+            await ctx.bot.safe_delete_message(search_msg)
 
         if not info:
-            return Response("No videos found.", delete_after=30)
+            await ctx.bot.send_message(ctx.channel, "No videos found.")
 
         def check(m):
-            return (
+            valid_message = (
                 m.content.lower()[0] in 'yn' or
                 # hardcoded function name weeee
-                m.content.lower().startswith('{}{}'.format(self.config.command_prefix, 'search')) or
+                m.content.lower().startswith('{}{}'.format(ctx.bot.config.command_prefix, 'search')) or
                 m.content.lower().startswith('exit'))
+            is_author = m.author == ctx.author
+            is_channel = m.channel == ctx.channel
+            return valid_message and is_author and is_channel
 
         for e in info['entries']:
-            result_message = await self.safe_send_message(channel, "Result %s/%s: %s" % (
+            result_message = await ctx.bot.safe_send_message(ctx.channel, "Result %s/%s: %s" % (
                 info['entries'].index(e) + 1, len(info['entries']), e['webpage_url']))
 
-            confirm_message = await self.safe_send_message(channel, "Is this ok? Type `y`, `n` or `exit`")
-            response_message = await self.wait_for_message(30, author=author, channel=channel, check=check)
+            confirm_message = await ctx.bot.safe_send_message(ctx.channel, "Is this ok? Type `y`, `n` or `exit`")
+            response_message = await ctx.bot.wait_for('message', check=check)
 
             if not response_message:
-                await self.safe_delete_message(result_message)
-                await self.safe_delete_message(confirm_message)
-                return Response("Ok nevermind.", delete_after=30)
+                await ctx.bot.safe_delete_message(result_message)
+                await ctx.bot.safe_delete_message(confirm_message)
+                return await ctx.bot.send_message(ctx.channel, "Ok nevermind.")
 
             # They started a new search query so lets clean up and bugger off
-            elif response_message.content.startswith(self.config.command_prefix) or \
+            elif response_message.content.startswith(ctx.bot.config.command_prefix) or \
                     response_message.content.lower().startswith('exit'):
 
-                await self.safe_delete_message(result_message)
-                await self.safe_delete_message(confirm_message)
+                await ctx.bot.safe_delete_message(result_message)
+                await ctx.bot.safe_delete_message(confirm_message)
                 return
 
             if response_message.content.lower().startswith('y'):
-                await self.safe_delete_message(result_message)
-                await self.safe_delete_message(confirm_message)
-                await self.safe_delete_message(response_message)
-
-                await self.cmd_play(player, channel, author, permissions, [], e['webpage_url'])
-
-                return Response("Alright, coming right up!", delete_after=30)
+                await ctx.bot.safe_delete_message(result_message)
+                await ctx.bot.safe_delete_message(confirm_message)
+                await ctx.bot.safe_delete_message(response_message)
+                await ctx.bot.send_message(ctx.channel, "Alright, coming right up!")
+                await ctx.invoke(self.play, e['webpage_url'])
+                return
             else:
-                await self.safe_delete_message(result_message)
-                await self.safe_delete_message(confirm_message)
-                await self.safe_delete_message(response_message)
+                await ctx.bot.safe_delete_message(result_message)
+                await ctx.bot.safe_delete_message(confirm_message)
+                await ctx.bot.safe_delete_message(response_message)
 
         return Response("Oh well :frowning:", delete_after=30)
             
-    @commands.command
+    @commands.command()
     async def np(self, player, channel, guild, message):
         """
         Usage:
@@ -1546,7 +1551,7 @@ class Commands:
         """
         author = ctx.author.voice
         if not author.channel:
-            raise exceptions.CommandError('You are not in a voice channel!')
+            await ctx.bot.send_message(ctx.channel,'You are not in a voice channel!')
 
         voice_client = ctx.bot.the_voice_clients.get(ctx.guild.id, None)
         if voice_client and voice_client.channel.guild == author.channel.guild:
@@ -1591,7 +1596,7 @@ class Commands:
             player.pause()
 
         else:
-            raise exceptions.CommandError('Player is not playing.', expire_in=30)
+            await ctx.bot.send_message(ctx.channel,'Player is not playing.')
 
     @commands.command()
     async def resume(self, player):
@@ -1606,7 +1611,7 @@ class Commands:
             player.resume()
 
         else:
-            raise exceptions.CommandError('Player is not paused.', expire_in=30)
+            await ctx.bot.send_message(ctx.channel,'Player is not paused.')
 
     @commands.command()
     async def shuffle(self, channel, player):
@@ -1653,7 +1658,7 @@ class Commands:
         """
 
         if player.is_stopped:
-            raise exceptions.CommandError("Can't skip! The player is not playing!", expire_in=20)
+            await ctx.bot.send_message(ctx.channel,"Can't skip! The player is not playing!")
 
         if not player.current_entry:
             if player.playlist.peek():
@@ -1796,7 +1801,7 @@ class Commands:
         """
 
         if player.is_stopped:
-            raise exceptions.CommandError("Can't skip! The player is not playing!", expire_in=20)
+            await ctx.bot.send_message(ctx.channel,"Can't skip! The player is not playing!")
 
         if not player.current_entry:
             if player.playlist.peek():
@@ -1843,7 +1848,7 @@ class Commands:
             new_volume = int(new_volume)
 
         except ValueError:
-            raise exceptions.CommandError('{} is not a valid number'.format(new_volume), expire_in=20)
+            await ctx.bot.send_message(ctx.channel,'{} is not a valid number'.format(new_volume))
 
         if relative:
             vol_change = new_volume
@@ -1858,12 +1863,12 @@ class Commands:
 
         else:
             if relative:
-                raise exceptions.CommandError(
+                await ctx.bot.send_message(ctx.channel,
                     'Unreasonable volume change provided: {}{:+} -> {}%.  Provide a change between {} and {:+}.'.format(
-                        old_volume, vol_change, old_volume + vol_change, 1 - old_volume, 100 - old_volume), expire_in=20)
+                        old_volume, vol_change, old_volume + vol_change, 1 - old_volume, 100 - old_volume))
             else:
-                raise exceptions.CommandError(
-                    'Unreasonable volume provided: {}%. Provide a value between 1 and 100.'.format(new_volume), expire_in=20)
+                await ctx.bot.send_message(ctx.channel,
+                    'Unreasonable volume provided: {}%. Provide a value between 1 and 100.'.format(new_volume))
 
     @commands.command()
     async def queue(self, channel, player):
@@ -1985,17 +1990,17 @@ class Commands:
         try:
             info = await self.downloader.extract_info(self.loop, song_url.strip('<>'), download=False, process=False)
         except Exception as e:
-            raise exceptions.CommandError("Could not extract info from input url\n%s\n" % e, expire_in=25)
+            await ctx.bot.send_message(ctx.channel,"Could not extract info from input url\n%s\n" % e)
 
         if not info:
-            raise exceptions.CommandError("Could not extract info from input url, no data.", expire_in=25)
+            await ctx.bot.send_message(ctx.channel,"Could not extract info from input url, no data.")
 
         if not info.get('entries', None):
             # TODO: Retarded playlist checking
             # set(url, webpageurl).difference(set(url))
 
             if info.get('url', None) != info.get('webpage_url', info.get('url', None)):
-                raise exceptions.CommandError("This does not seem to be a playlist.", expire_in=25)
+                await ctx.bot.send_message(ctx.channel,"This does not seem to be a playlist.")
             else:
                 return await self.cmd_pldump(channel, info.get(''))
 
@@ -2008,7 +2013,7 @@ class Commands:
         exfunc = linegens[info['extractor'].split(':')[0]]
 
         if not exfunc:
-            raise exceptions.CommandError("Could not extract info from input url, unsupported playlist type.", expire_in=25)
+            await ctx.bot.send_message(ctx.channel,"Could not extract info from input url, unsupported playlist type.")
 
         with BytesIO() as fcontent:
             for item in info['entries']:
@@ -2126,7 +2131,7 @@ class Commands:
         try:
             await self.edit_profile(username=name)
         except Exception as e:
-            raise exceptions.CommandError(e, expire_in=20)
+            await ctx.bot.send_message(ctx.channel,e)
 
         return Response(":ok_hand:", delete_after=20)
 
@@ -2141,14 +2146,14 @@ class Commands:
         """
 
         if not channel.permissions_for(guild.me).change_nickname:
-            raise exceptions.CommandError("Unable to change nickname: no permission.")
+            await ctx.bot.send_message(ctx.channel,"Unable to change nickname: no permission.")
 
         nick = ' '.join([nick, *leftover_args])
 
         try:
             await self.change_nickname(guild.me, nick)
         except Exception as e:
-            raise exceptions.CommandError(e, expire_in=20)
+            await ctx.bot.send_message(ctx.channel,e)
 
         return Response(":ok_hand:", delete_after=20)
 
@@ -2174,7 +2179,7 @@ class Commands:
                     await self.edit_profile(avatar=await res.read())
 
         except Exception as e:
-            raise exceptions.CommandError("Unable to change avatar: %s" % e, expire_in=20)
+            await ctx.bot.send_message(ctx.channel,"Unable to change avatar: %s" % e)
 
         return Response(":ok_hand:", delete_after=20)
 
