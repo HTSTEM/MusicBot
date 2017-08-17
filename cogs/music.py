@@ -30,9 +30,9 @@ class Music:
             return await ctx.send('You are not in a voice channel!')
         
         await voice.channel.connect()
-
+    '''
     @commands.command()
-    async def play(self, ctx, *, query):
+    async def playLocal(self, ctx, *, query):
         """Plays a file from the local filesystem"""
 
         if ctx.voice_client is None:
@@ -48,7 +48,7 @@ class Music:
         ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
         
         await ctx.send('Now playing: {}'.format(query))
-
+    '''
     def music_finished(self, e, ctx):
         coro = self.read_queue(ctx)
         fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
@@ -67,16 +67,18 @@ class Music:
                 ctx.voice_client.stop()
 
             ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
-            await ctx.send('Now playing: **{}**'.format(player.title))        
+            await ctx.send('Now playing: **{}**'.format(player.title))
+            game = discord.Game(name=player.title)
+            await self.bot.change_presence(game=game)
         else:    
             await ctx.send('Out of songs :\'(')
 
     @commands.command()
-    async def yt(self, ctx, *, url):
+    async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
         
         if ctx.voice_client is None:
-            if ctx.author.voice.channel:
+            if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
                return await ctx.send("Not connected to a voice channel.")
@@ -91,6 +93,8 @@ class Music:
             
             ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
             await ctx.send('Now playing: **{}**'.format(player.title))
+            game = discord.Game(name=player.title)
+            await self.bot.change_presence(game=game)
         else:
             self.bot.queue.append(player)
             await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.bot.queue) - 1))
@@ -112,6 +116,7 @@ class Music:
 
     @commands.command()
     async def queue(self, ctx):
+        print(self.bot.queue)
         if self.bot.queue:
             message = 'Now playing: **{}** `[00:00/00:00]`\n\n'.format(self.bot.queue[0].title)
             message += '\n'.join([

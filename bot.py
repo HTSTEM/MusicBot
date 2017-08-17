@@ -41,6 +41,12 @@ class MusicBot(commands.Bot):
             self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
             raise exception
         
+    async def on_ready(self):
+        self.logger.info('Connected to Discord')
+        self.logger.info('Guilds  : {}'.format(len(self.guilds)))
+        self.logger.info('Users   : {}'.format(len(set(self.get_all_members()))))
+        self.logger.info('Channels: {}'.format(len(list(self.get_all_channels()))))
+        
     def run(self, token):
         cogs = ['cogs.music']
         #self.remove_command("help")
