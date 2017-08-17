@@ -1,196 +1,60 @@
-import asyncio
+import logging
+import traceback
 
 import discord
-import youtube_dl
 
 from discord.ext import commands
-import checks
 
-# Suppress noise about console usage from errors
-token = open('token.txt','r').read().split('\n')[0]
-
-
-ytdl_format_options = {
-    'format': 'bestaudio/best',
-    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0' # ipv6 addresses cause issues sometimes
-}
-
-ffmpeg_options = {
-    'before_options': '-nostdin',
-    'options': '-vn'
-}
-
-ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
-
-
-class YTDLSource(discord.PCMVolumeTransformer):
-    def __init__(self, source, *, data, volume=0.5):
-        super().__init__(source, volume)
-
-        self.data = data
-
-        self.title = data.get('title')
-        self.url = data.get('url')
-
-    @classmethod
-    async def from_url(cls, url, *, loop=None):
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, ytdl.extract_info, url)
-        
-        if 'entries' in data:
-            # take first item from a playlist
-            data = data['entries'][0]
-
-        filename = ytdl.prepare_filename(data)
-        return cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
-
-
-class Music:
-    def __init__(self, bot):
-        self.bot = bot
+class MusicBot(commands.Bot):
+    def __init__(self, command_prefix='!', *args, **kwargs):
         self.queue = []
-
-    @commands.command()
-    @checks.manage_channels()
-    async def join(self, ctx, *, channel: discord.VoiceChannel):
-        """Joins a voice channel"""
-
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
+        logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
+        self.logger = logging.getLogger('bot')
+        super().__init__(command_prefix=command_prefix, *args, **kwargs)
         
-        await channel.connect()
-        
-    @commands.command()
-    @checks.manage_channels()
-    async def summon(self, ctx):
-        """Join the voice channel you're in."""
-        voice = ctx.author.voice
-        if voice is None:
-            return await ctx.send('You are not in a voice channel!')
-        
-        await voice.channel.connect()
-
-    @commands.command()
-    async def play(self, ctx, *, query):
-        """Plays a file from the local filesystem"""
-        return await ctx.send("We need to make this not local. `return`ed.")
-
-        if ctx.voice_client is None:
-            if ctx.author.voice.channel:
-                await ctx.author.voice.channel.connect()
-            else:
-                return await ctx.send("Not connected to a voice channel.")
-
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
-
-        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
-        ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
-        
-        await ctx.send('Now playing: {}'.format(query))
-
-    def song_finished(self, e, ctx):
-        coro = self.read_queue(ctx)
-        fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
-        try:
-            fut.result()
-        except:
-            print("Fork")
+    async def close(self):
+        await super().close()
     
-    async def read_queue(self, ctx):
-        print('rq')
-        if self.queue:
-            print(self.queue)
-            player = self.queue.pop()
-            print(player)
-            
-            if ctx.voice_client.is_playing():
-                ctx.voice_client.stop()
-            
-            ctx.voice_client.play(player, after=lambda: self.song_finished(ctx))
-            await ctx.send('Now playing: **{}**'.format(player.title))
-        
-    @commands.command()
-    async def yt(self, ctx, *, url):
-        """Streams from a url (almost anything youtube_dl supports)"""
+    async def on_command_error(self, ctx: commands.Context, exception: Exception):
+        if isinstance(exception, commands.CommandInvokeError):
+            if isinstance(exception.original, discord.Forbidden):
+                try: await ctx.send('Permissions error: `{}`'.format(exception))
+                except discord.Forbidden: return
 
-        if ctx.voice_client is None:
-            if ctx.author.voice.channel:
-                await ctx.author.voice.channel.connect()
+            lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
+            self.logger.error(''.join(lines)) 
+            
+        elif isinstance(exception, commands.CheckFailure):
+            await ctx.send('You can\'t do that.')
+        elif isinstance(exception, commands.CommandNotFound):
+            pass
+        elif isinstance(exception, commands.UserInputError):
+            error = ' '.join(exception.args)
+            error_data = re.findall('Converting to \"(.*)\" failed for parameter \"(.*)\"\.', error)
+            if not error_data:
+                await ctx.send('Error: {}'.format(' '.join(exception.args)))
             else:
-                return await ctx.send("Not connected to a voice channel.")
-
-        player = await YTDLSource.from_url(url, loop=self.bot.loop)
-        
-        if not self.queue:
-            self.queue.append(player)
-            
-            if ctx.voice_client.is_playing():
-                ctx.voice_client.stop()
-            
-            ctx.voice_client.play(player, after=lambda e: self.song_finished(e, ctx))
-            await ctx.send('Now playing: **{}**'.format(player.title))
+                await ctx.send('Got to say, I *was* expecting `{1}` to be an `{0}`..'.format(*error_data[0]))
         else:
-            self.queue.append(player)
-            await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.queue) - 1))
-
-    @commands.command()
-    @checks.manage_channels()
-    async def volume(self, ctx, volume: int):
-        """Changes the player's volume"""
-
-        if ctx.voice_client is None:
-            return await ctx.send("Not connected to a voice channel.")
-
-        ctx.voice_client.source.volume = volume/100
-        await ctx.send("Changed volume to {}%".format(volume))
+            info = traceback.format_exception(type(exception), exception, exception.__traceback__, chain=False)
+            self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
+            raise exception
         
-    @commands.command()
-    @checks.manage_channels()
-    async def resume(self, ctx):
-        """Resumes player"""
+    def run(self, token):
+        cogs = ['cogs.music']
+        #self.remove_command("help")
+        for cog in cogs:
+            try:
+                self.load_extension(cog)
+            except Exception as e:
+                self.logger.exception('Failed to load cog {}.'.format(cog))
+            else:
+                self.logger.info('Loaded cog {}.'.format(cog))
 
-        ctx.voice_client.resume()
+        self.logger.info('Loaded {} cogs'.format(len(self.cogs)))
+        super().run(token)
 
-    @commands.command()
-    @checks.manage_channels()
-    async def pause(self, ctx):
-        """Stops player"""
-
-        ctx.voice_client.pause()
-
-    @commands.command()
-    @checks.manage_channels()
-    async def stop(self, ctx):
-        """Stops player"""
-
-        ctx.voice_client.stop()
-        
-    @commands.command()
-    @checks.manage_channels()
-    async def die(self, ctx):
-        """Stops player"""
-
-        await ctx.send(':wave:')
-        await ctx.bot.logout()
-
-
-bot = commands.Bot('!')
-
-@bot.event
-async def on_ready():
-    print('Logged in as {0.id}/{0}'.format(bot.user))
-    print('------')
-
-bot.add_cog(Music(bot))
-
-bot.run(token)
+if __name__ == '__main__':
+    token = open('token.txt','r').read().split('\n')[0]
+    bot = MusicBot()
+    bot.run(token)
