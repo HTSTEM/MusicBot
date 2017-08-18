@@ -14,25 +14,6 @@ class Music:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    @checks.manage_channels()
-    async def join(self, ctx, *, channel: discord.VoiceChannel):
-        """Joins a voice channel"""
-
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
-        
-        await channel.connect()
-        
-    @commands.command()
-    @checks.manage_channels()
-    async def summon(self, ctx):
-        """Join the voice channel you're in."""
-        voice = ctx.author.voice
-        if voice is None:
-            return await ctx.send('You are not in a voice channel!')
-        
-        await voice.channel.connect()
     '''
     @commands.command()
     async def playLocal(self, ctx, *, query):
@@ -52,6 +33,8 @@ class Music:
         
         await ctx.send('Now playing: {}'.format(query))
     '''
+
+    # Callbacks:
     def music_finished(self, e, ctx):
         coro = self.read_queue(ctx)
         fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
@@ -62,6 +45,7 @@ class Music:
             traceback.print_exc()
             print("Fork")
     
+    # Utilities:
     async def read_queue(self, ctx):
         self.bot.queue.pop(0)
         if self.bot.queue:
@@ -70,24 +54,26 @@ class Music:
             await self.start_playing(ctx, self.bot.queue[0])
         else:
             print('Queue empty. Using auto-playlist.')
-
-            found = False
-            while not found:
-                url = random.choice(self.bot.autoplaylist)
-                
-                try:
-                    player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
-                    found = True
-                except youtube_dl.utils.DownloadError:
-                    print('Download error. Skipping.')
+            await self.auto_playlist(ctx)
+    
+    async def auto_playlist(self, ctx):
+        found = False
+        while not found:
+            url = random.choice(self.bot.autoplaylist)
             
-            self.bot.queue.append(player)
-            
-            if ctx.voice_client.is_playing():
-                ctx.voice_client.stop()
-            
-            await self.start_playing(ctx, player, announce=False)
-                    
+            try:
+                player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
+                found = True
+            except youtube_dl.utils.DownloadError:
+                print('Download error. Skipping.')
+        
+        self.bot.queue.append(player)
+        
+        if ctx.voice_client.is_playing():
+            ctx.voice_client.stop()
+        
+        await self.start_playing(ctx, player, announce=False)
+    
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
@@ -96,6 +82,7 @@ class Music:
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
 
+    # User commands:
     @commands.command()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
@@ -124,6 +111,29 @@ class Music:
         else:
             self.bot.queue.append(player)
             await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.bot.queue) - 1))
+
+    @commands.command()
+    async def skip(self, ctx):
+        # Register skips
+        if not self.bot.queue:
+            await ctx.send('There\'s nothing playing.')
+            return
+        elif ctx.author.id in self.bot.queue[0].skips:
+            pass
+        else:
+            self.bot.queue[0].skips.append(ctx.author.id)
+        
+        # Skip the song        
+        num_needed = min(8, int(len(ctx.voice_client.channel.members) / 2))
+        if len(self.bot.queue[0].skips) >= num_needed or (self.bot.queue[0].user is not None and ctx.author.id == self.bot.queue[0].user.id):
+            await ctx.send('The skip ratio has been reached, skipping song...'.format(ctx.author.id))
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            return
+        
+        left = num_needed - len(self.bot.queue[0].skips)
+        await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
+            
 
     @commands.command()
     async def queue(self, ctx):
@@ -162,6 +172,27 @@ class Music:
             message = 'Not playing anything.'    
         await ctx.send(message)
 
+    # Mod commands:
+    @commands.command()
+    @checks.manage_channels()
+    async def join(self, ctx, *, channel: discord.VoiceChannel):
+        """Joins a voice channel"""
+
+        if ctx.voice_client is not None:
+            return await ctx.voice_client.move_to(channel)
+        
+        await channel.connect()
+        
+    @commands.command()
+    @checks.manage_channels()
+    async def summon(self, ctx):
+        """Join the voice channel you're in."""
+        voice = ctx.author.voice
+        if voice is None:
+            return await ctx.send('You are not in a voice channel!')
+        
+        await voice.channel.connect()
+
     @commands.command()
     @checks.manage_channels()
     async def volume(self, ctx, volume: int):
@@ -195,7 +226,8 @@ class Music:
         """Skips a song"""
 
         ctx.voice_client.stop()
-        
+
+    # Dev/Hoster only really:    
     @commands.command()
     @checks.manage_channels()
     async def stop(self, ctx):
