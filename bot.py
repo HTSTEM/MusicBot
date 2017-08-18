@@ -12,16 +12,16 @@ class MusicBot(commands.Bot):
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
         self.autoplaylist = open('config/autoplaylist.txt').read().split('\n')
-        
-        self.yaml = YAML(typ='safe') 
+
+        self.yaml = YAML(typ='safe')
         with open('config/config.yaml') as conf_file:
             self.config = self.yaml.load(conf_file)
 
-        super().__init__(command_prefix=command_prefix, *args, **kwargs)        
-        
+        super().__init__(command_prefix=command_prefix, *args, **kwargs)
+
     async def close(self):
         await super().close()
-    
+
     async def on_command_error(self, ctx: commands.Context, exception: Exception):
         if isinstance(exception, commands.CommandInvokeError):
             if isinstance(exception.original, discord.Forbidden):
@@ -29,8 +29,8 @@ class MusicBot(commands.Bot):
                 except discord.Forbidden: return
 
             lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
-            self.logger.error(''.join(lines)) 
-            
+            self.logger.error(''.join(lines))
+
         elif isinstance(exception, commands.CheckFailure):
             await ctx.send('You can\'t do that.')
         elif isinstance(exception, commands.CommandNotFound):
@@ -46,13 +46,40 @@ class MusicBot(commands.Bot):
             info = traceback.format_exception(type(exception), exception, exception.__traceback__, chain=False)
             self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
             raise exception
-        
+
     async def on_ready(self):
         self.logger.info('Connected to Discord')
         self.logger.info('Guilds  : {}'.format(len(self.guilds)))
         self.logger.info('Users   : {}'.format(len(set(self.get_all_members()))))
         self.logger.info('Channels: {}'.format(len(list(self.get_all_channels()))))
-        
+
+        if 'default_channels' in self.config:
+            class Holder:
+                pass
+
+            self.logger.info('Joining voice channels..')
+
+            dc = self.config['default_channels']
+            for guild_id in dc:
+                guild = self.get_guild(guild_id)
+                if guild is not None:
+                    self.logger.info(' - Found guild \'{}\'.'.format(guild.name))
+                    channel = guild.get_channel(dc[guild_id])
+                    if channel is None:
+                        self.logger.info('   - Channel {} not found.'.format(dc[guild_id]))
+                    elif not isinstance(channel, discord.VoiceChannel):
+                        self.logger.info('   - Channel \'{}\' found, but is not voice channel.'.format(channel.name))
+                    else:
+                        self.logger.info('   - Channel \'{}\' found. Joining.'.format(channel.name))
+                        vc = await channel.connect()
+                        self.logger.info('   - Joined. Starting auto-playlist.')
+                        ctx = Holder()
+                        ctx.voice_client = vc
+                        await self.cogs['Music'].auto_playlist(ctx)
+                else:
+                    self.logger.info(' - Guild {} not found.'.format(guild_id))
+            self.logger.info('Done.')
+
     def run(self, token):
         cogs = ['cogs.music']
         #self.remove_command("help")
