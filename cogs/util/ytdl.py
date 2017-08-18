@@ -46,7 +46,8 @@ class YTDLSource(PCMVolumeTransformer):
         if 'entries' in data:
             # take first item from a playlist
             data = data['entries'][0]
-            if 'duration' in data: duration = data['duration']
+        
+        if 'duration' in data: duration = data['duration']
 
         filename = ytdl.prepare_filename(data)
         return cls(FFmpegPCMAudio(filename, **ffmpeg_options), user, duration, data=data)

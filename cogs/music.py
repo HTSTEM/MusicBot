@@ -1,6 +1,8 @@
 import asyncio
+import random
 import time
 
+import youtube_dl
 import discord
 
 from discord.ext import commands
@@ -66,13 +68,31 @@ class Music:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
             await self.start_playing(ctx, self.bot.queue[0])
-        else:    
-            await ctx.send('Out of songs :\'(')
-        
-    async def start_playing(self, ctx, player):
+        else:
+            print('Queue empty. Using auto-playlist.')
+
+            found = False
+            while not found:
+                url = random.choice(self.bot.autoplaylist)
+                
+                try:
+                    player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+                    found = True
+                except youtube_dl.utils.DownloadError:
+                    print('Download error. Skipping.')
+            
+            self.bot.queue.append(player)
+            
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            
+            await self.start_playing(ctx, player, announce=False)
+                    
+    async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
-        await ctx.send('Now playing: **{}**'.format(player.title))
+        if announce:
+            await ctx.send('Now playing: **{}**'.format(player.title))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
 
@@ -86,7 +106,13 @@ class Music:
             else:
                return await ctx.send("Not connected to a voice channel.")
 
-        player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+        try:
+            with ctx.typing():
+                player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+        except youtube_dl.utils.DownloadError:
+            await ctx.send('No song found.')
+            return
+        print(player)
         
         if not self.bot.queue:
             self.bot.queue.append(player)
@@ -99,21 +125,6 @@ class Music:
             self.bot.queue.append(player)
             await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.bot.queue) - 1))
 
-        '''
-        if ctx.voice_client is None:
-            if ctx.author.voice.channel:
-                await ctx.author.voice.channel.connect()
-            else:
-                return await ctx.send("Not connected to a voice channel.")
-
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
-
-        player = await YTDLSource.from_url(url, loop=self.bot.loop)
-        ctx.voice_client.play(player, after=lambda e:self.music_finished(e, ctx))
-        
-        await ctx.send('Now playing: {}'.format(player.title))'''
-
     @commands.command()
     async def queue(self, ctx):
         if self.bot.queue:
@@ -124,12 +135,29 @@ class Music:
                 
             message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
                 playing.title, 
-                time.strftime("%M:%S", time.gmtime(playing_time)),#here's a hack for now
+                time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
                 time.strftime("%M:%S", time.gmtime(playing.duration))
                 )
             message += '\n'.join([
                 '`{}.` **{}** added by **{}**'.format(n + 1, i.title, i.user.name) for n, i in enumerate(self.bot.queue[1:])
             ])
+        else:
+            message = 'Not playing anything.'    
+        await ctx.send(message)
+    
+    @commands.command()
+    async def np(self, ctx):
+        if self.bot.queue:
+            playing = self.bot.queue[0]
+            playing_time = int(time.time()-playing.start_time)
+            if ctx.voice_client.is_paused(): 
+                playing_time -= time.time() - ctx.voice_client.source.pause_start
+                
+            message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
+                playing.title, 
+                time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
+                time.strftime("%M:%S", time.gmtime(playing.duration))
+                )
         else:
             message = 'Not playing anything.'    
         await ctx.send(message)

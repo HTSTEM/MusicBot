@@ -10,6 +10,7 @@ class MusicBot(commands.Bot):
         self.queue = []
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
+        self.autoplaylist = open('config/autoplaylist.txt').read().split('\n')
                 
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
         
