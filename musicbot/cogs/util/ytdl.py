@@ -68,3 +68,7 @@ class YTDLSource(PCMVolumeTransformer):
 
         filename = ytdl.prepare_filename(data)
         return cls(FFmpegPCMAudio(filename, **ffmpeg_options), user, duration, data=data)
+    
+    @classmethod
+    async def search(cls, query, *args, **kwargs):
+        return ytdl.extract_info(query, *args, **kwargs)
