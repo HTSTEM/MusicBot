@@ -50,9 +50,10 @@ class Music:
 
     # Utilities:
     async def read_queue(self, ctx):
-        just_played = self.bot.queue.pop(0)
-        if just_played.likes and just_played.channel is not None:
-            await just_played.channel.send('The song **{}** recieved **{}** likes.'.format(just_played.title, len(just_played.likes)))
+        if self.bot.queue:
+            just_played = self.bot.queue.pop(0)
+            if just_played.likes and just_played.channel is not None:
+                await just_played.channel.send('The song **{}** recieved **{}** likes.'.format(just_played.title, len(just_played.likes)))
 
         if self.bot.queue:
             if ctx.voice_client.is_playing():
@@ -64,7 +65,7 @@ class Music:
 
     async def auto_playlist(self, ctx):
         found = False
-        while not found:
+        while not found and not self.bot.queue:
             if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
                 url = random.choice(self.bot.jingles)
                 self.jingle_last = True
@@ -72,27 +73,34 @@ class Music:
                 url = random.choice(self.bot.autoplaylist)
                 self.jingle_last = False
 
+            player = None
             try:
                 player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
                 found = True
             except youtube_dl.utils.DownloadError:
                 self.bot.logger.warn('Download error. Skipping.')
+            
+            if player is None:
+                found = False
+        
+        if not self.bot.queue:
+            self.bot.queue.append(player)
 
-        self.bot.queue.append(player)
+            if ctx.voice_client.is_playing():
+                return
 
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
-
-        await self.start_playing(ctx, player, announce=False)
+            await self.start_playing(ctx, player, announce=False)
 
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
         if announce:
             if player.user is None:
-                await ctx.send('Now playing: **{}**'.format(player.title))
+                c = player.channel if player.channel is not None else ctx.channel
+                await c.send('Now playing: **{}**'.format(player.title))
             else:
-                await ctx.send('<@{}>,- your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
+                c = player.channel if player.channel is not None else ctx.channel
+                await c.send('<@{}>, your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
 
@@ -124,6 +132,7 @@ class Music:
         try:
             with ctx.typing():
                 player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+                player.channel = ctx.channel
         except youtube_dl.utils.DownloadError:
             await ctx.send('No song found.')
             return

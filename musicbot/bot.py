@@ -117,10 +117,13 @@ class MusicBot(commands.Bot):
                         vc = await channel.connect()
                         self.voice[guild_id] = vc
                         self.logger.info('   - Joined. Starting auto-playlist.')
-                        ctx = Holder()
-                        ctx.voice_client = vc
-                        ctx.bot = self
-                        await self.cogs['Music'].auto_playlist(ctx)
+                        cctx = Holder()
+                        cctx.voice_client = vc
+                        cctx.bot = self
+                        c = guild.get_channel(self.config['bot_channels'][guild_id][0])
+                        cctx.send = c.send
+                        cctx.channel = c
+                        await self.cogs['Music'].auto_playlist(cctx)
                 else:
                     self.logger.info(' - Guild {} not found.'.format(guild_id))
             self.logger.info('Done.')
