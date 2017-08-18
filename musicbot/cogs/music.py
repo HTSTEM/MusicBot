@@ -112,6 +112,9 @@ class Music:
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
 
+        if url.startswith('<') and url.endswith('>'):
+            url = url[1:][:-1]
+        
         if ctx.voice_client is None:
             if ctx.author.voice:
                 self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
