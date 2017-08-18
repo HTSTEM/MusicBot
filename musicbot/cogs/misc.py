@@ -277,14 +277,13 @@ class Misc:
         if len(args) == 0:
             d = ''#'**TWOWBot help:**'
 
-            cats = {'All': []}
+            cats = {}
             for cmd in cmds:
                 if not hasattr(cmd, 'category'):
                     cmd.category = 'Misc'
                 if cmd.category not in cats:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
-                cats['All'].append(cmd)
 
             d += '\n**Categories:**\n'
             for cat in cats:
@@ -292,14 +291,13 @@ class Misc:
             d += '\nUse `{}help <category>` to list commands in a category'.format(ctx.prefix)
             d += '\nUse `{}help <command>` to get indepth help for a command\n'.format(ctx.prefix)
         elif len(args) == 1:
-            cats = {'All': []}
+            cats = {}
             for cmd in cmds:
                 if not hasattr(cmd, 'category'):
                     cmd.category = 'Misc'
                 if cmd.category not in cats:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
-                cats['All'].append(cmd)
             if args[0].title() in cats:
                 d = 'Commands in caterogy **`{}`**:\n'.format(args[0])
                 for cmd in sorted(cats[args[0].title()], key=lambda x:x.name):
