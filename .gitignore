@@ -1,4 +1,3 @@
 __pycache__/
-token.txt
-*.webm
-*.m4a
+config/token.txt
+audio_cache/*

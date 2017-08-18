@@ -1,5 +1,5 @@
-import logging
 import traceback
+import logging
 
 import discord
 
@@ -110,5 +110,5 @@ class MusicBot(commands.Bot):
 
 if __name__ == '__main__':
     bot = MusicBot()
-    token = open(bot.config['token_file'],'r').read().split('\n')[0]
+    token = open(bot.config['token_file'], 'r').read().split('\n')[0]
     bot.run(token)
