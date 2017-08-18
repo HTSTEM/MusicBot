@@ -9,6 +9,9 @@ import discord
 from ruamel.yaml import YAML
 from discord.ext import commands
 
+from cogs.util.checks import NotInVCError
+
+
 class MusicBot(commands.Bot):
     def __init__(self, command_prefix='!', *args, **kwargs):
         self.queue = []
@@ -65,7 +68,8 @@ class MusicBot(commands.Bot):
             self.logger.error(''.join(lines))
 
         elif isinstance(exception, commands.CheckFailure):
-            await ctx.send('You can\'t do that.')
+            if 'in_vc' not in exception.args:
+                await ctx.send('You can\'t do that.')
         elif isinstance(exception, commands.CommandNotFound):
             pass
         elif isinstance(exception, commands.UserInputError):

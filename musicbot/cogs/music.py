@@ -110,6 +110,7 @@ class Music:
     # User commands:
     @category('music')
     @commands.command()
+    @checks.in_vc()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
 
@@ -172,6 +173,7 @@ class Music:
             
     @category('music')
     @commands.command()
+    @checks.in_vc()
     async def search(self, ctx, *, query):
         '''Search for a song'''
         
@@ -252,6 +254,7 @@ class Music:
 
     @category('music')
     @commands.command()
+    @checks.in_vc()
     async def skip(self, ctx):
         """Registers that you want to skip the current song."""
 
@@ -302,6 +305,7 @@ class Music:
         
     @category('music')
     @commands.command()
+    @checks.in_vc()
     async def like(self, ctx):
         """'Like' the currently playing song"""
         if not self.bot.queue:
