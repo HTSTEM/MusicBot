@@ -133,6 +133,24 @@ class Misc:
         await ctx.send(m)
         
     @category('misc')
+    @commands.command(aliases=['permissions'])
+    async def perms(self, ctx):
+        perms = ctx.channel.permissions_for(ctx.author)
+        whitelist = []
+        for command in ctx.bot.commands:
+            for check in command.checks:
+                if not await check(ctx):
+                    break
+            else:
+                whitelist.append(command.name)
+        m = '```yaml\n'
+        m += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
+        m += 'Max_Song_Length: {}\n'.format(self.bot.config['max_song_length'])
+        m += 'Max_Songs: {}\n'.format(self.bot.config['max_songs_queued'])
+        m += '```'
+        await ctx.author.send(m)
+        
+    @category('misc')
     @commands.command()
     async def listids(self, ctx):
         data = 'Your ID: {}\n\n'.format(ctx.author.id)
