@@ -181,7 +181,12 @@ class Music:
 
         # Skip the song
         num_needed = min(8, int(len(ctx.voice_client.channel.members) / 2))
-        if len(self.bot.queue[0].skips) >= num_needed or (self.bot.queue[0].user is not None and ctx.author.id == self.bot.queue[0].user.id):
+        if self.bot.queue[0].user is not None and ctx.author.id == self.bot.queue[0].user.id:
+            await ctx.send('The current song was force-skipped by the queuer.')
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            return
+        if len(self.bot.queue[0].skips) >= num_needed:
             await ctx.send('The skip ratio has been reached, skipping song...'.format(ctx.author.id))
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
