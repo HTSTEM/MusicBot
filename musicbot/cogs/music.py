@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import random
 import time
+import os
 
 import youtube_dl
 import discord
@@ -110,6 +112,9 @@ class Music:
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
 
+        if url.startswith('<') and url.endswith('>'):
+            url = url[1:][:-1]
+        
         if ctx.voice_client is None:
             if ctx.author.voice:
                 self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
@@ -197,6 +202,25 @@ class Music:
 
     @category('music')
     @commands.command()
+    async def mylikes(self, ctx):
+        if ctx.author.id in self.bot.likes and self.bot.likes[ctx.author.id]:
+            m = '**Your liked songs:**\n'
+            m += '\n'.join(base64.b64decode(i.encode('ascii')).decode('utf-8') for i in self.bot.likes[ctx.author.id])
+        else:
+            m = 'You haven\'t liked any songs.'
+        
+        if len(m) < 2000:
+            await ctx.author.send(m)
+        else:
+            with open('{}-likes.txt'.format(ctx.author.id), 'wb') as f:
+                f.write(m.encode('utf-8'))
+            with open('{}-likes.txt'.format(ctx.author.id), 'rb') as f:
+                await ctx.author.send(file=discord.File(f))
+            os.remove('{}-likes.txt'.format(ctx.author.id))
+        await ctx.send(':mailbox_with_mail:')
+        
+    @category('music')
+    @commands.command()
     async def like(self, ctx):
         """'Like' the currently playing song"""
         if not self.bot.queue:
@@ -209,6 +233,12 @@ class Music:
 
         if self.bot.queue[0].channel is None:
             self.bot.queue[0].channel = ctx.channel
+
+        if ctx.author.id not in self.bot.likes:
+            self.bot.likes[ctx.author.id] = []
+        if self.bot.queue[0].title not in self.bot.likes[ctx.author.id]:
+            self.bot.likes[ctx.author.id].append(base64.b64encode(self.bot.queue[0].title.encode('utf-8')).decode('ascii'))
+            self.bot.save_likes()
 
         await ctx.send('<@{}>,your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
 

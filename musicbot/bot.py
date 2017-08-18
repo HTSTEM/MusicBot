@@ -1,6 +1,7 @@
 import traceback
 import logging
 import time
+import os
 import re
 
 import discord
@@ -17,17 +18,29 @@ class MusicBot(commands.Bot):
         self.jingles = open('config/jingles.txt').read().split('\n')
 
         self.yaml = YAML(typ='safe')
-        with open('config/config.yaml') as conf_file:
+        with open('config/config.yml') as conf_file:
             self.config = self.yaml.load(conf_file)
 
         if 'command_prefix' in self.config:
             command_prefix = self.config['command_prefix']
+        
+        if os.path.exists('config/likes.yml'):
+            with open('config/likes.yml') as conf_file:
+                self.likes = self.yaml.load(conf_file)
+        else:
+            self.likes = {}
+        if self.likes is None:
+            self.likes = {}
         
         self.voice = {}
         self.dying = False
 
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
 
+    def save_likes(self):
+        with open('config/likes.yml', 'w') as conf_file:
+            self.yaml.dump(self.likes, conf_file)
+        
     async def close(self):
         await super().close()
 
@@ -82,6 +95,9 @@ class MusicBot(commands.Bot):
                     vc.source.start_time += time.time() - vc.source.pause_start
             
     async def on_message(self, message):
+        if message.guild is None:  # DMs
+            return
+
         if 'bot_channels' in self.config:
             bc = self.config['bot_channels']
             if message.guild.id in bc:

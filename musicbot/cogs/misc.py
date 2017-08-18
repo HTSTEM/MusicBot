@@ -64,11 +64,11 @@ class Misc:
         
         filename = '{}-ids-all.txt'.format("".join([x if x.isalnum() else "_" for x in ctx.guild.name]))
         
-        with open(filename, 'w') as ids_file:
-            ids_file.write(data)
+        with open(filename, 'wb') as ids_file:
+            ids_file.write(data.encode('utf-8'))
         
         await ctx.send(':mailbox_with_mail:')
-        with open(filename, 'r') as ids_file:
+        with open(filename, 'rb') as ids_file:
             await ctx.author.send(file=discord.File(ids_file))
         
         os.remove(filename)    
