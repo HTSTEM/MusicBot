@@ -29,3 +29,6 @@ token_file: config/token.txt
 # song.
 # The chance is `1/jingle_chance`
 jingle_chance: 5
+
+# It's the prefix.. What more do I need to say?
+command_prefix: !

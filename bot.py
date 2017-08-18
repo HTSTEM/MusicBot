@@ -18,6 +18,9 @@ class MusicBot(commands.Bot):
         with open('config/config.yaml') as conf_file:
             self.config = self.yaml.load(conf_file)
 
+        if 'command_prefix' in self.config:
+            command_prefix = self.config['command_prefix']
+
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
 
     async def close(self):
