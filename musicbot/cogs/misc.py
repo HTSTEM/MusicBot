@@ -23,6 +23,42 @@ class Misc:
     @commands.command()
     async def joinserver(self, ctx):
         await ctx.send('Sorry. This bot has been designed to only work on HTC.')
+        
+    @category('bot')
+    @commands.command()
+    @checks.bot_owner()
+    async def setname(self, ctx, *, name):
+        '''Change the bot's username'''
+        try: 
+            await self.bot.user.edit(username=name)
+        except discord.HTTPException:
+            await ctx.send('Changing the name failed.')
+            
+    @category('bot')
+    @commands.command()
+    @checks.manage_channels()
+    async def setnick(self, ctx, *, name):
+        '''Change the bot's nickname'''
+        try: 
+            await ctx.guild.get_member(self.bot.user.id).edit(nick=name)
+        except discord.HTTPException:
+            await ctx.send('Changing the name failed.')
+            
+    @category('bot')
+    @commands.command()
+    @checks.bot_owner()
+    async def setavatar(self, ctx):
+        '''Change the bot's nickname'''
+        attachment = ctx.message.attachments[0]
+        await attachment.save(attachment.filename)
+        try: 
+            with open(attachment.filename, 'rb') as avatar:
+                await self.bot.user.edit(avatar=avatar.read())
+                print('it worked')
+        except discord.HTTPException:
+            await ctx.send('Changing the avatar failed.')
+        except discord.InvalidArgument:
+            await ctx.send('You did not upload an image.')
 
     @category('bot')
     @commands.command(aliases=['shutdown'])
@@ -282,7 +318,6 @@ class Misc:
 
         d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
         await ctx.send(d)
-
 
 def setup(bot):
     bot.add_cog(Misc(bot))
