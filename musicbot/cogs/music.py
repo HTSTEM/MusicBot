@@ -39,14 +39,14 @@ class Music:
 
     # Callbacks:
     def music_finished(self, e, ctx):
-        coro = self.read_queue(ctx)
-        fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
-        try:
-            fut.result()
-        except:
-            import traceback
-            traceback.print_exc()
-            print("Fork")
+        if not ctx.bot.dying:
+            coro = self.read_queue(ctx)
+            fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
+            try:
+                fut.result()
+            except:
+                import traceback
+                traceback.print_exc()
 
     # Utilities:
     async def read_queue(self, ctx):
@@ -104,7 +104,7 @@ class Music:
 
         if ctx.voice_client is None:
             if ctx.author.voice:
-                await ctx.author.voice.channel.connect()
+                self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
             else:
                return await ctx.send("Not connected to a voice channel.")
 
@@ -231,11 +231,18 @@ class Music:
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
 
-            message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
-                playing.title,
-                time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
-                time.strftime("%M:%S", time.gmtime(playing.duration))
-                )
+            if ctx.voice_client.is_paused():
+                message = 'Now playing: **{}** `[{}/{}]` (**PAUSED**)\n\n'.format(
+                    playing.title,
+                    time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
+                    time.strftime("%M:%S", time.gmtime(playing.duration))
+                    )
+            else:
+                message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
+                    playing.title,
+                    time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
+                    time.strftime("%M:%S", time.gmtime(playing.duration))
+                    )
         else:
             message = 'Not playing anything.'
         await ctx.send(message)
@@ -289,7 +296,7 @@ class Music:
         if ctx.voice_client is not None:
             return await ctx.voice_client.move_to(channel)
 
-        await channel.connect()
+        self.bot.voice[ctx.guild.id] = await channel.connect()
 
     @category('bot')
     @commands.command()
@@ -300,7 +307,7 @@ class Music:
         if voice is None:
             return await ctx.send('You are not in a voice channel!')
 
-        await voice.channel.connect()
+        self.bot.voice[ctx.guild.id] = await voice.channel.connect()
 
     @category('player')
     @commands.command()

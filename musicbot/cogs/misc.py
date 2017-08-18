@@ -28,7 +28,7 @@ class Misc:
     @checks.manage_channels()
     async def die(self, ctx):
         """Shuts down the bot"""
-
+        ctx.bot.dying = True
         await ctx.send(':wave:')
         await ctx.bot.logout()
 

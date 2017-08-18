@@ -1,5 +1,6 @@
 import traceback
 import logging
+import time
 import re
 
 import discord
@@ -21,6 +22,9 @@ class MusicBot(commands.Bot):
 
         if 'command_prefix' in self.config:
             command_prefix = self.config['command_prefix']
+        
+        self.voice = {}
+        self.dying = False
 
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
 
@@ -51,7 +55,32 @@ class MusicBot(commands.Bot):
             info = traceback.format_exception(type(exception), exception, exception.__traceback__, chain=False)
             self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
             raise exception
-
+    
+    async def on_voice_state_update(self, member, before, after):
+        if not ((after.channel is None) ^ (before.channel is None)):
+            return
+        
+        if after.channel is None:
+            channel = before.channel
+            left = True
+        else:
+            channel = after.channel
+            left = False
+        
+        if channel.guild.id in self.voice:
+            vc = self.voice[channel.guild.id]
+            
+            if len(channel.members) <= 1:
+                self.logger.info('{} empty. Pausing.'.format(channel.name))
+                if vc.is_playing():
+                    vc.pause()
+                    vc.source.pause_start = time.time()
+            else:
+                self.logger.info('Someone appeared in {}! Resuming.'.format(channel.name))
+                if vc.is_paused():
+                    vc.resume()
+                    vc.source.start_time += time.time() - vc.source.pause_start
+            
     async def on_message(self, message):
         if 'bot_channels' in self.config:
             bc = self.config['bot_channels']
@@ -86,6 +115,7 @@ class MusicBot(commands.Bot):
                     else:
                         self.logger.info('   - Channel \'{}\' found. Joining.'.format(channel.name))
                         vc = await channel.connect()
+                        self.voice[guild_id] = vc
                         self.logger.info('   - Joined. Starting auto-playlist.')
                         ctx = Holder()
                         ctx.voice_client = vc
