@@ -287,6 +287,7 @@ class Music:
     @category('music')
     @commands.command()
     async def mylikes(self, ctx):
+        '''Get a list of every song you've ever liked.'''
         if ctx.author.id in self.bot.likes and self.bot.likes[ctx.author.id]:
             m = '**Your liked songs:**\n'
             m += '\n'.join(base64.b64decode(i.encode('ascii')).decode('utf-8') for i in self.bot.likes[ctx.author.id])
@@ -393,6 +394,7 @@ class Music:
     @category('music')
     @commands.command()
     async def dequeue(self, ctx):
+        '''Remove your song(s) from the queue'''
         for i in self.bot.queue:
             if i.user is not None:
                 if i.user.id == ctx.author.id:
@@ -406,6 +408,10 @@ class Music:
     @commands.command()
     @checks.manage_channels()
     async def remsong(self, ctx, *, song):
+        '''Remove a song from the queue.
+        `song` can either be the number of the song in the queue
+        or it can be the name (or part of the name) of the song you
+        wish to remove.'''
         try:
             song = int(song)
             is_int = True

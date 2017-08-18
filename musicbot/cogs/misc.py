@@ -22,11 +22,13 @@ class Misc:
     @category('misc')
     @commands.command()
     async def id(self, ctx):
+        '''Get your user id'''
         await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
 
     @category('bot')
     @commands.command()
     async def joinserver(self, ctx):
+        '''Invite the bot to your server'''
         await ctx.send('Sorry. This bot has been designed to only work on HTC.')
         
     @category('bot')
@@ -77,12 +79,14 @@ class Misc:
     @category('bot')
     @commands.command()
     async def restart(self, ctx):
+        '''Restart the bot'''
         await ctx.send('Please use `{}die` and run the bot in a restart loop.'.format(ctx.prefix))
 
     @category('misc')
     @commands.command()
     @checks.event_team_or_higher()
     async def start_comp(self, ctx):
+        '''Start a competition'''
         if self.bot.like_comp_active:
             return await ctx.send('There is already a competition going on.')
         self.bot.like_comp_active = True
@@ -93,6 +97,7 @@ class Misc:
     @commands.command()
     @checks.event_team_or_higher()
     async def cancel_comp(self, ctx):
+        '''Cancel any current competitions'''
         if not self.bot.like_comp_active:
             return await ctx.send('There isn\'t a competition going on..')
         self.bot.like_comp_active = False
@@ -103,6 +108,7 @@ class Misc:
     @commands.command()
     @checks.event_team_or_higher()
     async def end_comp(self, ctx):
+        '''End the current competition'''
         if not self.bot.like_comp_active:
             return await ctx.send('There isn\'t a competition going on..')
         self.bot.like_comp_active = False
@@ -123,6 +129,7 @@ class Misc:
     @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
     async def most_liked(self, ctx):
+        '''Get the top 10 most liked songs of all time'''
         likes = {}
         for i in self.bot.likes:
             for j in self.bot.likes[i]:
@@ -140,6 +147,7 @@ class Misc:
     @category('misc')
     @commands.command(aliases=['permissions'])
     async def perms(self, ctx):
+        '''View your permissions'''
         perms = ctx.channel.permissions_for(ctx.author)
         whitelist = []
         for command in ctx.bot.commands:
@@ -158,6 +166,7 @@ class Misc:
     @category('misc')
     @commands.command()
     async def listids(self, ctx):
+        '''Get all of the IDs for the current server'''
         data = 'Your ID: {}\n\n'.format(ctx.author.id)
 
         data += 'Text Channel IDs:\n'
@@ -195,6 +204,8 @@ class Misc:
     @commands.command()
     @checks.manage_channels()
     async def bldump(self, ctx):
+        '''Gets a list of every blacklisted user.'''
+    
         m = '**Blacklisted users:\n**'
         m += '\n'.join(str(i) for i in self.bot.blacklist)
         await ctx.author.send(m)
