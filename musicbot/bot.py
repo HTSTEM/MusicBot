@@ -32,11 +32,20 @@ class MusicBot(commands.Bot):
         if self.likes is None:
             self.likes = {}
         
+        if os.path.exists('config/blacklist.txt'):
+            with open('config/blacklist.txt') as bl_file:
+                self.blacklist = [int(i) for i in bl_file.read().split('\n') if i]
+        else:
+            self.blacklist = []
+        
         self.voice = {}
         self.dying = False
 
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
 
+    def save_bl(self):
+        with open('config/blacklist.txt', 'w') as bl_file:
+            bl_file.write('\n'.join(str(i) for i in self.blacklist))
     def save_likes(self):
         with open('config/likes.yml', 'w') as conf_file:
             self.yaml.dump(self.likes, conf_file)
@@ -96,6 +105,9 @@ class MusicBot(commands.Bot):
             
     async def on_message(self, message):
         if message.guild is None:  # DMs
+            return
+        
+        if message.author.id in self.blacklist:
             return
 
         if 'bot_channels' in self.config:

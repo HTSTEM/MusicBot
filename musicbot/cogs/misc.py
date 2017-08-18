@@ -75,6 +75,51 @@ class Misc:
 
     @category('misc')
     @commands.command()
+    @checks.manage_channels()
+    async def bldump(self, ctx):
+        m = '**Blacklisted users:\n**'
+        m += '\n'.join(str(i) for i in self.bot.blacklist)
+        await ctx.author.send(m)
+        await ctx.send(':mailbox_with_mail:')
+        
+    @category('misc')
+    @commands.command()
+    @checks.manage_channels()
+    async def blacklist(self, ctx, mode, id):
+        """Blacklist a user from using commands"""
+        mode = mode.lower()
+        if mode not in ['+', '-', 'add', 'remove']:
+            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
+            return
+        
+        try:
+            id = int(id)
+        except ValueError:
+            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
+            return
+        
+        if mode in ['+', 'add']:
+            user = ctx.guild.get_member(id)
+            if user is None or not user.permissions_in(ctx.channel).manage_channels:
+                if id not in self.bot.blacklist:
+                    self.bot.blacklist.append(id)
+                    self.bot.save_bl()
+                    await ctx.send('The user with the id `{}` has been blacklisted.'.format(id))
+                else:
+                    await ctx.send('The user with the id `{}` has already been blacklisted.'.format(id))
+            else:
+                await ctx.send('You can\'t blacklist someone with `Manage Channels`. Please ask a developer if you *must* blacklist them.')
+        else:
+            if id not in self.bot.blacklist:
+                await ctx.send('`{}` isn\'t in the blacklist.'.format(id))
+            else:
+                while id in self.bot.blacklist:
+                    self.bot.blacklist.remove(id)
+                self.bot.save_bl()
+                await ctx.send('The user with the id `{}` has been removed from the blacklist.'.format(id))
+        
+    @category('misc')
+    @commands.command()
     async def help(self, ctx, *args):
         '''This help message'''
         cmds = {i for i in ctx.bot.all_commands.values()}
