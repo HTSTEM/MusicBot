@@ -92,7 +92,7 @@ class Music:
             if player.user is None:
                 await ctx.send('Now playing: **{}**'.format(player.title))
             else:
-                await ctx.send('<@{}> - your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
+                await ctx.send('<@{}>,- your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
 
@@ -197,7 +197,7 @@ class Music:
         if self.bot.queue[0].channel is None:
             self.bot.queue[0].channel = ctx.channel
 
-        await ctx.send('<@{}> your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
+        await ctx.send('<@{}>,your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
 
     @category('music')
     @commands.command()
@@ -252,6 +252,34 @@ class Music:
         await ctx.send('<@{}>, you don\'t appear to have any songs in the queue.'.format(ctx.author.id))            
 
     # Mod commands:
+    @category('music')
+    @commands.command()
+    @checks.manage_channels()
+    async def remsong(self, ctx, *, song):
+        try:
+            song = int(song)
+            is_int = True
+        except ValueError:
+            is_int = False
+        
+        if is_int:
+            if song < 1 or song >= len(self.bot.queue):
+                await ctx.send('<@{}>, song must be in range 1-{} or the title.'.format(ctx.author.id, len(self.bot.queue) - 1))
+                return
+            else:
+                player = self.bot.queue.pop(song)
+                await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))   
+        else:
+            for i in self.bot.queue:
+                if song in i.title:
+                    player = i
+                    break
+            else:
+                await ctx.send('<@{}>, no song found matching `{}` in the queue.'.format(ctx.author.id, song))
+                return
+            self.bot.queue.remove(player)
+            await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))
+    
     @category('bot')
     @commands.command()
     @checks.manage_channels()
