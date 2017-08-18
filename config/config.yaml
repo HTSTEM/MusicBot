@@ -31,4 +31,4 @@ token_file: config/token.txt
 jingle_chance: 5
 
 # It's the prefix.. What more do I need to say?
-command_prefix: !
+command_prefix: "!"

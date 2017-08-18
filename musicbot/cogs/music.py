@@ -9,6 +9,8 @@ from discord.ext import commands
 
 from cogs.util import checks
 from cogs.util.ytdl import YTDLSource
+from cogs.util.categories import category
+
 
 class Music:
     def __init__(self, bot):
@@ -95,6 +97,7 @@ class Music:
         await self.bot.change_presence(game=game)
 
     # User commands:
+    @category('music')
     @commands.command()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
@@ -154,6 +157,7 @@ class Music:
 
             await ctx.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(player.title, len(self.bot.queue) - 1, time.strftime("%H:%M:%S", time.gmtime(ttp))))
 
+    @category('music')
     @commands.command()
     async def skip(self, ctx):
         """Registers that you want to skip the current song."""
@@ -178,6 +182,7 @@ class Music:
         left = num_needed - len(self.bot.queue[0].skips)
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
 
+    @category('music')
     @commands.command()
     async def like(self, ctx):
         """'Like' the currently playing song"""
@@ -194,7 +199,7 @@ class Music:
 
         await ctx.send('<@{}> your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
 
-
+    @category('music')
     @commands.command()
     async def queue(self, ctx):
         """Shows the current queue."""
@@ -216,6 +221,7 @@ class Music:
             message = 'Not playing anything.'
         await ctx.send(message)
 
+    @category('music')
     @commands.command()
     async def np(self, ctx):
         """Gets the currently playing song"""
@@ -235,6 +241,7 @@ class Music:
         await ctx.send(message)
 
     # Mod commands:
+    @category('bot')
     @commands.command()
     @checks.manage_channels()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
@@ -245,6 +252,7 @@ class Music:
 
         await channel.connect()
 
+    @category('bot')
     @commands.command()
     @checks.manage_channels()
     async def summon(self, ctx):
@@ -255,6 +263,7 @@ class Music:
 
         await voice.channel.connect()
 
+    @category('player')
     @commands.command()
     @checks.manage_channels()
     async def volume(self, ctx, volume: int):
@@ -266,6 +275,7 @@ class Music:
         ctx.voice_client.source.volume = volume/100
         await ctx.send("Changed volume to {}%".format(volume))
 
+    @category('player')
     @commands.command()
     @checks.manage_channels()
     async def resume(self, ctx):
@@ -274,6 +284,7 @@ class Music:
             ctx.voice_client.resume()
             ctx.voice_client.source.start_time += time.time() - ctx.voice_client.source.pause_start
 
+    @category('player')
     @commands.command()
     @checks.manage_channels()
     async def pause(self, ctx):
@@ -282,6 +293,7 @@ class Music:
             ctx.voice_client.pause()
             ctx.voice_client.source.pause_start = time.time()
 
+    @category('player')
     @commands.command()
     @checks.manage_channels()
     async def forceskip(self, ctx):
@@ -289,6 +301,7 @@ class Music:
 
         ctx.voice_client.stop()
 
+    @category('player')
     @commands.command()
     @checks.manage_channels()
     async def clear(self, ctx):
@@ -297,6 +310,7 @@ class Music:
         ctx.voice_client.stop()
 
     # Dev/Hoster only really
+    @category('bot')    
     @commands.command(aliases=['shutdown'])
     @checks.manage_channels()
     async def die(self, ctx):

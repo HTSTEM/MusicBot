@@ -1,5 +1,6 @@
 import traceback
 import logging
+import re
 
 import discord
 
@@ -95,8 +96,8 @@ class MusicBot(commands.Bot):
             self.logger.info('Done.')
 
     def run(self, token):
-        cogs = ['cogs.music']
-        #self.remove_command("help")
+        cogs = ['cogs.music', 'cogs.misc']
+        self.remove_command("help")
         for cog in cogs:
             try:
                 self.load_extension(cog)
