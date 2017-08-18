@@ -40,6 +40,8 @@ class MusicBot(commands.Bot):
         
         self.voice = {}
         self.dying = False
+        self.like_comp_active = False
+        self.like_comp = {}
 
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
 

@@ -239,6 +239,16 @@ class Music:
         if self.bot.queue[0].title not in self.bot.likes[ctx.author.id]:
             self.bot.likes[ctx.author.id].append(base64.b64encode(self.bot.queue[0].title.encode('utf-8')).decode('ascii'))
             self.bot.save_likes()
+        
+        if self.bot.like_comp_active:
+            if self.bot.queue[0].user is not None:
+                if self.bot.queue[0].user not in self.bot.like_comp:
+                    self.bot.like_comp[self.bot.queue[0].user] = {}
+                if self.bot.queue[0].title not in self.bot.like_comp[self.bot.queue[0].user]:
+                    self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title] = []
+                if ctx.author.id != self.bot.queue[0].user.id:
+                    if ctx.author.id not in self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title]:
+                        self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title].append(ctx.author.id)
 
         await ctx.send('<@{}>,your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
 
