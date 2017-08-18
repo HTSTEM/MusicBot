@@ -247,6 +247,11 @@ class Music:
     async def queue(self, ctx):
         """Shows the current queue."""
         if self.bot.queue:
+            
+            if len(self.bot.queue) > 10 and not ctx.channel.permissions_for(ctx.author).manage_channels:
+                message = 'The queue has {} items. Ask a mod to see the queue.\n'.format(len(self.bot.queue))
+                return await ctx.send(message)
+                
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
             if ctx.voice_client.is_paused():
