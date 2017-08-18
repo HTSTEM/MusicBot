@@ -1,4 +1,5 @@
 import re
+import os
 
 import discord
 
@@ -11,32 +12,68 @@ from cogs.util.categories import category
 class Misc:
     def __init__(self, bot):
         self.bot = bot
-        
+
     @category('misc')
     @commands.command()
     async def id(self, ctx):
         await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
-        
+
     @category('bot')
     @commands.command()
     async def joinserver(self, ctx):
         await ctx.send('Sorry. This bot has been designed to only work on HTC.')
-        
-    @category('bot')    
+
+    @category('bot')
     @commands.command(aliases=['shutdown'])
     @checks.manage_channels()
     async def die(self, ctx):
         """Shuts down the bot"""
 
         await ctx.send(':wave:')
-        await ctx.bot.logout()    
-        
+        await ctx.bot.logout()
+
     @category('bot')
     @commands.command()
     async def restart(self, ctx):
         await ctx.send('Please use `{}die` and run the bot in a restart loop.'.format(ctx.prefix))
+
+    @category('misc')
+    @commands.command()
+    async def listids(self, ctx):
+        data = 'Your ID: {}\n\n'.format(ctx.author.id)
+
+        data += 'Text Channel IDs:\n'
+        for c in ctx.guild.channels:
+            if isinstance(c, discord.TextChannel):
+                data += '{}: {}\n'.format(c.name, c.id)
+
+        data += '\nVoice Channel IDs:\n'
+        for c in ctx.guild.channels:
+            if isinstance(c, discord.VoiceChannel):
+                data += '{}: {}\n'.format(c.name, c.id)
+
+        data += '\nRole IDs:\n'
+        for r in ctx.guild.roles:
+            data += '{}: {}\n'.format(r.name, r.id)
+
+        data += '\nUser IDs:\n'
+        if ctx.guild.large:
+            await self.bot.request_offline_member(ctx.guild)
+        for m in ctx.guild.members:
+            data += '{}: {}\n'.format(m.name, m.id)
         
-    @category('misc')    
+        filename = '{}-ids-all.txt'.format("".join([x if x.isalnum() else "_" for x in ctx.guild.name]))
+        
+        with open(filename, 'w') as ids_file:
+            ids_file.write(data)
+        
+        await ctx.send(':mailbox_with_mail:')
+        with open(filename, 'r') as ids_file:
+            await ctx.author.send(file=discord.File(ids_file))
+        
+        os.remove(filename)    
+
+    @category('misc')
     @commands.command()
     async def help(self, ctx, *args):
         '''This help message'''
@@ -108,7 +145,7 @@ class Misc:
                             d += ']`\n'
                         else:
                             d += '>`\n'
-                    
+
                     d += '\n**Description:**\n'
                     d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
 
