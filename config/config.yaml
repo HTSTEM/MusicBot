@@ -24,3 +24,8 @@ bot_channels:
 # This is the location of the bot's token. The token must be placed on
 # the first line of the file
 token_file: config/token.txt
+
+# This is the change that a jingle will play instead of an auto-playlist
+# song.
+# The chance is `1/jingle_chance`
+jingle_chance: 5

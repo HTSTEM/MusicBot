@@ -13,6 +13,7 @@ from cogs.util.ytdl import YTDLSource
 class Music:
     def __init__(self, bot):
         self.bot = bot
+        self.jingle_last = False
 
     '''
     @commands.command()
@@ -47,7 +48,10 @@ class Music:
 
     # Utilities:
     async def read_queue(self, ctx):
-        self.bot.queue.pop(0)
+        just_played = self.bot.queue.pop(0)
+        if just_played.likes and just_played.channel is not None:
+            await just_played.channel.send('The song **{}** recieved **{}** likes.'.format(just_played.title, len(just_played.likes)))
+
         if self.bot.queue:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
@@ -59,7 +63,12 @@ class Music:
     async def auto_playlist(self, ctx):
         found = False
         while not found:
-            url = random.choice(self.bot.autoplaylist)
+            if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
+                url = random.choice(self.bot.jingles)
+                self.jingle_last = True
+            else:
+                url = random.choice(self.bot.autoplaylist)
+                self.jingle_last = False
 
             try:
                 player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
@@ -122,6 +131,8 @@ class Music:
                 await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(self.bot.config['max_song_length'], player.duration))
                 return
 
+        player.channel = ctx.channel
+
         if not self.bot.queue:
             self.bot.queue.append(player)
 
@@ -145,6 +156,8 @@ class Music:
 
     @commands.command()
     async def skip(self, ctx):
+        """Registers that you want to skip the current song."""
+
         # Register skips
         if not self.bot.queue:
             await ctx.send('There\'s nothing playing.')
@@ -166,7 +179,25 @@ class Music:
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
 
     @commands.command()
+    async def like(self, ctx):
+        """'Like' the currently playing song"""
+        if not self.bot.queue:
+            await ctx.send('There\'s nothing playing.')
+            return
+        elif ctx.author.id in self.bot.queue[0].likes:
+            pass
+        else:
+            self.bot.queue[0].likes.append(ctx.author.id)
+
+        if self.bot.queue[0].channel is None:
+            self.bot.queue[0].channel = ctx.channel
+
+        await ctx.send('<@{}> your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
+
+
+    @commands.command()
     async def queue(self, ctx):
+        """Shows the current queue."""
         if self.bot.queue:
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
@@ -187,6 +218,7 @@ class Music:
 
     @commands.command()
     async def np(self, ctx):
+        """Gets the currently playing song"""
         if self.bot.queue:
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
@@ -245,7 +277,7 @@ class Music:
     @commands.command()
     @checks.manage_channels()
     async def pause(self, ctx):
-        """Stops player"""
+        """Pause the player"""
         if ctx.voice_client.is_playing():
             ctx.voice_client.pause()
             ctx.voice_client.source.pause_start = time.time()
@@ -253,7 +285,7 @@ class Music:
     @commands.command()
     @checks.manage_channels()
     async def forceskip(self, ctx):
-        """Skips a song"""
+        """Forcefully skips a song"""
 
         ctx.voice_client.stop()
 

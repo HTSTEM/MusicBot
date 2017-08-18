@@ -38,6 +38,7 @@ class YTDLSource(PCMVolumeTransformer):
         self.start_time = 0 #idk, super hacky
         self.pause_start = 0
         
+        self.channel = None
         self.skips = []
         self.likes = []
 
