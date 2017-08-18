@@ -75,6 +75,47 @@ class Misc:
         await ctx.send('Please use `{}die` and run the bot in a restart loop.'.format(ctx.prefix))
 
     @category('misc')
+    @commands.command()
+    @checks.manage_channels()
+    async def start_comp(self, ctx):
+        if self.bot.like_comp_active:
+            return await ctx.send('There is already a competition going on.')
+        self.bot.like_comp_active = True
+        self.bot.like_comp = {}
+        await ctx.send('A like competition has been started! Woot?')
+    
+    @category('misc')
+    @commands.command()
+    @checks.manage_channels()
+    async def cancel_comp(self, ctx):
+        if not self.bot.like_comp_active:
+            return await ctx.send('There isn\'t a competition going on..')
+        self.bot.like_comp_active = False
+        self.bot.like_comp = {}
+        await ctx.send('The like competition has been canceled.')
+    
+    @category('misc')
+    @commands.command()
+    @checks.manage_channels()
+    async def end_comp(self, ctx):
+        if not self.bot.like_comp_active:
+            return await ctx.send('There isn\'t a competition going on..')
+        self.bot.like_comp_active = False
+        print(self.bot.like_comp)
+        
+        m = 'The like competition has ended.\n**Results:**\n'
+        likes = []
+        for user in self.bot.like_comp:
+            for song in self.bot.like_comp[user]:
+                likes.append((user, song, len(self.bot.like_comp[user][song])))
+        likes.sort(key=lambda x:x[2], reverse=True)
+        
+        m += '\n'.join('`{}`: **{}** with the song **{}** and **{} like{}**'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '') for n, i in enumerate(likes[:10]))
+        
+        self.bot.like_comp = {}
+        await ctx.send(m)
+        
+    @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
     async def most_liked(self, ctx):
         likes = {}
