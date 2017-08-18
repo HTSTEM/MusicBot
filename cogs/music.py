@@ -53,7 +53,7 @@ class Music:
                 ctx.voice_client.stop()
             await self.start_playing(ctx, self.bot.queue[0])
         else:
-            print('Queue empty. Using auto-playlist.')
+            self.bot.logger.info('Queue empty. Using auto-playlist.')
             await self.auto_playlist(ctx)
 
     async def auto_playlist(self, ctx):
@@ -65,7 +65,7 @@ class Music:
                 player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
                 found = True
             except youtube_dl.utils.DownloadError:
-                print('Download error. Skipping.')
+                self.bot.logger.warn('Download error. Skipping.')
 
         self.bot.queue.append(player)
 

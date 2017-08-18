@@ -47,6 +47,15 @@ class MusicBot(commands.Bot):
             self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
             raise exception
 
+    async def on_message(self, message):
+        if 'bot_channels' in self.config:
+            bc = self.config['bot_channels']
+            if message.guild.id in bc:
+                if message.channel.id not in bc[message.guild.id]:
+                    return
+
+        await self.process_commands(message)
+
     async def on_ready(self):
         self.logger.info('Connected to Discord')
         self.logger.info('Guilds  : {}'.format(len(self.guilds)))
@@ -75,6 +84,7 @@ class MusicBot(commands.Bot):
                         self.logger.info('   - Joined. Starting auto-playlist.')
                         ctx = Holder()
                         ctx.voice_client = vc
+                        ctx.bot = self
                         await self.cogs['Music'].auto_playlist(ctx)
                 else:
                     self.logger.info(' - Guild {} not found.'.format(guild_id))
