@@ -17,6 +17,25 @@ class Misc:
     async def id(self, ctx):
         await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
         
+    @category('bot')
+    @commands.command()
+    async def joinserver(self, ctx):
+        await ctx.send('Sorry. This bot has been designed to only work on HTC.')
+        
+    @category('bot')    
+    @commands.command(aliases=['shutdown'])
+    @checks.manage_channels()
+    async def die(self, ctx):
+        """Shuts down the bot"""
+
+        await ctx.send(':wave:')
+        await ctx.bot.logout()    
+        
+    @category('bot')
+    @commands.command()
+    async def restart(self, ctx):
+        await ctx.send('Please use `{}die` and run the bot in a restart loop.'.format(ctx.prefix))
+        
     @category('misc')    
     @commands.command()
     async def help(self, ctx, *args):

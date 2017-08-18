@@ -348,15 +348,5 @@ class Music:
         self.bot.queue = []
         ctx.voice_client.stop()
 
-    # Dev/Hoster only really
-    @category('bot')    
-    @commands.command(aliases=['shutdown'])
-    @checks.manage_channels()
-    async def die(self, ctx):
-        """Shuts down the bot"""
-
-        await ctx.send(':wave:')
-        await ctx.bot.logout()
-
 def setup(bot):
     bot.add_cog(Music(bot))
