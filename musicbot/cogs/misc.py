@@ -12,6 +12,11 @@ class Misc:
     def __init__(self, bot):
         self.bot = bot
         
+    @category('misc')
+    @commands.command()
+    async def id(self, ctx):
+        await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
+        
     @category('misc')    
     @commands.command()
     async def help(self, ctx, *args):
