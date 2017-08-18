@@ -30,7 +30,7 @@ class Music:
 
         source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
         ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
-        
+
         await ctx.send('Now playing: {}'.format(query))
     '''
 
@@ -44,7 +44,7 @@ class Music:
             import traceback
             traceback.print_exc()
             print("Fork")
-    
+
     # Utilities:
     async def read_queue(self, ctx):
         self.bot.queue.pop(0)
@@ -55,32 +55,32 @@ class Music:
         else:
             print('Queue empty. Using auto-playlist.')
             await self.auto_playlist(ctx)
-    
+
     async def auto_playlist(self, ctx):
         found = False
         while not found:
             url = random.choice(self.bot.autoplaylist)
-            
+
             try:
                 player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
                 found = True
             except youtube_dl.utils.DownloadError:
                 print('Download error. Skipping.')
-        
+
         self.bot.queue.append(player)
-        
+
         if ctx.voice_client.is_playing():
             ctx.voice_client.stop()
-        
+
         await self.start_playing(ctx, player, announce=False)
-    
+
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
         if announce:
             if player.user is None:
                 await ctx.send('Now playing: **{}**'.format(player.title))
-            else:    
+            else:
                 await ctx.send('<@{}> - your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
@@ -89,12 +89,25 @@ class Music:
     @commands.command()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
-        
+
         if ctx.voice_client is None:
             if ctx.author.voice:
                 await ctx.author.voice.channel.connect()
             else:
                return await ctx.send("Not connected to a voice channel.")
+
+        mod_perms = ctx.channel.permissions_for(ctx.author).manage_channels
+
+        if not mod_perms:
+            # Check the queue limit before bothering to download the song
+            queued = 0
+            for i in self.bot.queue[1:]:
+                if i.user is not None:
+                    if i.user.id == ctx.author.id:
+                        queued += 1
+            if queued >= self.bot.config['max_songs_queued']:
+                await ctx.send('You can only have {} song{} in the queue at once.'.format(self.bot.config['max_songs_queued'], '' if self.bot.config['max_songs_queued'] == 1 else 's'))
+                return
 
         try:
             with ctx.typing():
@@ -102,25 +115,32 @@ class Music:
         except youtube_dl.utils.DownloadError:
             await ctx.send('No song found.')
             return
-        
+
+        if not mod_perms:
+            # Length checking
+            if player.duration > self.bot.config['max_song_length']:
+                await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(self.bot.config['max_song_length'], player.duration))
+                return
+
         if not self.bot.queue:
             self.bot.queue.append(player)
-            
+
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
-            
+
             await self.start_playing(ctx, player)
         else:
-            self.bot.queue.append(player)
             ttp = 0
             for i in self.bot.queue:
                 ttp += i.duration
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
-            if ctx.voice_client.is_paused(): 
+            if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
-            ttp -= playing_time    
-            
+            ttp -= playing_time
+
+            self.bot.queue.append(player)
+
             await ctx.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(player.title, len(self.bot.queue) - 1, time.strftime("%H:%M:%S", time.gmtime(ttp))))
 
     @commands.command()
@@ -133,15 +153,15 @@ class Music:
             pass
         else:
             self.bot.queue[0].skips.append(ctx.author.id)
-        
-        # Skip the song        
+
+        # Skip the song
         num_needed = min(8, int(len(ctx.voice_client.channel.members) / 2))
         if len(self.bot.queue[0].skips) >= num_needed or (self.bot.queue[0].user is not None and ctx.author.id == self.bot.queue[0].user.id):
             await ctx.send('The skip ratio has been reached, skipping song...'.format(ctx.author.id))
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
             return
-        
+
         left = num_needed - len(self.bot.queue[0].skips)
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
 
@@ -150,11 +170,11 @@ class Music:
         if self.bot.queue:
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
-            if ctx.voice_client.is_paused(): 
+            if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
-                
+
             message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
-                playing.title, 
+                playing.title,
                 time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
                 time.strftime("%M:%S", time.gmtime(playing.duration))
                 )
@@ -162,24 +182,24 @@ class Music:
                 '`{}.` **{}** added by **{}**'.format(n + 1, i.title, i.user.name) for n, i in enumerate(self.bot.queue[1:])
             ])
         else:
-            message = 'Not playing anything.'    
+            message = 'Not playing anything.'
         await ctx.send(message)
-    
+
     @commands.command()
     async def np(self, ctx):
         if self.bot.queue:
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
-            if ctx.voice_client.is_paused(): 
+            if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
-                
+
             message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
-                playing.title, 
+                playing.title,
                 time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
                 time.strftime("%M:%S", time.gmtime(playing.duration))
                 )
         else:
-            message = 'Not playing anything.'    
+            message = 'Not playing anything.'
         await ctx.send(message)
 
     # Mod commands:
@@ -190,9 +210,9 @@ class Music:
 
         if ctx.voice_client is not None:
             return await ctx.voice_client.move_to(channel)
-        
+
         await channel.connect()
-        
+
     @commands.command()
     @checks.manage_channels()
     async def summon(self, ctx):
@@ -200,7 +220,7 @@ class Music:
         voice = ctx.author.voice
         if voice is None:
             return await ctx.send('You are not in a voice channel!')
-        
+
         await voice.channel.connect()
 
     @commands.command()
@@ -213,7 +233,7 @@ class Music:
 
         ctx.voice_client.source.volume = volume/100
         await ctx.send("Changed volume to {}%".format(volume))
-        
+
     @commands.command()
     @checks.manage_channels()
     async def resume(self, ctx):
@@ -252,6 +272,6 @@ class Music:
 
         await ctx.send(':wave:')
         await ctx.bot.logout()
-        
+
 def setup(bot):
     bot.add_cog(Music(bot))

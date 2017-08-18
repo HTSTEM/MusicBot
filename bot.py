@@ -3,6 +3,7 @@ import traceback
 
 import discord
 
+from ruamel.yaml import YAML
 from discord.ext import commands
 
 class MusicBot(commands.Bot):
@@ -11,8 +12,12 @@ class MusicBot(commands.Bot):
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
         self.autoplaylist = open('config/autoplaylist.txt').read().split('\n')
-                
-        super().__init__(command_prefix=command_prefix, *args, **kwargs)
+        
+        self.yaml = YAML(typ='safe') 
+        with open('config/config.yaml') as conf_file:
+            self.config = self.yaml.load(conf_file)
+
+        super().__init__(command_prefix=command_prefix, *args, **kwargs)        
         
     async def close(self):
         await super().close()
@@ -63,6 +68,6 @@ class MusicBot(commands.Bot):
         super().run(token)
 
 if __name__ == '__main__':
-    token = open('token.txt','r').read().split('\n')[0]
     bot = MusicBot()
+    token = open(bot.config['token_file'],'r').read().split('\n')[0]
     bot.run(token)
