@@ -1,3 +1,4 @@
+import base64
 import re
 import os
 
@@ -37,6 +38,23 @@ class Misc:
     async def restart(self, ctx):
         await ctx.send('Please use `{}die` and run the bot in a restart loop.'.format(ctx.prefix))
 
+    @category('misc')
+    @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
+    async def most_liked(self, ctx):
+        likes = {}
+        for i in self.bot.likes:
+            for j in self.bot.likes[i]:
+                j = base64.b64decode(j.encode('ascii')).decode('utf-8')
+                if j not in likes:
+                    likes[j] = 0
+                likes[j] += 1
+        likes = list(likes.items())
+        likes.sort(key=lambda x:x[1], reverse=True)
+        likes
+        m = '**The top 10 most liked songs of all time are:**\n'
+        m += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
+        await ctx.send(m)
+        
     @category('misc')
     @commands.command()
     async def listids(self, ctx):
