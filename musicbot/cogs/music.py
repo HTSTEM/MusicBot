@@ -105,14 +105,6 @@ class Music:
                 await c.send('<@{}>, your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
-        
-    def search_song(self, user):
-        count = 0
-        for song in self.bot.queue:
-            if song.user == user:
-                return count
-            count += 1
-        return -1
 
     # User commands:
     @category('music')
@@ -120,10 +112,8 @@ class Music:
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
 
-        url = url.strip('<>')
-        
-        if self.search_song(ctx.author) > 0: #let them play a song if they're song is currently playing
-            return await ctx.send("You already have a song in the queue!")
+        if url.startswith('<') and url.endswith('>'):
+            url = url[1:][:-1]
         
         if ctx.voice_client is None:
             if ctx.author.voice:
