@@ -144,7 +144,7 @@ class Misc:
         whitelist = []
         for command in ctx.bot.commands:
             for check in command.checks:
-                if not await check(ctx):
+                if not await check(ctx, throw_error=False):
                     break
             else:
                 whitelist.append(command.name)
