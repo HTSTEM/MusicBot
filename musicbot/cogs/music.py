@@ -240,6 +240,17 @@ class Music:
             message = 'Not playing anything.'
         await ctx.send(message)
 
+    @category('music')
+    @commands.command()
+    async def dequeue(self, ctx):
+        for i in self.bot.queue:
+            if i.user is not None:
+                if i.user.id == ctx.author.id:
+                    self.bot.queue.remove(i)
+                    await ctx.send('<@{}>, your song **{}** has been removed from the queue.'.format(ctx.author.id, i.title))
+                    return
+        await ctx.send('<@{}>, you don\'t appear to have any songs in the queue.'.format(ctx.author.id))            
+
     # Mod commands:
     @category('bot')
     @commands.command()
