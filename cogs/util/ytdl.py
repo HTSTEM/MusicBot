@@ -35,6 +35,8 @@ class YTDLSource(PCMVolumeTransformer):
         self.url = data.get('url')
         self.user = user
         self.duration = duration
+        self.start_time = 0 #idk, super hacky
+        self.pause_start = 0
 
     @classmethod
     async def from_url(cls, url, user=None, *, loop=None):

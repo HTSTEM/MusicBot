@@ -63,16 +63,18 @@ class Music:
     async def read_queue(self, ctx):
         self.bot.queue.pop(0)
         if self.bot.queue:
-            player = self.bot.queue[0]
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
-
-            ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
-            await ctx.send('Now playing: **{}**'.format(player.title))
-            game = discord.Game(name=player.title)
-            await self.bot.change_presence(game=game)
+            await self.start_playing(ctx, self.bot.queue[0])
         else:    
             await ctx.send('Out of songs :\'(')
+        
+    async def start_playing(self, ctx, player):
+        player.start_time = time.time()
+        ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
+        await ctx.send('Now playing: **{}**'.format(player.title))
+        game = discord.Game(name=player.title)
+        await self.bot.change_presence(game=game)
 
     @commands.command()
     async def play(self, ctx, *, url):
@@ -92,10 +94,7 @@ class Music:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
             
-            ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
-            await ctx.send('Now playing: **{}**'.format(player.title))
-            game = discord.Game(name=player.title)
-            await self.bot.change_presence(game=game)
+            await self.start_playing(ctx, player)
         else:
             self.bot.queue.append(player)
             await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.bot.queue) - 1))
@@ -119,8 +118,13 @@ class Music:
     async def queue(self, ctx):
         if self.bot.queue:
             playing = self.bot.queue[0]
-            message = 'Now playing: **{}** `[00:00/{}]`\n\n'.format(
+            playing_time = int(time.time()-playing.start_time)
+            if ctx.voice_client.is_paused(): 
+                playing_time -= time.time() - ctx.voice_client.source.pause_start
+                
+            message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
                 playing.title, 
+                time.strftime("%M:%S", time.gmtime(playing_time)),#here's a hack for now
                 time.strftime("%M:%S", time.gmtime(playing.duration))
                 )
             message += '\n'.join([
@@ -145,27 +149,36 @@ class Music:
     @checks.manage_channels()
     async def resume(self, ctx):
         """Resumes player"""
-
-        ctx.voice_client.resume()
+        if ctx.voice_client.is_paused():
+            ctx.voice_client.resume()
+            ctx.voice_client.source.start_time += time.time() - ctx.voice_client.source.pause_start
 
     @commands.command()
     @checks.manage_channels()
     async def pause(self, ctx):
         """Stops player"""
-
-        ctx.voice_client.pause()
+        if ctx.voice_client.is_playing():
+            ctx.voice_client.pause()
+            ctx.voice_client.source.pause_start = time.time()
 
     @commands.command()
     @checks.manage_channels()
-    async def stop(self, ctx):
-        """Stops player"""
+    async def forceskip(self, ctx):
+        """Skips a song"""
 
         ctx.voice_client.stop()
         
     @commands.command()
     @checks.manage_channels()
+    async def stop(self, ctx):
+        """Stops player and clears queue"""
+        self.bot.queue = []
+        ctx.voice_client.stop()
+        
+    @commands.command()
+    @checks.manage_channels()
     async def die(self, ctx):
-        """Stops player"""
+        """Shuts down the bot"""
 
         await ctx.send(':wave:')
         await ctx.bot.logout()
