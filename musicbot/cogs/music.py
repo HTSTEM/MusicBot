@@ -131,17 +131,16 @@ class Music:
 
         try:
             with ctx.typing():
+                duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
+                if duration > self.bot.config['max_song_length']:
+                    await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(self.bot.config['max_song_length'], duration))
+                    return
+            
                 player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
                 player.channel = ctx.channel
         except youtube_dl.utils.DownloadError:
             await ctx.send('No song found.')
             return
-
-        if not mod_perms:
-            # Length checking
-            if player.duration > self.bot.config['max_song_length']:
-                await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(self.bot.config['max_song_length'], player.duration))
-                return
 
         player.channel = ctx.channel
 
