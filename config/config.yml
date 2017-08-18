@@ -6,6 +6,9 @@ max_song_length: 900
 # time. Excludes members with the 'Manage Channels' permission.
 max_songs_queued: 1
 
+# This limits how many songs will be searched by the !search function
+search_limit: 3
+
 # The bot will auto-join and start playing in these.
 # <guild id>: <voice channel id>
 default_channels:

@@ -105,6 +105,7 @@ class Music:
                 await c.send('<@{}>, your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
+        
 
     # User commands:
     @category('music')
@@ -112,8 +113,7 @@ class Music:
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
 
-        if url.startswith('<') and url.endswith('>'):
-            url = url[1:][:-1]
+        url = url.strip('<>')
         
         if ctx.voice_client is None:
             if ctx.author.voice:
@@ -169,6 +169,86 @@ class Music:
             self.bot.queue.append(player)
 
             await ctx.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(player.title, len(self.bot.queue) - 1, time.strftime("%H:%M:%S", time.gmtime(ttp))))
+            
+    @category('music')
+    @commands.command()
+    async def search(self, ctx, *, query):
+        '''Search for a song'''
+        
+        mod_perms = ctx.channel.permissions_for(ctx.author).manage_channels
+        if not mod_perms:
+            # Check the queue limit before bothering to download the song
+            queued = 0
+            for i in self.bot.queue[1:]:
+                if i.user is not None:
+                    if i.user.id == ctx.author.id:
+                        queued += 1
+            if queued >= self.bot.config['max_songs_queued']:
+                await ctx.send('You can only have {} song{} in the queue at once.'.format(self.bot.config['max_songs_queued'], '' if self.bot.config['max_songs_queued'] == 1 else 's'))
+                return
+    
+        
+        if not query:
+            return await ctx.send('Please specify a search query.')
+
+        search_query = 'ytsearch{}:{}'.format(self.bot.config['search_limit'],query)
+
+        search_msg = await ctx.send("Searching for videos...")
+        await ctx.channel.trigger_typing()
+        try:
+            info = await YTDLSource.search(search_query, download=False, process=True)
+        except Exception as e:
+            await search_msg.edit(content=str(e))
+            raise e
+        else:
+            await search_msg.delete()
+
+        if not info:
+            await ctx.send("No videos found.")
+
+        def check(m):
+            valid_message = (
+                m.content.lower()[0] in 'yn' or
+                # hardcoded function name weeee
+                m.content.lower().startswith('{}{}'.format(ctx.prefix, 'search')) or
+                m.content.lower().startswith('exit'))
+            is_author = m.author == ctx.author
+            is_channel = m.channel == ctx.channel
+            return valid_message and is_author and is_channel
+
+        for e in info['entries']:
+            result_message = await ctx.send( "Result {}/{}: {}".format(
+                info['entries'].index(e) + 1, len(info['entries']), e['webpage_url']))
+
+            confirm_message = await ctx.send("Is this ok? Type `y`, `n` or `exit`")
+            response_message = await ctx.bot.wait_for('message', check=check)
+
+            if not response_message:
+                await result_message.delete()
+                await confirm_message.delete()
+                return await ctx.send("Ok nevermind.")
+
+            # They started a new search query so lets clean up and bugger off
+            elif response_message.content.startswith(ctx.prefix) or \
+                    response_message.content.lower().startswith('exit'):
+
+                await result_message.delete()
+                await confirm_message.delete()
+                return
+
+            if response_message.content.lower().startswith('y'):
+                await result_message.delete()
+                await confirm_message.delete()
+                await response_message.delete()
+                await ctx.send("Alright, coming right up!")
+                await ctx.invoke(self.play, url=e['webpage_url'])
+                return
+            else:
+                await result_message.delete()
+                await confirm_message.delete()
+                await response_message.delete()
+
+        await ctx.send("Oh well :frowning:")
 
     @category('music')
     @commands.command()
@@ -199,6 +279,7 @@ class Music:
 
         left = num_needed - len(self.bot.queue[0].skips)
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
+        
 
     @category('music')
     @commands.command()
