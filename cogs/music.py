@@ -78,7 +78,10 @@ class Music:
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
         if announce:
-            await ctx.send('Now playing: **{}**'.format(player.title))
+            if player.user is None:
+                await ctx.send('Now playing: **{}**'.format(player.title))
+            else:    
+                await ctx.send('<@{}> - your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
 
@@ -99,7 +102,6 @@ class Music:
         except youtube_dl.utils.DownloadError:
             await ctx.send('No song found.')
             return
-        print(player)
         
         if not self.bot.queue:
             self.bot.queue.append(player)
@@ -110,7 +112,16 @@ class Music:
             await self.start_playing(ctx, player)
         else:
             self.bot.queue.append(player)
-            await ctx.send('**{}** has been added to the queue. Position: {}'.format(player.title, len(self.bot.queue) - 1))
+            ttp = 0
+            for i in self.bot.queue:
+                ttp += i.duration
+            playing = self.bot.queue[0]
+            playing_time = int(time.time()-playing.start_time)
+            if ctx.voice_client.is_paused(): 
+                playing_time -= time.time() - ctx.voice_client.source.pause_start
+            ttp -= playing_time    
+            
+            await ctx.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(player.title, len(self.bot.queue) - 1, time.strftime("%H:%M:%S", time.gmtime(ttp))))
 
     @commands.command()
     async def skip(self, ctx):
@@ -133,7 +144,6 @@ class Music:
         
         left = num_needed - len(self.bot.queue[0].skips)
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
-            
 
     @commands.command()
     async def queue(self, ctx):
@@ -227,15 +237,15 @@ class Music:
 
         ctx.voice_client.stop()
 
-    # Dev/Hoster only really:    
     @commands.command()
     @checks.manage_channels()
-    async def stop(self, ctx):
+    async def clear(self, ctx):
         """Stops player and clears queue"""
         self.bot.queue = []
         ctx.voice_client.stop()
-        
-    @commands.command()
+
+    # Dev/Hoster only really
+    @commands.command(aliases=['shutdown'])
     @checks.manage_channels()
     async def die(self, ctx):
         """Shuts down the bot"""
