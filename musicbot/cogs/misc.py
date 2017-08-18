@@ -1,6 +1,11 @@
+import subprocess
+import asyncio
+import inspect
 import base64
+import sys
 import re
 import os
+
 
 import discord
 
@@ -76,7 +81,7 @@ class Misc:
 
     @category('misc')
     @commands.command()
-    @checks.manage_channels()
+    @checks.event_team_or_higher()
     async def start_comp(self, ctx):
         if self.bot.like_comp_active:
             return await ctx.send('There is already a competition going on.')
@@ -86,7 +91,7 @@ class Misc:
     
     @category('misc')
     @commands.command()
-    @checks.manage_channels()
+    @checks.event_team_or_higher()
     async def cancel_comp(self, ctx):
         if not self.bot.like_comp_active:
             return await ctx.send('There isn\'t a competition going on..')
@@ -96,7 +101,7 @@ class Misc:
     
     @category('misc')
     @commands.command()
-    @checks.manage_channels()
+    @checks.event_team_or_higher()
     async def end_comp(self, ctx):
         if not self.bot.like_comp_active:
             return await ctx.send('There isn\'t a competition going on..')
@@ -230,7 +235,28 @@ class Misc:
                     self.bot.blacklist.remove(id)
                 self.bot.save_bl()
                 await ctx.send('The user with the id `{}` has been removed from the blacklist.'.format(id))
-        
+
+    @category('bot')
+    @commands.command(aliases=['git_pull'])
+    @checks.manage_channels()
+    async def update(self, ctx):
+        '''Updates the bot from git'''
+
+        await ctx.send(':warning: Warning! Pulling from git!')
+
+        if sys.platform == 'win32':
+            process = subprocess.run('git pull', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.stdout, process.stderr
+        else:
+            process = await asyncio.create_subprocess_exec('git', 'pull', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate()
+        stdout = stdout.decode().splitlines()
+        stdout = '\n'.join('+ ' + i for i in stdout)
+        stderr = stderr.decode().splitlines()
+        stderr = '\n'.join('- ' + i for i in stderr)
+
+        await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+                
     @category('misc')
     @commands.command()
     async def help(self, ctx, *args):
