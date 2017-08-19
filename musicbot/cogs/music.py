@@ -244,14 +244,20 @@ class Music:
             if response_message.content.lower().startswith('y'):
                 await result_message.delete()
                 await confirm_message.delete()
-                await response_message.delete()
+                try:
+                    await response_message.delete()
+                except discord.errors.Forbidden:
+                    pass
                 await ctx.send("Alright, coming right up!")
                 await ctx.invoke(self.play, url=e['webpage_url'])
                 return
             else:
                 await result_message.delete()
                 await confirm_message.delete()
-                await response_message.delete()
+                try:
+                    await response_message.delete()
+                except discord.errors.Forbidden:
+                    pass
 
         await ctx.send("Oh well :frowning:")
 
