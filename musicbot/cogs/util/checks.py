@@ -9,14 +9,13 @@ def manage_channels():
     return commands.check(predicate)
 
 def event_team_or_higher():
-    async def predicate(ctx: commands.Context) -> bool:
+    async def predicate(ctx: commands.Context, *, throw_error=True) -> bool:
         for role in ctx.author.roles:
             if role.id in [344352523466833930, 290757144863703040]:
                 return True
         perms = ctx.channel.permissions_for(ctx.author)
         return perms.manage_channels
     return commands.check(predicate)
-    
 
 def bot_owner():
     async def predicate(ctx: commands.Context, *, throw_error=True) -> bool:
