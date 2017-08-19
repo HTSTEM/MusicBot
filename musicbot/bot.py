@@ -98,6 +98,8 @@ class MusicBot(commands.Bot):
         if channel.guild.id in self.voice:
             vc = self.voice[channel.guild.id]
             
+            if vc.channel != channel: return
+            
             if len(channel.members) <= 1:
                 self.logger.info('{} empty. Pausing.'.format(channel.name))
                 if vc.is_playing():
