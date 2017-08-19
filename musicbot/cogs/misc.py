@@ -249,7 +249,7 @@ class Misc:
 
     @category('bot')
     @commands.command(aliases=['git_pull'])
-    @checks.manage_channels()
+    @checks.owner_or_mod()
     async def update(self, ctx):
         '''Updates the bot from git'''
 
