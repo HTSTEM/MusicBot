@@ -37,7 +37,7 @@ class YTDLSource(PCMVolumeTransformer):
         self.duration = duration
         self.start_time = 0 #idk, super hacky
         self.pause_start = 0
-        
+
         self.channel = None
         self.skips = []
         self.likes = []
@@ -50,11 +50,11 @@ class YTDLSource(PCMVolumeTransformer):
         if 'entries' in data and data['entries']:
             # take first item from a playlist
             data = data['entries'][0]
-        
+
         if 'duration' in data: duration = data['duration']
 
         return duration
-        
+
     @classmethod
     async def from_url(cls, url, user=None, *, loop=None):
         loop = loop or asyncio.get_event_loop()
@@ -63,12 +63,12 @@ class YTDLSource(PCMVolumeTransformer):
         if 'entries' in data and data['entries']:
             # take first item from a playlist
             data = data['entries'][0]
-        
+
         if 'duration' in data: duration = data['duration']
 
         filename = ytdl.prepare_filename(data)
         return cls(FFmpegPCMAudio(filename, **ffmpeg_options), user, duration, data=data)
-    
+
     @classmethod
     async def search(cls, query, *args, **kwargs):
         return ytdl.extract_info(query, *args, **kwargs)

@@ -27,12 +27,12 @@ def event_team_or_higher():
     return commands.check(predicate)
 
 def bot_owner():
-    async def predicate(ctx: commands.Context, *,throw_error=True) -> bool:
+    async def predicate(ctx: commands.Context, *, throw_error=True) -> bool:
         return await owner_pred(ctx, throw_error=throw_error)
     return commands.check(predicate)
 
 def owner_or_mod():
-    async def predicate(ctx: commands.Context, *,throw_error=True) -> bool:
+    async def predicate(ctx: commands.Context, *, throw_error=True) -> bool:
         owner = await owner_pred(ctx, throw_error=throw_error)
         mod = await mod_pred(ctx, throw_error=throw_error)
         return owner or mod
@@ -45,14 +45,14 @@ def in_vc():
                 await ctx.send('I\'m not in a voice channel on this server.')
                 raise commands.CheckFailure('in_vc')
             return False
-            
+
         vc = ctx.bot.voice[ctx.guild.id]
         if ctx.author not in vc.channel.members:
             if throw_error:
                 await ctx.send('You must be in `{}` to use that command.'.format(vc.channel.name))
                 raise commands.CheckFailure('in_vc')
             return False
-            
+
         return True
     return commands.check(predicate)
 

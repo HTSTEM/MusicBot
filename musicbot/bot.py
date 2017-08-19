@@ -26,7 +26,7 @@ class MusicBot(commands.Bot):
 
         if 'command_prefix' in self.config:
             command_prefix = self.config['command_prefix']
-        
+
         if os.path.exists('config/likes.yml'):
             with open('config/likes.yml') as conf_file:
                 self.likes = self.yaml.load(conf_file)
@@ -34,13 +34,13 @@ class MusicBot(commands.Bot):
             self.likes = {}
         if self.likes is None:
             self.likes = {}
-        
+
         if os.path.exists('config/blacklist.txt'):
             with open('config/blacklist.txt') as bl_file:
                 self.blacklist = [int(i) for i in bl_file.read().split('\n') if i]
         else:
             self.blacklist = []
-        
+
         self.voice = {}
         self.dying = False
         self.like_comp_active = False
@@ -54,7 +54,7 @@ class MusicBot(commands.Bot):
     def save_likes(self):
         with open('config/likes.yml', 'w') as conf_file:
             self.yaml.dump(self.likes, conf_file)
-        
+
     async def close(self):
         await super().close()
 
@@ -83,23 +83,23 @@ class MusicBot(commands.Bot):
             info = traceback.format_exception(type(exception), exception, exception.__traceback__, chain=False)
             self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
             raise exception
-    
+
     async def on_voice_state_update(self, member, before, after):
         if not ((after.channel is None) ^ (before.channel is None)):
             return
-        
+
         if after.channel is None:
             channel = before.channel
             left = True
         else:
             channel = after.channel
             left = False
-        
+
         if channel.guild.id in self.voice:
             vc = self.voice[channel.guild.id]
-            
+
             if vc.channel != channel: return
-            
+
             if len(channel.members) <= 1:
                 self.logger.info('{} empty. Pausing.'.format(channel.name))
                 if vc.is_playing():
@@ -110,11 +110,11 @@ class MusicBot(commands.Bot):
                 if vc.is_paused():
                     vc.resume()
                     vc.source.start_time += time.time() - vc.source.pause_start
-            
+
     async def on_message(self, message):
         if message.guild is None:  # DMs
             return
-        
+
         if message.author.id in self.blacklist:
             return
 

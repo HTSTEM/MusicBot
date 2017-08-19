@@ -81,10 +81,10 @@ class Music:
                 found = True
             except youtube_dl.utils.DownloadError:
                 self.bot.logger.warn('Download error. Skipping.')
-            
+
             if player is None:
                 found = False
-        
+
         if not self.bot.queue:
             self.bot.queue.append(player)
 
@@ -105,7 +105,7 @@ class Music:
                 await c.send('<@{}>, your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
-        
+
 
     # User commands:
     @category('music')
@@ -115,7 +115,7 @@ class Music:
         """Streams from a url (almost anything youtube_dl supports)"""
 
         url = url.strip('<>')
-        
+
         if ctx.voice_client is None:
             if ctx.author.voice:
                 self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
@@ -141,7 +141,7 @@ class Music:
                 if duration > self.bot.config['max_song_length']:
                     await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(self.bot.config['max_song_length'], duration))
                     return
-            
+
                 player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
                 player.channel = ctx.channel
         except youtube_dl.utils.DownloadError:
@@ -170,13 +170,13 @@ class Music:
             self.bot.queue.append(player)
 
             await ctx.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(player.title, len(self.bot.queue) - 1, time.strftime("%H:%M:%S", time.gmtime(ttp))))
-            
+
     @category('music')
     @commands.command()
     @checks.in_vc()
     async def search(self, ctx, *, query):
         '''Search for a song'''
-        
+
         mod_perms = ctx.channel.permissions_for(ctx.author).manage_channels
         if not mod_perms:
             # Check the queue limit before bothering to download the song
@@ -188,12 +188,12 @@ class Music:
             if queued >= self.bot.config['max_songs_queued']:
                 await ctx.send('You can only have {} song{} in the queue at once.'.format(self.bot.config['max_songs_queued'], '' if self.bot.config['max_songs_queued'] == 1 else 's'))
                 return
-    
-        
+
+
         if not query:
             return await ctx.send('Please specify a search query.')
 
-        search_query = 'ytsearch{}:{}'.format(self.bot.config['search_limit'],query)
+        search_query = 'ytsearch{}:{}'.format(self.bot.config['search_limit'], query)
 
         search_msg = await ctx.send("Searching for videos...")
         await ctx.channel.trigger_typing()
@@ -282,7 +282,7 @@ class Music:
 
         left = num_needed - len(self.bot.queue[0].skips)
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
-        
+
 
     @category('music')
     @commands.command()
@@ -293,7 +293,7 @@ class Music:
             m += '\n'.join(base64.b64decode(i.encode('ascii')).decode('utf-8') for i in self.bot.likes[ctx.author.id])
         else:
             m = 'You haven\'t liked any songs.'
-        
+
         if len(m) < 2000:
             await ctx.author.send(m)
         else:
@@ -303,7 +303,7 @@ class Music:
                 await ctx.author.send(file=discord.File(f))
             os.remove('{}-likes.txt'.format(ctx.author.id))
         await ctx.send(':mailbox_with_mail:')
-        
+
     @category('music')
     @commands.command()
     @checks.in_vc()
@@ -325,7 +325,7 @@ class Music:
         if self.bot.queue[0].title not in self.bot.likes[ctx.author.id]:
             self.bot.likes[ctx.author.id].append(base64.b64encode(self.bot.queue[0].title.encode('utf-8')).decode('ascii'))
             self.bot.save_likes()
-        
+
         if self.bot.like_comp_active:
             if self.bot.queue[0].user is not None:
                 if self.bot.queue[0].user not in self.bot.like_comp:
@@ -336,18 +336,18 @@ class Music:
                     if ctx.author.id not in self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title]:
                         self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title].append(ctx.author.id)
 
-        await ctx.send('<@{}>,your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
+        await ctx.send('<@{}>, your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
 
     @category('music')
     @commands.command()
     async def queue(self, ctx):
         """Shows the current queue."""
         if self.bot.queue:
-            
+
             if len(self.bot.queue) > 10 and not ctx.channel.permissions_for(ctx.author).manage_channels:
                 message = 'The queue has {} items. Ask a mod to see the queue.\n'.format(len(self.bot.queue))
                 return await ctx.send(message)
-                
+
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
             if ctx.voice_client.is_paused():
@@ -401,7 +401,7 @@ class Music:
                     self.bot.queue.remove(i)
                     await ctx.send('<@{}>, your song **{}** has been removed from the queue.'.format(ctx.author.id, i.title))
                     return
-        await ctx.send('<@{}>, you don\'t appear to have any songs in the queue.'.format(ctx.author.id))            
+        await ctx.send('<@{}>, you don\'t appear to have any songs in the queue.'.format(ctx.author.id))
 
     # Mod commands:
     @category('music')
@@ -417,14 +417,14 @@ class Music:
             is_int = True
         except ValueError:
             is_int = False
-        
+
         if is_int:
             if song < 1 or song >= len(self.bot.queue):
                 await ctx.send('<@{}>, song must be in range 1-{} or the title.'.format(ctx.author.id, len(self.bot.queue) - 1))
                 return
             else:
                 player = self.bot.queue.pop(song)
-                await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))   
+                await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))
         else:
             for i in self.bot.queue:
                 if song in i.title:
@@ -435,7 +435,7 @@ class Music:
                 return
             self.bot.queue.remove(player)
             await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))
-    
+
     @category('bot')
     @commands.command()
     @checks.manage_channels()

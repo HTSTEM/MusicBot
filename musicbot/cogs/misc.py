@@ -30,27 +30,27 @@ class Misc:
     async def joinserver(self, ctx):
         '''Invite the bot to your server'''
         await ctx.send('Sorry. This bot has been designed to only work on HTC.')
-        
+
     @category('bot')
     @commands.command()
     @checks.bot_owner()
     async def setname(self, ctx, *, name):
         '''Change the bot's username'''
-        try: 
+        try:
             await self.bot.user.edit(username=name)
         except discord.HTTPException:
             await ctx.send('Changing the name failed.')
-            
+
     @category('bot')
     @commands.command()
     @checks.owner_or_mod()
     async def setnick(self, ctx, *, name):
         '''Change the bot's nickname'''
-        try: 
+        try:
             await ctx.guild.get_member(self.bot.user.id).edit(nick=name)
         except discord.HTTPException:
             await ctx.send('Changing the name failed.')
-            
+
     @category('bot')
     @commands.command()
     @checks.bot_owner()
@@ -58,7 +58,7 @@ class Misc:
         '''Change the bot's profile picture'''
         attachment = ctx.message.attachments[0]
         await attachment.save(attachment.filename)
-        try: 
+        try:
             with open(attachment.filename, 'rb') as avatar:
                 await self.bot.user.edit(avatar=avatar.read())
         except discord.HTTPException:
@@ -91,7 +91,7 @@ class Misc:
         self.bot.like_comp_active = True
         self.bot.like_comp = {}
         await ctx.send('A like competition has been started! Woot?')
-    
+
     @category('misc')
     @commands.command()
     @checks.event_team_or_higher()
@@ -102,7 +102,7 @@ class Misc:
         self.bot.like_comp_active = False
         self.bot.like_comp = {}
         await ctx.send('The like competition has been canceled.')
-    
+
     @category('misc')
     @commands.command()
     @checks.event_team_or_higher()
@@ -112,19 +112,19 @@ class Misc:
             return await ctx.send('There isn\'t a competition going on..')
         self.bot.like_comp_active = False
         print(self.bot.like_comp)
-        
+
         m = 'The like competition has ended.\n**Results:**\n'
         likes = []
         for user in self.bot.like_comp:
             for song in self.bot.like_comp[user]:
                 likes.append((user, song, len(self.bot.like_comp[user][song])))
         likes.sort(key=lambda x:x[2], reverse=True)
-        
+
         m += '\n'.join('`{}`: **{}** with the song **{}** and **{} like{}**'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '') for n, i in enumerate(likes[:10]))
-        
+
         self.bot.like_comp = {}
         await ctx.send(m)
-        
+
     @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
     async def most_liked(self, ctx):
@@ -142,7 +142,7 @@ class Misc:
         m = '**The top 10 most liked songs of all time are:**\n'
         m += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
         await ctx.send(m)
-        
+
     @category('misc')
     @commands.command(aliases=['permissions'])
     async def perms(self, ctx):
@@ -161,7 +161,7 @@ class Misc:
         m += 'Max_Songs: {}\n'.format(self.bot.config['max_songs_queued'])
         m += '```'
         await ctx.author.send(m)
-        
+
     @category('misc')
     @commands.command()
     async def listids(self, ctx):
@@ -187,29 +187,29 @@ class Misc:
             await self.bot.request_offline_member(ctx.guild)
         for m in ctx.guild.members:
             data += '{}: {}\n'.format(m.name, m.id)
-        
+
         filename = '{}-ids-all.txt'.format("".join([x if x.isalnum() else "_" for x in ctx.guild.name]))
-        
+
         with open(filename, 'wb') as ids_file:
             ids_file.write(data.encode('utf-8'))
-        
+
         await ctx.send(':mailbox_with_mail:')
         with open(filename, 'rb') as ids_file:
             await ctx.author.send(file=discord.File(ids_file))
-        
-        os.remove(filename)    
+
+        os.remove(filename)
 
     @category('misc')
     @commands.command()
     @checks.manage_channels()
     async def bldump(self, ctx):
         '''Gets a list of every blacklisted user.'''
-    
+
         m = '**Blacklisted users:\n**'
         m += '\n'.join(str(i) for i in self.bot.blacklist)
         await ctx.author.send(m)
         await ctx.send(':mailbox_with_mail:')
-        
+
     @category('misc')
     @commands.command()
     @checks.manage_channels()
@@ -219,13 +219,13 @@ class Misc:
         if mode not in ['+', '-', 'add', 'remove']:
             await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
             return
-        
+
         try:
             id = int(id)
         except ValueError:
             await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
             return
-        
+
         if mode in ['+', 'add']:
             user = ctx.guild.get_member(id)
             if user is None or not user.permissions_in(ctx.channel).manage_channels:
@@ -266,7 +266,7 @@ class Misc:
         stderr = '\n'.join('- ' + i for i in stderr)
 
         await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
-                
+
     @category('misc')
     @commands.command()
     async def help(self, ctx, *args):
