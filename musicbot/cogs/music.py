@@ -398,7 +398,7 @@ class Music:
     @commands.command()
     async def dequeue(self, ctx):
         '''Remove your song(s) from the queue'''
-        for i in self.bot.queue:
+        for i in self.bot.queue[1:]:
             if i.user is not None:
                 if i.user.id == ctx.author.id:
                     self.bot.queue.remove(i)
@@ -429,8 +429,8 @@ class Music:
                 player = self.bot.queue.pop(song)
                 await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))
         else:
-            for i in self.bot.queue:
-                if song in i.title:
+            for i in self.bot.queue[1:]:
+                if song.lower() in i.title.lower():
                     player = i
                     break
             else:
