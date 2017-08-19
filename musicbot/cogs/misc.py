@@ -43,7 +43,7 @@ class Misc:
             
     @category('bot')
     @commands.command()
-    @checks.manage_channels()
+    @checks.owner_or_mod()
     async def setnick(self, ctx, *, name):
         '''Change the bot's nickname'''
         try: 
@@ -55,13 +55,12 @@ class Misc:
     @commands.command()
     @checks.bot_owner()
     async def setavatar(self, ctx):
-        '''Change the bot's nickname'''
+        '''Change the bot's profile picture'''
         attachment = ctx.message.attachments[0]
         await attachment.save(attachment.filename)
         try: 
             with open(attachment.filename, 'rb') as avatar:
                 await self.bot.user.edit(avatar=avatar.read())
-                print('it worked')
         except discord.HTTPException:
             await ctx.send('Changing the avatar failed.')
         except discord.InvalidArgument:
@@ -69,7 +68,7 @@ class Misc:
 
     @category('bot')
     @commands.command(aliases=['shutdown'])
-    @checks.manage_channels()
+    @checks.owner_or_mod()
     async def die(self, ctx):
         """Shuts down the bot"""
         ctx.bot.dying = True
