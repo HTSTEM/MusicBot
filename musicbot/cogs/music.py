@@ -331,7 +331,7 @@ class Music:
 
         if ctx.author.id not in self.bot.likes:
             self.bot.likes[ctx.author.id] = []
-        if self.bot.queue[0].title not in self.bot.likes[ctx.author.id]:
+        if base64.b64encode(self.bot.queue[0].title.encode('utf-8')).decode('ascii') not in self.bot.likes[ctx.author.id]:
             self.bot.likes[ctx.author.id].append(base64.b64encode(self.bot.queue[0].title.encode('utf-8')).decode('ascii'))
             self.bot.save_likes()
 
