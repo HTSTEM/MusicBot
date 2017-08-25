@@ -361,12 +361,12 @@ class Music:
         # Notes for any other developers:
         # I was originally using levenshtein, however there is one
         # problem I have found with it in the past:
-        #  If the search string is short, then levenshtein will weight
-        #  other short strings higher, even if they have nothing to do
-        #  with your target. For example, if I searched 'abcd' looking
-        #  for 'abcdefghijklmnop', 'jlki' would have a higher priority
-        #  than what you really want. For this reason, I'm just using
-        #  `in`.
+        # If the search string is short, then levenshtein will weight
+        # other short strings higher, even if they have nothing to do
+        # with your target. For example, if I searched 'abcd' looking
+        # for 'abcdefghijklmnop', 'jlki' would have a higher priority
+        # than what you really want. For this reason, I'm just using
+        # `in`.
         #
         # TL;DR:
         # Levenshtein sucks as a general search algorithm.

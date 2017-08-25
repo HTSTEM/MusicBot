@@ -155,14 +155,21 @@ class Misc:
         '''View your permissions'''
         perms = ctx.channel.permissions_for(ctx.author)
         whitelist = []
+        vc_only = []
         for command in ctx.bot.commands:
             for check in command.checks:
-                if not await check(ctx, throw_error=False):
+                try:
+                    if not await check(ctx):
+                        break
+                except Exception as e:
+                    if 'user_in_vc' in e.args:
+                        vc_only.append(command.name)
                     break
             else:
                 whitelist.append(command.name)
         m = '```yaml\n'
         m += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
+        if len(vc_only)>0: m += 'VC_only: {}\n'.format(', '.join(vc_only))
         m += 'Max_Song_Length: {}\n'.format(self.bot.config['max_song_length'])
         m += 'Max_Songs: {}\n'.format(self.bot.config['max_songs_queued'])
         m += '```'
