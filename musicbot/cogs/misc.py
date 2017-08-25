@@ -305,7 +305,7 @@ class Misc:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
             if args[0].title() in cats:
-                d = 'Commands in caterogy **`{}`**:\n'.format(args[0])
+                d = 'Commands in category **`{}`**:\n'.format(args[0])
                 for cmd in sorted(cats[args[0].title()], key=lambda x:x.name):
                     d += '\n  `{}{}`'.format(ctx.prefix, cmd.name)
 
