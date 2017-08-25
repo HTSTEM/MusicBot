@@ -12,9 +12,11 @@ async def mod_pred(ctx: commands.Context) -> bool:
     return perms.manage_channels
 
 #checks
+
+#proper perms/user
 def manage_channels():
     async def predicate(ctx: commands.Context) -> bool:
-        return await mod_pred(ctx)
+        return await mod_pred(ctx) or await owner_pred(ctx)
     return commands.check(predicate)
 
 def event_team_or_higher():
@@ -23,7 +25,7 @@ def event_team_or_higher():
             if role.id in [344352523466833930, 290757144863703040]:
                 return True
         perms = ctx.channel.permissions_for(ctx.author)
-        return perms.manage_channels
+        return perms.manage_channels or await owner_pred(ctx)
     return commands.check(predicate)
 
 def bot_owner():
@@ -31,13 +33,7 @@ def bot_owner():
         return await owner_pred(ctx)
     return commands.check(predicate)
 
-def owner_or_mod():
-    async def predicate(ctx: commands.Context) -> bool:
-        owner = await owner_pred(ctx)
-        mod = await mod_pred(ctx)
-        return owner or mod
-    return commands.check(predicate)
-
+#proper location
 def in_vc():
     async def predicate(ctx: commands.Context) -> bool:
         if ctx.guild.id not in ctx.bot.voice:

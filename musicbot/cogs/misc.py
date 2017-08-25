@@ -43,7 +43,7 @@ class Misc:
 
     @category('bot')
     @commands.command()
-    @checks.owner_or_mod()
+    @checks.manage_channels()
     async def setnick(self, ctx, *, name):
         '''Change the bot's nickname'''
         try:
@@ -68,7 +68,7 @@ class Misc:
 
     @category('bot')
     @commands.command(aliases=['shutdown'])
-    @checks.owner_or_mod()
+    @checks.manage_channels()
     async def die(self, ctx):
         """Shuts down the bot"""
         ctx.bot.dying = True
@@ -84,7 +84,7 @@ class Misc:
         await ctx.bot.logout()
 
     @category('misc')
-    @commands.command()
+    @commands.command(aliases=['startcomp'])
     @checks.event_team_or_higher()
     @checks.not_dm()
     async def start_comp(self, ctx):
@@ -96,7 +96,7 @@ class Misc:
         await ctx.send('A like competition has been started! Woot?')
 
     @category('misc')
-    @commands.command()
+    @commands.command(aliases=['cancelcomp'])
     @checks.event_team_or_higher()
     @checks.not_dm()
     async def cancel_comp(self, ctx):
@@ -108,7 +108,7 @@ class Misc:
         await ctx.send('The like competition has been canceled.')
 
     @category('misc')
-    @commands.command()
+    @commands.command(aliases=['endcomp'])
     @checks.event_team_or_higher()
     @checks.not_dm()
     async def end_comp(self, ctx):
@@ -116,7 +116,6 @@ class Misc:
         if not self.bot.like_comp_active:
             return await ctx.send('There isn\'t a competition going on..')
         self.bot.like_comp_active = False
-        print(self.bot.like_comp)
 
         m = 'The like competition has ended.\n**Results:**\n'
         likes = []
@@ -262,7 +261,7 @@ class Misc:
 
     @category('bot')
     @commands.command(aliases=['git_pull'])
-    @checks.owner_or_mod()
+    @checks.manage_channels()
     async def update(self, ctx):
         '''Updates the bot from git'''
 
