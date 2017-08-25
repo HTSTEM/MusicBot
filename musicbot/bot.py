@@ -112,8 +112,8 @@ class MusicBot(commands.Bot):
                     vc.source.start_time += time.time() - vc.source.pause_start
 
     async def on_message(self, message):
-        if message.guild is None:  # DMs
-            return
+        #if message.guild is None:  # DMs
+        #    return
 
         if message.author.id in self.blacklist:
             return

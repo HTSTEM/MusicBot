@@ -84,6 +84,7 @@ class Misc:
     @category('misc')
     @commands.command()
     @checks.event_team_or_higher()
+    @checks.not_dm()
     async def start_comp(self, ctx):
         '''Start a competition'''
         if self.bot.like_comp_active:
@@ -95,6 +96,7 @@ class Misc:
     @category('misc')
     @commands.command()
     @checks.event_team_or_higher()
+    @checks.not_dm()
     async def cancel_comp(self, ctx):
         '''Cancel any current competitions'''
         if not self.bot.like_comp_active:
@@ -106,6 +108,7 @@ class Misc:
     @category('misc')
     @commands.command()
     @checks.event_team_or_higher()
+    @checks.not_dm()
     async def end_comp(self, ctx):
         '''End the current competition'''
         if not self.bot.like_comp_active:
@@ -145,6 +148,7 @@ class Misc:
 
     @category('misc')
     @commands.command(aliases=['permissions'])
+    @checks.not_dm()
     async def perms(self, ctx):
         '''View your permissions'''
         perms = ctx.channel.permissions_for(ctx.author)
@@ -164,6 +168,7 @@ class Misc:
 
     @category('misc')
     @commands.command()
+    @checks.not_dm()
     async def listids(self, ctx):
         '''Get all of the IDs for the current server'''
         data = 'Your ID: {}\n\n'.format(ctx.author.id)

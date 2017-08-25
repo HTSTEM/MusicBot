@@ -114,6 +114,7 @@ class Music:
     @category('music')
     @commands.command()
     @checks.in_vc()
+    @checks.not_dm()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
 
@@ -177,6 +178,7 @@ class Music:
     @category('music')
     @commands.command()
     @checks.in_vc()
+    @checks.not_dm()
     async def search(self, ctx, *, query):
         '''Search for a song'''
 
@@ -264,6 +266,7 @@ class Music:
     @category('music')
     @commands.command()
     @checks.in_vc()
+    @checks.not_dm()
     async def skip(self, ctx):
         """Registers that you want to skip the current song."""
 
@@ -316,6 +319,7 @@ class Music:
     @category('music')
     @commands.command()
     @checks.in_vc()
+    @checks.not_dm()
     async def like(self, ctx):
         """'Like' the currently playing song"""
         if not self.bot.queue:
@@ -349,6 +353,12 @@ class Music:
 
     @category('music')
     @commands.command()
+    async def remlike(self, ctx, song):
+        pass
+
+    @category('music')
+    @commands.command()
+    @checks.not_dm()
     async def queue(self, ctx):
         """Shows the current queue."""
         if self.bot.queue:
@@ -376,6 +386,7 @@ class Music:
 
     @category('music')
     @commands.command()
+    @checks.not_dm()
     async def np(self, ctx):
         """Gets the currently playing song"""
         if self.bot.queue:
@@ -402,6 +413,7 @@ class Music:
 
     @category('music')
     @commands.command()
+    @checks.not_dm()
     async def dequeue(self, ctx):
         '''Remove your song(s) from the queue'''
         for i in self.bot.queue[1:]:
@@ -416,6 +428,7 @@ class Music:
     @category('music')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def remsong(self, ctx, *, song):
         '''Remove a song from the queue.
         `song` can either be the number of the song in the queue
@@ -448,6 +461,7 @@ class Music:
     @category('bot')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
         """Joins a voice channel"""
 
@@ -459,6 +473,7 @@ class Music:
     @category('bot')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def summon(self, ctx):
         """Join the voice channel you're in."""
         voice = ctx.author.voice
@@ -470,6 +485,7 @@ class Music:
     @category('player')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
 
@@ -482,6 +498,7 @@ class Music:
     @category('player')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def resume(self, ctx):
         """Resumes player"""
         if ctx.voice_client.is_paused():
@@ -491,6 +508,7 @@ class Music:
     @category('player')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def pause(self, ctx):
         """Pause the player"""
         if ctx.voice_client.is_playing():
@@ -500,6 +518,7 @@ class Music:
     @category('player')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def forceskip(self, ctx):
         """Forcefully skips a song"""
 
@@ -508,6 +527,7 @@ class Music:
     @category('player')
     @commands.command()
     @checks.manage_channels()
+    @checks.not_dm()
     async def clear(self, ctx):
         """Stops player and clears queue"""
         self.bot.queue = []

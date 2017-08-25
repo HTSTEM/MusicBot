@@ -56,3 +56,7 @@ def in_vc():
         return True
     return commands.check(predicate)
 
+def not_dm():
+    async def predicate(ctx: commands.Context) -> bool:
+        return ctx.guild != None
+    return commands.check(predicate)
