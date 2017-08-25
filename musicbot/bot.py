@@ -118,7 +118,7 @@ class MusicBot(commands.Bot):
         if message.author.id in self.blacklist:
             return
 
-        if 'bot_channels' in self.config:
+        if message.guild is not None and 'bot_channels' in self.config:
             bc = self.config['bot_channels']
             if message.guild.id in bc:
                 if message.channel.id not in bc[message.guild.id]:

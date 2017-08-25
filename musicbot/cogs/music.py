@@ -354,7 +354,71 @@ class Music:
     @category('music')
     @commands.command()
     async def remlike(self, ctx, song):
-        pass
+        '''Remove your 'life' from a song.
+        This does not affect like competitions.'''
+        # Notes for any other developers:
+        # I was originally using levenshtein, however there is one
+        # problem I have found with it in the past:
+        #  If the search string is short, then levenshtein will weight
+        #  other short strings higher, even if they have nothing to do
+        #  with your target. For example, if I searched 'abcd' looking
+        #  for 'abcdefghijklmnop', 'jlki' would have a higher priority
+        #  than what you really want. For this reason, I'm just using
+        #  `in`.
+        #
+        # TL;DR:
+        # Levenshtein sucks as a general search algorithm.
+        #
+        # P.S.
+        #  I might write my own algorithm one day to use that handles
+        #  this better. :P
+        
+        if ctx.author.id not in self.bot.likes:
+            return await ctx.send('<@{}>, you\'ve never liked any songs.'.format(ctx.author.id))
+        
+        for i in self.bot.likes[ctx.author.id]:
+            i = base64.b64decode(i.encode('ascii')).decode('utf-8')
+            if song.lower() in i.lower():  # Replace with better algorithm later
+                
+                def check(m):
+                    valid_message = (
+                        m.content.lower()[0] in 'yn' or
+                        m.content.lower().startswith('exit'))
+                    is_author = m.author == ctx.author
+                    is_channel = m.channel == ctx.channel
+                    return valid_message and is_author and is_channel
+
+                result_message = await ctx.send("I found **{}**".format(i))
+
+                confirm_message = await ctx.send("Is this ok? Type `y`, `n` or `exit`")
+                response_message = await ctx.bot.wait_for('message', check=check)
+
+                try:
+                    await response_message.delete()
+                except discord.errors.Forbidden:
+                    pass
+
+                if not response_message:
+                    await result_message.delete()
+                    await confirm_message.delete()
+                    return await ctx.send("Ok nevermind.")
+                elif response_message.content.lower().startswith('exit'):
+                    await result_message.delete()
+                    await confirm_message.delete()
+                    return await ctx.send("Ok nevermind.")
+
+                if response_message.content.lower().startswith('y'):
+                    await result_message.delete()
+                    await confirm_message.delete()
+                    
+                    await ctx.send("<@{}>, **{}** has been removed from your likes.".format(ctx.author.id, i))
+                    self.bot.likes[ctx.author.id].remove(base64.b64encode(i.encode('utf-8')).decode('ascii'))
+                    self.bot.save_likes()
+                    return
+                else:
+                    await result_message.delete()
+                    await confirm_message.delete()
+        await ctx.send("<@{}>, no song could be found. Sorry.".format(ctx.author.id))
 
     @category('music')
     @commands.command()
