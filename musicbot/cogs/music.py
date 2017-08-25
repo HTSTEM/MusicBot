@@ -56,9 +56,11 @@ class Music:
             just_played = self.bot.queue.pop(0)
             if just_played.likes and just_played.channel is not None:
                 if just_played.user is not None:
-                    await just_played.channel.send('<@{}>, your song **{}** recieved **{}** likes.'.format(just_played.user.id, just_played.title, len(just_played.likes)))
+                    await just_played.channel.send('<@{}>, your song **{}** recieved **{}** like{}.'.format(
+                        just_played.user.id, just_played.title, len(just_played.likes), '' if len(just_played.likes) == 1 else 's'))
                 else:
-                    await just_played.channel.send('The song **{}** recieved **{}** likes.'.format(just_played.title, len(just_played.likes)))
+                    await just_played.channel.send('The song **{}** recieved **{}** like{}.'.format(
+                        just_played.title, len(just_played.likes), '' if len(just_played.likes) == 1 else 's'))
 
         if self.bot.queue:
             if ctx.voice_client.is_playing():
