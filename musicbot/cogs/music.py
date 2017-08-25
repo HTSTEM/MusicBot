@@ -354,7 +354,7 @@ class Music:
     @category('music')
     @commands.command()
     async def remlike(self, ctx, song):
-        '''Remove your 'life' from a song.
+        '''Remove your 'like' from a song.
         This does not affect like competitions.'''
         # Notes for any other developers:
         # I was originally using levenshtein, however there is one
