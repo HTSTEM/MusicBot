@@ -79,7 +79,9 @@ class Misc:
     @commands.command()
     async def restart(self, ctx):
         '''Restart the bot'''
-        await ctx.send('Please use `{}die` and run the bot in a restart loop.'.format(ctx.prefix))
+        ctx.bot.dying = True
+        await ctx.send('Shutting down the bot. If the bot is in a restart loop, it will start back up.\nPlease use `{}die` in future as it is a more accurate command.'.format(ctx.prefix))
+        await ctx.bot.logout()
 
     @category('misc')
     @commands.command()
