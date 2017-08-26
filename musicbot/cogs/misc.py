@@ -197,7 +197,7 @@ class Misc:
 
         data += '\nUser IDs:\n'
         if ctx.guild.large:
-            await self.bot.request_offline_member(ctx.guild)
+            await self.bot.request_offline_members(ctx.guild)
         for m in ctx.guild.members:
             data += '{}: {}\n'.format(m.name, m.id)
 
@@ -424,7 +424,7 @@ class Misc:
                     d += '\n'
 
         d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
-        await ctx.send(d)
-
+        return await ctx.send(d)
+    
 def setup(bot):
     bot.add_cog(Misc(bot))
