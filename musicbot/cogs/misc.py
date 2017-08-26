@@ -83,7 +83,7 @@ class Misc:
         await ctx.send('Shutting down the bot. If the bot is in a restart loop, it will start back up.\nPlease use `{}die` in future as it is a more accurate command.'.format(ctx.prefix))
         await ctx.bot.logout()
 
-    @category('misc')
+    @category('comp')
     @commands.command(aliases=['startcomp'])
     @checks.event_team_or_higher()
     @checks.not_dm()
@@ -95,7 +95,7 @@ class Misc:
         self.bot.like_comp = {}
         await ctx.send('A like competition has been started! Woot?')
 
-    @category('misc')
+    @category('comp')
     @commands.command(aliases=['cancelcomp'])
     @checks.event_team_or_higher()
     @checks.not_dm()
@@ -107,7 +107,7 @@ class Misc:
         self.bot.like_comp = {}
         await ctx.send('The like competition has been canceled.')
 
-    @category('misc')
+    @category('comp')
     @commands.command(aliases=['endcomp'])
     @checks.event_team_or_higher()
     @checks.not_dm()
@@ -212,7 +212,7 @@ class Misc:
 
         os.remove(filename)
 
-    @category('misc')
+    @category('modding')
     @commands.command()
     @checks.manage_channels()
     async def bldump(self, ctx):
@@ -223,7 +223,7 @@ class Misc:
         await ctx.author.send(m)
         await ctx.send(':mailbox_with_mail:')
 
-    @category('misc')
+    @category('modding')
     @commands.command()
     @checks.manage_channels()
     async def blacklist(self, ctx, mode, id):
