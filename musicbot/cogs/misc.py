@@ -309,23 +309,19 @@ class Misc:
                 if cmd.category not in cats:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
-            cats = [(n, len(c)) for n,c in cats.items()] #can't think of good names
+            cats = list(cats.keys())
             cats.sort()
             
-            embed = discord.Embed(title='**Categories:**')
-            for cat, count in cats:
-                embed.add_field(name=cat, value='{} command{}'.format(count, '' if count == 1 else 's'))
-
-            embed.description = 'Use `{0}help <category>` to list commands in a category.\n'
-            embed.description += 'Use `{0}help <command>` to get in depth help for a command.'
-            embed.description = embed.description.format(ctx.prefix)
-            embed.set_footer(text='Made by Bottersnike#3605 and hanss314#0128')
-            try:
-                await ctx.send(embed=embed)
-            except discord.Forbidden:
-                await ctx.author.send(embed=embed)
-            return
+            width = max([len(cat) for cat in cats]) + 2
+            d += '**Categories:**\n'
+            for cat in zip(cats[0::2], cats[1::2]):
+                d += '**`{}`**{}**`{}`**\n'.format(cat[0],' ' * int(2.3 * (width-len(cat[0]))), cat[1])
+            if len(cats)%2 == 1:
+                d += '**`{}`**\n'.format(cats[-1])
             
+            d += '\nUse `{0}help <category>` to list commands in a category.\n'.format(ctx.prefix)
+            d += 'Use `{0}help <command>` to get in depth help for a command.\n'.format(ctx.prefix)
+
         elif len(args) == 1:
             cats = {}
             for cmd in cmds:
