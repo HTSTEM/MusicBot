@@ -320,7 +320,11 @@ class Misc:
             embed.description += 'Use `{0}help <command>` to get in depth help for a command.'
             embed.description = embed.description.format(ctx.prefix)
             embed.set_footer(text='Made by Bottersnike#3605 and hanss314#0128')
-            return await ctx.send(embed=embed)
+            try:
+                await ctx.send(embed=embed)
+            except discord.Forbidden:
+                await ctx.author.send(embed=embed)
+            return
             
         elif len(args) == 1:
             cats = {}
