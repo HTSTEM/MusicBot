@@ -1,0 +1,61 @@
+# bot will search through until it finds a match for a user
+
+# this is the default fallback for things/people without perms specified
+# the commands allowed will be default-blacklist+whitelist
+default:
+  #this specifies which categories default users can use
+  whitelist:
+    - misc
+    - music
+
+  # No song may be queued that is longer than this in seconds
+  max_song_length: 900
+
+  # This is the number of songs that a user may have in the queue at one
+  max_songs_queued: 1
+
+# add specific perms for users here
+# perms stated under users have precedence of perms under roles
+users:
+  # special bot owner field
+  owner:
+    # access to all commands
+    whitelist:
+      - bot
+      - player
+      - modding
+      - comp
+      - owner
+      #owner isn't used yet, but might be in the future
+    
+  #use user ids
+  000000000000000: {}
+  
+# add specific perms for roles
+# roles higher in the hierarchy have precedence over roles lower in the hierarchy
+roles:
+  # moderators
+  191344863038537728:
+    # give mods all perms except owner
+    whitelist:
+      - bot
+      - player
+      - modding
+      - comp
+    # idk, do we want to give mods perms to use all songs?
+  
+  #event team
+  344352523466833930:
+    # adds default stuff
+    # this equals default stuff + comp stuff
+    whitelist:
+      - comp
+      
+  #memelord
+  334301546710040576:
+    # blacklist memelords
+    blacklist:
+      - player
+      - misc
+      
+  # I just set everything up for htc, set things up for your servers if you want

@@ -1,11 +1,3 @@
-# No song may be queued that is longer than this (s) except by someone
-# with the 'Manage Channels' permission.
-max_song_length: 900
-
-# This is the number of songs that a user may have in the queue at one
-# time. Excludes members with the 'Manage Channels' permission.
-max_songs_queued: 1
-
 # This limits how many songs will be searched by the !search function
 search_limit: 3
 

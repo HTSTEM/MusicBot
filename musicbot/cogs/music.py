@@ -128,24 +128,23 @@ class Music:
             else:
                return await ctx.send("Not connected to a voice channel.")
 
-        mod_perms = ctx.channel.permissions_for(ctx.author).manage_channels
+        perms = await checks.permissions_for(ctx)
 
-        if not mod_perms:
-            # Check the queue limit before bothering to download the song
-            queued = 0
-            for i in self.bot.queue[1:]:
-                if i.user is not None:
-                    if i.user.id == ctx.author.id:
-                        queued += 1
-            if queued >= self.bot.config['max_songs_queued']:
-                await ctx.send('You can only have {} song{} in the queue at once.'.format(self.bot.config['max_songs_queued'], '' if self.bot.config['max_songs_queued'] == 1 else 's'))
-                return
+        # Check the queue limit before bothering to download the song
+        queued = 0
+        for i in self.bot.queue[1:]:
+            if i.user is not None:
+                if i.user.id == ctx.author.id:
+                    queued += 1
+        if queued >= perms['max_songs_queued']:
+            await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            return
 
         try:
             with ctx.typing():
                 duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
-                if duration > self.bot.config['max_song_length']:
-                    await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(self.bot.config['max_song_length'], duration))
+                if duration > perms['max_song_length']:
+                    await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(perms['max_song_length'], duration))
                     return
 
                 player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
@@ -184,17 +183,16 @@ class Music:
     async def search(self, ctx, *, query):
         '''Search for a song'''
 
-        mod_perms = ctx.channel.permissions_for(ctx.author).manage_channels
-        if not mod_perms:
-            # Check the queue limit before bothering to download the song
-            queued = 0
-            for i in self.bot.queue[1:]:
-                if i.user is not None:
-                    if i.user.id == ctx.author.id:
-                        queued += 1
-            if queued >= self.bot.config['max_songs_queued']:
-                await ctx.send('You can only have {} song{} in the queue at once.'.format(self.bot.config['max_songs_queued'], '' if self.bot.config['max_songs_queued'] == 1 else 's'))
-                return
+        perms = checks.permissions_for(ctx)
+        # Check the queue limit before bothering to download the song
+        queued = 0
+        for i in self.bot.queue[1:]:
+            if i.user is not None:
+                if i.user.id == ctx.author.id:
+                    queued += 1
+        if queued >= perms['max_songs_queued']:
+            await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            return
 
 
         if not query:
@@ -493,7 +491,6 @@ class Music:
     # Mod commands:
     @category('music')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def remsong(self, ctx, *, song):
         '''Remove a song from the queue.
@@ -526,7 +523,6 @@ class Music:
 
     @category('bot')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
         """Joins a voice channel"""
@@ -538,7 +534,6 @@ class Music:
 
     @category('bot')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def summon(self, ctx):
         """Join the voice channel you're in."""
@@ -550,7 +545,6 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
@@ -563,7 +557,6 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def resume(self, ctx):
         """Resumes player"""
@@ -573,7 +566,6 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def pause(self, ctx):
         """Pause the player"""
@@ -583,7 +575,6 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def forceskip(self, ctx):
         """Forcefully skips a song"""
@@ -592,7 +583,6 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.manage_channels()
     @checks.not_dm()
     async def clear(self, ctx):
         """Stops player and clears queue"""

@@ -9,7 +9,7 @@ import discord
 from ruamel.yaml import YAML
 from discord.ext import commands
 
-from cogs.util.checks import NotInVCError
+from cogs.util.checks import NotInVCError, can_use
 
 
 class MusicBot(commands.Bot):
@@ -23,6 +23,9 @@ class MusicBot(commands.Bot):
         self.yaml = YAML(typ='safe')
         with open('config/config.yml') as conf_file:
             self.config = self.yaml.load(conf_file)
+        
+        with open('config/permissions.yml') as conf_file:
+            self.permissions = self.yaml.load(conf_file)
 
         if 'command_prefix' in self.config:
             command_prefix = self.config['command_prefix']
@@ -171,6 +174,7 @@ class MusicBot(commands.Bot):
     def run(self, token):
         cogs = ['cogs.music', 'cogs.misc']
         self.remove_command("help")
+        self.add_check(can_use)
         for cog in cogs:
             try:
                 self.load_extension(cog)
@@ -178,7 +182,7 @@ class MusicBot(commands.Bot):
                 self.logger.exception('Failed to load cog {}.'.format(cog))
             else:
                 self.logger.info('Loaded cog {}.'.format(cog))
-
+                
         self.logger.info('Loaded {} cogs'.format(len(self.cogs)))
         super().run(token)
 

@@ -33,7 +33,6 @@ class Misc:
 
     @category('bot')
     @commands.command()
-    @checks.bot_owner()
     async def setname(self, ctx, *, name):
         '''Change the bot's username'''
         try:
@@ -43,7 +42,6 @@ class Misc:
 
     @category('bot')
     @commands.command()
-    @checks.manage_channels()
     async def setnick(self, ctx, *, name):
         '''Change the bot's nickname'''
         try:
@@ -53,7 +51,6 @@ class Misc:
 
     @category('bot')
     @commands.command()
-    @checks.bot_owner()
     async def setavatar(self, ctx):
         '''Change the bot's profile picture'''
         attachment = ctx.message.attachments[0]
@@ -68,7 +65,6 @@ class Misc:
 
     @category('bot')
     @commands.command(aliases=['shutdown'])
-    @checks.manage_channels()
     async def die(self, ctx):
         """Shuts down the bot"""
         ctx.bot.dying = True
@@ -85,7 +81,6 @@ class Misc:
 
     @category('comp')
     @commands.command(aliases=['startcomp'])
-    @checks.event_team_or_higher()
     @checks.not_dm()
     async def start_comp(self, ctx):
         '''Start a competition'''
@@ -97,7 +92,6 @@ class Misc:
 
     @category('comp')
     @commands.command(aliases=['cancelcomp'])
-    @checks.event_team_or_higher()
     @checks.not_dm()
     async def cancel_comp(self, ctx):
         '''Cancel any current competitions'''
@@ -109,7 +103,6 @@ class Misc:
 
     @category('comp')
     @commands.command(aliases=['endcomp'])
-    @checks.event_team_or_higher()
     @checks.not_dm()
     async def end_comp(self, ctx):
         '''End the current competition'''
@@ -214,7 +207,6 @@ class Misc:
 
     @category('modding')
     @commands.command()
-    @checks.manage_channels()
     async def bldump(self, ctx):
         '''Gets a list of every blacklisted user.'''
 
@@ -225,7 +217,6 @@ class Misc:
 
     @category('modding')
     @commands.command()
-    @checks.manage_channels()
     async def blacklist(self, ctx, mode, id):
         """Blacklist a user from using commands"""
         mode = mode.lower()
@@ -261,7 +252,6 @@ class Misc:
 
     @category('bot')
     @commands.command(aliases=['git_pull'])
-    @checks.manage_channels()
     async def update(self, ctx):
         '''Updates the bot from git'''
 
