@@ -44,12 +44,13 @@ async def can_use(ctx: commands.Context) -> bool:
 
 #checks
 
-#proper perms/user
+#proper perms/user 
+# DEPRECATED use permissions.yml
 def manage_channels():
     async def predicate(ctx: commands.Context) -> bool:
         return await mod_pred(ctx) or await owner_pred(ctx)
     return commands.check(predicate)
-
+# DEPRECATED use permissions.yml
 def event_team_or_higher():
     async def predicate(ctx: commands.Context) -> bool:
         for role in ctx.author.roles:
@@ -58,11 +59,13 @@ def event_team_or_higher():
         perms = ctx.channel.permissions_for(ctx.author)
         return perms.manage_channels or await owner_pred(ctx)
     return commands.check(predicate)
-
+# DEPRECATED use permissions.yml
 def bot_owner():
     async def predicate(ctx: commands.Context) -> bool:
         return await owner_pred(ctx)
-    return commands.check(predicate)        
+    return commands.check(predicate)
+
+
 
 #proper location
 def in_vc():
