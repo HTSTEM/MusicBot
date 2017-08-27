@@ -145,7 +145,7 @@ class Misc:
     @checks.not_dm()
     async def perms(self, ctx):
         '''View your permissions'''
-        perms = ctx.channel.permissions_for(ctx.author)
+        perms = await checks.permissions_for(ctx)
         whitelist = []
         vc_only = []
         for command in ctx.bot.commands:
@@ -154,6 +154,7 @@ class Misc:
                     if not await check(ctx):
                         break
                 except Exception as e:
+                    print(e)
                     if 'user_in_vc' in e.args:
                         vc_only.append(command.name)
                     break
@@ -162,8 +163,8 @@ class Misc:
         m = '```yaml\n'
         m += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
         if len(vc_only)>0: m += 'VC_only: {}\n'.format(', '.join(vc_only))
-        m += 'Max_Song_Length: {}\n'.format(self.bot.config['max_song_length'])
-        m += 'Max_Songs: {}\n'.format(self.bot.config['max_songs_queued'])
+        m += 'Max_Song_Length: {}\n'.format(perms['max_song_length'])
+        m += 'Max_Songs: {}\n'.format(perms['max_songs_queued'])
         m += '```'
         await ctx.author.send(m)
 
