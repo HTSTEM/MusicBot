@@ -26,6 +26,7 @@ users:
       - modding
       - comp
       - owner
+      - git
       #owner isn't used yet, but might be in the future
     
   #use user ids
@@ -42,6 +43,7 @@ roles:
       - player
       - modding
       - comp
+      - git
     # idk, do we want to give mods perms to use all songs?
   
   #event team
@@ -50,6 +52,11 @@ roles:
     # this equals default stuff + comp stuff
     whitelist:
       - comp
+  
+  #developer
+  334341418334027776:
+    whitelist:
+      - git
       
   #memelord
   334301546710040576:

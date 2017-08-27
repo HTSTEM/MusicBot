@@ -250,7 +250,7 @@ class Misc:
                 self.bot.save_bl()
                 await ctx.send('The user with the id `{}` has been removed from the blacklist.'.format(id))
 
-    @category('bot')
+    @category('git')
     @commands.command(aliases=['git_pull'])
     async def update(self, ctx):
         '''Updates the bot from git'''
@@ -271,7 +271,7 @@ class Misc:
         await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
         await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
         
-    @category('bot')
+    @category('git')
     @commands.command()
     async def revert(self, ctx, commit):
         '''Revert local copy to specified commit'''
