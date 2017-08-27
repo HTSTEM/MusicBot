@@ -270,6 +270,27 @@ class Misc:
 
         await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
         await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
+        
+    @category('bot')
+    @commands.command()
+    async def revert(self, ctx, commit):
+        '''Revert local copy to specified commit'''
+
+        await ctx.send(':warning: Warning! Reverting!')
+
+        if sys.platform == 'win32':
+            process = subprocess.run('git reset --hard {}'.format(commit), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.stdout, process.stderr
+        else:
+            process = await asyncio.create_subprocess_exec('git', 'reset', '--hard', commit, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate()
+        stdout = stdout.decode().splitlines()
+        stdout = '\n'.join('+ ' + i for i in stdout)
+        stderr = stderr.decode().splitlines()
+        stderr = '\n'.join('- ' + i for i in stderr)
+
+        await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+        await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
 
     @category('misc')
     @commands.command()
