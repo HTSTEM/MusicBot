@@ -308,12 +308,18 @@ class Misc:
                 if cmd.category not in cats:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
-
-            d += '\n**Categories:**\n'
-            for cat in cats:
-                d += '**`{}`**\n'.format(cat)
+            cats = list(cats.keys())
+            cats.sort()
+            d += '\n**Categories:**\n```\n'
+            width = max([len(cat) for cat in cats]) + 2
+            for cat in zip(cats[0::2], cats[1::2]):
+                d += '{}{}{}\n'.format(cat[0],' ' * (width-len(cat[0])), cat[1])
+            if len(cats)%2 == 1:
+                d += '{}\n'.format(cats[-1])
+            d += '```'
             d += '\nUse `{}help <category>` to list commands in a category'.format(ctx.prefix)
             d += '\nUse `{}help <command>` to get indepth help for a command\n'.format(ctx.prefix)
+            
         elif len(args) == 1:
             cats = {}
             for cmd in cmds:
