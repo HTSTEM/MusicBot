@@ -174,7 +174,12 @@ class Music:
 
             self.bot.queue.append(player)
 
-            await ctx.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(player.title, len(self.bot.queue) - 1, time.strftime("%H:%M:%S", time.gmtime(ttp))))
+            await ctx.send(
+                'Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
+                    player.title, 
+                    len(self.bot.queue) - 1, 
+                    time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
+                    ))
 
     @category('music')
     @commands.command()
@@ -438,8 +443,8 @@ class Music:
 
             message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
                 playing.title,
-                time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
-                time.strftime("%M:%S", time.gmtime(playing.duration))
+                time.strftime("%M:%S", time.gmtime(max(0,playing_time))),  
+                time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
                 )
             message += '\n'.join([
                 '`{}.` **{}** added by **{}**'.format(n + 1, i.title, i.user.name) for n, i in enumerate(self.bot.queue[1:])
@@ -462,14 +467,14 @@ class Music:
             if ctx.voice_client.is_paused():
                 message = 'Now playing: **{}** `[{}/{}]` (**PAUSED**)\n\n'.format(
                     playing.title,
-                    time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
-                    time.strftime("%M:%S", time.gmtime(playing.duration))
+                    time.strftime("%M:%S", time.gmtime(max(0,playing_time))),  # here's a hack for now
+                    time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
                     )
             else:
                 message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
                     playing.title,
-                    time.strftime("%M:%S", time.gmtime(playing_time)),  # here's a hack for now
-                    time.strftime("%M:%S", time.gmtime(playing.duration))
+                    time.strftime("%M:%S", time.gmtime(max(0,playing_time))),  # here's a hack for now
+                    time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
                     )
         else:
             message = 'Not playing anything.'
