@@ -148,18 +148,29 @@ class Misc:
         perms = await checks.permissions_for(ctx)
         whitelist = []
         vc_only = []
-        for command in ctx.bot.commands:
-            for check in command.checks:
-                try:
-                    if not await check(ctx):
-                        break
-                except Exception as e:
-                    print(e)
-                    if 'user_in_vc' in e.args:
-                        vc_only.append(command.name)
-                    break
-            else:
-                whitelist.append(command.name)
+        perms = await checks.permissions_for(ctx)
+        cats = {}
+        for cmd in ctx.bot.commands:
+            if not hasattr(cmd, 'category'):
+                cmd.category = 'Misc'
+            if cmd.category.lower() not in cats:
+                cats[cmd.category.lower()] = []
+            cats[cmd.category.lower()].append(cmd)
+        
+        print(cats)
+        for cat in perms['categories']:
+            if cat in cats:
+                for cmd in cats[cat]:
+                    for check in cmd.checks:
+                        try:
+                            if not await check(ctx):
+                                break
+                        except Exception as e:
+                            if 'user_in_vc' in e.args:
+                                vc_only.append(cmd.name)
+                            break
+                    else:
+                        whitelist.append(cmd.name)
         m = '```yaml\n'
         m += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
         if len(vc_only)>0: m += 'VC_only: {}\n'.format(', '.join(vc_only))
