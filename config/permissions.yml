@@ -57,6 +57,7 @@ roles:
   334341418334027776:
     whitelist:
       - git
+      - bot
       
   #memelord
   334301546710040576:
