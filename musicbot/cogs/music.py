@@ -183,7 +183,7 @@ class Music:
     async def search(self, ctx, *, query):
         '''Search for a song'''
 
-        perms = checks.permissions_for(ctx)
+        perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
         queued = 0
         for i in self.bot.queue[1:]:
