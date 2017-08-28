@@ -159,6 +159,7 @@ class MusicBot(commands.Bot):
                         self.logger.info('   - Channel \'{}\' found. Joining.'.format(channel.name))
                         vc = await channel.connect()
                         self.voice[guild_id] = vc
+                        
                         self.logger.info('   - Joined. Starting auto-playlist.')
                         cctx = Holder()
                         cctx.voice_client = vc
@@ -167,6 +168,12 @@ class MusicBot(commands.Bot):
                         cctx.send = c.send
                         cctx.channel = c
                         await self.cogs['Music'].auto_playlist(cctx)
+                        
+                        if len(vc.channel.members) <= 1:
+                            self.logger.info('   - {} empty. Pausing.'.format(vc.channel.name))
+                            if vc.is_playing():
+                                vc.pause()
+                                vc.source.pause_start = time.time()
                 else:
                     self.logger.info(' - Guild {} not found.'.format(guild_id))
             self.logger.info('Done.')
