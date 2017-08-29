@@ -3,6 +3,7 @@ import logging
 import time
 import os
 import re
+import sys
 
 import discord
 
@@ -66,10 +67,10 @@ class MusicBot(commands.Bot):
             if isinstance(exception.original, discord.Forbidden):
                 try: await ctx.send('Permissions error: `{}`'.format(exception))
                 except discord.Forbidden: return
-
+            
             lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
             self.logger.error(''.join(lines))
-
+            await self.notify_devs(''.join(lines))
         elif isinstance(exception, commands.CheckFailure):
             if 'bot_in_vc' in exception.args:
                 await ctx.send('I\'m not in a voice channel on this server.')
@@ -89,7 +90,31 @@ class MusicBot(commands.Bot):
         else:
             info = traceback.format_exception(type(exception), exception, exception.__traceback__, chain=False)
             self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
-            raise exception
+            await self.notify_devs(''.join(info))
+            
+    async def on_error(self, event_method, *args, **kwargs):
+        info = sys.exc_info()
+        info = traceback.format_exception(*info, chain=False)
+        self.logger.error('Unhandled exception - {}'.format(''.join(info)))
+        await self.notify_devs(''.join(info))
+    
+    async def notify_devs(self, info):
+        with open('error.txt', 'w') as error_file:
+            error_file.write(info)
+        
+        for dev_id in self.config['developers']:
+            dev = self.get_user(dev_id)
+            if dev is None:
+                self.logger.warning('Could not get developer with an ID of {0.id}, skipping.'.format(dev))
+                continue
+            try:
+                with open('error.txt', 'r') as error_file:
+                    await dev.send(file=discord.File(error_file))
+            except Exception as e:
+                self.logger.error('Couldn\'t send error embed to developer {0.id}. {1}'
+                                .format(dev, type(e).__name__ + ': ' + str(e)))
+            
+        os.remove('error.txt')
 
     async def on_voice_state_update(self, member, before, after):
         if not ((after.channel is None) ^ (before.channel is None)):

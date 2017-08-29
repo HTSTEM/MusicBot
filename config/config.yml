@@ -25,5 +25,10 @@ token_file: config/token.txt
 # The chance is `1/jingle_chance`
 jingle_chance: 5
 
+# These are the people the bot DMs when something goes wrong
+# Add yourself here if you want to know when something goes wrong
+developers:
+  - 240995021208289280
+
 # It's the prefix.. What more do I need to say?
 command_prefix: "!"

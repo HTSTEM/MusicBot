@@ -303,6 +303,12 @@ class Misc:
 
         await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
         await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
+        
+    @category('bot')
+    @commands.command(aliases=['exception'])
+    async def error(self, ctx, *, text: str = None):
+        '''Raises an error. Testing purposes only, please don't use.'''
+        raise Exception(text or 'Woo! Errors!')
 
     @category('misc')
     @commands.command()
