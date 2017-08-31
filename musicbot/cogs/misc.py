@@ -318,7 +318,7 @@ class Misc:
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             stdout, stderr = await process.communicate()
         stdout = stdout.decode().splitlines()
-        stdout = '\n'.join(i[:100] for i in stdout[:commits])
+        stdout = '\n'.join('+ ' + i[:90] for i in stdout[:commits])
         stderr = stderr.decode().splitlines()
         stderr = '\n'.join('- ' + i for i in stderr)
         

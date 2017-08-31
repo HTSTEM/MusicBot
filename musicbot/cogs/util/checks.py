@@ -1,3 +1,4 @@
+from discord import Member
 from discord.ext import commands
 
 class NotInVCError(BaseException): pass
@@ -5,11 +6,21 @@ class NotInVCError(BaseException): pass
 async def permissions_for(ctx):
     bot_perms = ctx.bot.permissions
     member = ctx.author
+        
     user_perms = {
         'categories': {cat.lower() for cat in bot_perms['default']['whitelist']},
         'max_song_length': bot_perms['default']['max_song_length'],
         'max_songs_queued': bot_perms['default']['max_songs_queued'],
         }
+    
+    if not isinstance(ctx.author, Member):
+        for serv_id in ctx.bot.config['bot_channels'].keys():
+            guild = ctx.bot.get_guild(serv_id)
+            if guild is not None and guild.get_member(ctx.author.id) is not None:
+                member = guild.get_member(ctx.author.id)
+                break
+        else:
+            return user_perms
     
     def add_perms(perms):
         if 'blacklist' in perms: user_perms['categories'] -= {cat.lower() for cat in perms['blacklist']}
