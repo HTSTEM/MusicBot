@@ -522,7 +522,7 @@ class Music:
         await ctx.send('<@{}>, you don\'t appear to have any songs in the queue.'.format(ctx.author.id))
 
     # Mod commands:
-    @category('music')
+    @category('modding')
     @commands.command()
     @checks.not_dm()
     async def remsong(self, ctx, *, song):
