@@ -307,7 +307,7 @@ class Misc:
     @category('git')
     @commands.command(aliases=['gitlog'])
     async def git_log(self, ctx, commits:int = 20):
-        '''Shows the 20 latest commits'''
+        '''Shows the latest commits. Defaults to 20 commits.'''
 
         if sys.platform == 'win32':
             process = subprocess.run('git log --pretty=oneline --abbrev-commit', shell=True, 
@@ -323,7 +323,15 @@ class Misc:
         stderr = '\n'.join('- ' + i for i in stderr)
         
         if commits > 10:
-            await ctx.author.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+            try:
+                await ctx.author.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+            except discord.errors.HTTPException:
+                import os
+                with open('gitlog.txt', 'w') as log_file:
+                    log_file.write('{}\n{}'.format(stdout,stderr))
+                with open('gitlog.txt', 'r') as log_file:
+                    await ctx.author.send(file=discord.File(log_file))
+                os.remove('gitlog.txt')
         else:
             await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
 
