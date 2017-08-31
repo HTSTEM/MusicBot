@@ -34,6 +34,10 @@ async def mod_pred(ctx: commands.Context) -> bool:
     perms = ctx.channel.permissions_for(ctx.author)
     return perms.manage_channels
 
+
+#checks
+#proper perms/user 
+
 async def can_use(ctx: commands.Context) -> bool:
     perms = await permissions_for(ctx)
     cat = 'misc'
@@ -42,9 +46,7 @@ async def can_use(ctx: commands.Context) -> bool:
     if cat in perms['categories']: return True
     else: return False
 
-#checks
 
-#proper perms/user 
 # DEPRECATED use permissions.yml
 def manage_channels():
     async def predicate(ctx: commands.Context) -> bool:

@@ -304,6 +304,30 @@ class Misc:
         await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
         await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
         
+    @category('git')
+    @commands.command(aliases=['gitlog'])
+    async def git_log(self, ctx, commits:int = 20):
+        '''Shows the 20 latest commits'''
+
+        if sys.platform == 'win32':
+            process = subprocess.run('git log --pretty=oneline --abbrev-commit', shell=True, 
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.stdout, process.stderr
+        else:
+            process = await asyncio.create_subprocess_exec('git', 'log', '--pretty=oneline', '--abbrev-commit', 
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate()
+        stdout = stdout.decode().splitlines()
+        stdout = '\n'.join(i[:100] for i in stdout[:commits])
+        stderr = stderr.decode().splitlines()
+        stderr = '\n'.join('- ' + i for i in stderr)
+        
+        if commits > 10:
+            await ctx.author.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+        else:
+            await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+
+        
     @category('bot')
     @commands.command(aliases=['exception'])
     async def error(self, ctx, *, text: str = None):
