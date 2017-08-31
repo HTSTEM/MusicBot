@@ -26,7 +26,7 @@ ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
 
 class YTDLSource(PCMVolumeTransformer):
-    def __init__(self, source, user, duration, *, data,  volume=0.5):
+    def __init__(self, source, user, duration, *, data, volume=0.5):
         super().__init__(source, volume)
 
         self.data = data
@@ -72,3 +72,9 @@ class YTDLSource(PCMVolumeTransformer):
     @classmethod
     async def search(cls, query, *args, **kwargs):
         return ytdl.extract_info(query, *args, **kwargs)
+    
+    #produces a fresh copy
+    def duplicate(self):
+        return YTDLSource(
+            FFmpegPCMAudio(ytdl.prepare_filename(self.data), **ffmpeg_options), 
+            self.user, self.duration, data=self.data)

@@ -13,6 +13,7 @@ from cogs.util import checks
 from cogs.util.ytdl import YTDLSource
 from cogs.util.categories import category
 
+should_continue = True
 
 class Music:
     def __init__(self, bot):
@@ -41,7 +42,8 @@ class Music:
 
     # Callbacks:
     def music_finished(self, e, ctx):
-        if not ctx.bot.dying:
+        print(should_continue)
+        if should_continue and not ctx.bot.dying:
             coro = self.read_queue(ctx)
             fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
             try:
@@ -587,6 +589,21 @@ class Music:
 
         ctx.voice_client.source.volume = volume/100
         await ctx.send("Changed volume to {}%".format(volume))
+
+    @category('bot')
+    @commands.command()
+    @checks.not_dm()
+    async def reconnect(self, ctx):
+        """Reconnects the voice client"""
+        global should_continue
+        should_continue = False #prevent music_finished from running
+        channel = ctx.voice_client.channel
+        source = ctx.voice_client.source
+        await ctx.voice_client.disconnect()
+        ctx.bot.voice[ctx.guild.id] = await channel.connect()
+        new_source = source.duplicate() #gets a fresh copy, breaks if isn't done
+        await self.start_playing(ctx, new_source)
+        should_continue = True
 
     @category('player')
     @commands.command()
