@@ -267,6 +267,34 @@ class Music:
                     pass
 
         await ctx.send("Oh well :frowning:")
+    
+    @category('music')
+    @commands.command()
+    @checks.in_vc()
+    @checks.not_dm()
+    async def jingle(self, ctx, number:int = None):
+        """Enqueues a jingle"""
+        perms = await checks.permissions_for(ctx)
+        # Check the queue limit before bothering to download the song
+        queued = 0
+        for i in self.bot.queue[1:]:
+            if i.user is not None:
+                if i.user.id == ctx.author.id:
+                    queued += 1
+        if queued >= perms['max_songs_queued']:
+            await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            return
+        
+        if number is None:
+            await ctx.invoke(self.play, url=random.choice(ctx.bot.jingles))
+            return
+        
+        if number > len(ctx.bot.jingles):
+            return await ctx.send('There\'s only {} jingles!'.format(len(ctx.bot.jingles)))
+        elif number < 1:
+            return await ctx.send('I can\'t play a jingle that doesn\'t exist!')
+        
+        await ctx.invoke(self.play, url=ctx.bot.jingles[number-1])
 
     @category('music')
     @commands.command()
