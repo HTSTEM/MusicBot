@@ -329,7 +329,21 @@ class Music:
 
         left = num_needed - len(self.bot.queue[0].skips)
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
+        
+    @category('music')
+    @commands.command()
+    @checks.not_dm()
+    @checks.in_vc()
+    async def unskip(self, ctx):
+        """Removes your vote to skip the current song."""
 
+        if not self.bot.queue:
+            return await ctx.send('There\'s nothing playing.')
+        elif ctx.author.id not in self.bot.queue[0].skips:
+            pass
+        else:
+            self.bot.queue[0].skips.remove(ctx.author.id)
+            return await ctx.send('{} You have removed your vote to skip this song.'.format(ctx.author.mention))
 
     @category('music')
     @commands.command()
