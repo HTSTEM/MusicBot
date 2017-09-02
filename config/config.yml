@@ -29,6 +29,8 @@ jingle_chance: 5
 # Add yourself here if you want to know when something goes wrong
 developers:
   - 240995021208289280
+  - 210907256068374529
+  - 161508165672763392
 
 # It's the prefix.. What more do I need to say?
 command_prefix: "!"
