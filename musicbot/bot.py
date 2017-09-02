@@ -66,7 +66,8 @@ class MusicBot(commands.Bot):
         if isinstance(exception, commands.CommandInvokeError):
             if isinstance(exception.original, discord.Forbidden):
                 try: await ctx.send('Permissions error: `{}`'.format(exception))
-                except discord.Forbidden: return
+                except discord.Forbidden: pass
+                return
             
             lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
             self.logger.error(''.join(lines))
