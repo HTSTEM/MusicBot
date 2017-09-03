@@ -121,6 +121,10 @@ class Music:
     @checks.in_vc()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
+        
+        if ctx.author.id in self.bot.pending:
+            return await ctx.send('Wait until I\'m done processing your first request!')
+        self.bot.pending.add(ctx.author.id)
 
         url = url.strip('<>')
 
@@ -182,6 +186,7 @@ class Music:
                     len(self.bot.queue) - 1, 
                     time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
                     ))
+            self.bot.pending.discard(ctx.author.id)
 
     @category('music')
     @commands.command()
@@ -189,7 +194,11 @@ class Music:
     @checks.in_vc()
     async def search(self, ctx, *, query):
         '''Search for a song'''
-
+        
+        if ctx.author.id in self.bot.pending:
+            return await ctx.send('Wait until I\'m done processing your first request!')
+        self.bot.pending.add(ctx.author.id)
+        
         perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
         queued = 0
@@ -258,6 +267,7 @@ class Music:
                 except discord.errors.Forbidden:
                     pass
                 await ctx.send("Alright, coming right up!")
+                self.bot.pending.discard(ctx.author.id)
                 await ctx.invoke(self.play, url=e['webpage_url'])
                 return
             else:
@@ -267,8 +277,9 @@ class Music:
                     await response_message.delete()
                 except discord.errors.Forbidden:
                     pass
-
+                
         await ctx.send("Oh well :frowning:")
+        self.bot.pending.discard(ctx.author.id)
     
     @category('music')
     @commands.command()

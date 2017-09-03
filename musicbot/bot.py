@@ -16,6 +16,7 @@ from cogs.util.checks import NotInVCError, can_use
 class MusicBot(commands.Bot):
     def __init__(self, command_prefix='!', *args, **kwargs):
         self.queue = []
+        self.pending = set()
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
         self.autoplaylist = open('config/autoplaylist.txt').read().split('\n')
