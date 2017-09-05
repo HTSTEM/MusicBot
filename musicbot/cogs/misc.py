@@ -81,7 +81,7 @@ class Misc:
 
     @category('comp')
     @commands.command(aliases=['startcomp'])
-    @checks.not_dm()
+    @commands.guild_only()
     async def start_comp(self, ctx):
         '''Start a competition'''
         if self.bot.like_comp_active:
@@ -92,7 +92,7 @@ class Misc:
 
     @category('comp')
     @commands.command(aliases=['cancelcomp'])
-    @checks.not_dm()
+    @commands.guild_only()
     async def cancel_comp(self, ctx):
         '''Cancel any current competitions'''
         if not self.bot.like_comp_active:
@@ -103,7 +103,7 @@ class Misc:
 
     @category('comp')
     @commands.command(aliases=['endcomp'])
-    @checks.not_dm()
+    @commands.guild_only()
     async def end_comp(self, ctx):
         '''End the current competition'''
         if not self.bot.like_comp_active:
@@ -142,7 +142,7 @@ class Misc:
 
     @category('misc')
     @commands.command(aliases=['permissions'])
-    @checks.not_dm()
+    @commands.guild_only()
     async def perms(self, ctx):
         '''View your permissions'''
         perms = await checks.permissions_for(ctx)
@@ -181,7 +181,7 @@ class Misc:
 
     @category('misc')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def listids(self, ctx):
         '''Get all of the IDs for the current server'''
         data = 'Your ID: {}\n\n'.format(ctx.author.id)

@@ -32,14 +32,13 @@ async def permissions_for(ctx):
         if role.id in bot_perms['roles']: add_perms(bot_perms['roles'][role.id])
     
     if member.id in bot_perms['users']: add_perms(bot_perms['users'][member.id])
-    elif 'owner' in bot_perms['users'] and await owner_pred(ctx): add_perms(bot_perms['users']['owner'])
+    if 'owner' in bot_perms['users'] and await owner_pred(ctx): add_perms(bot_perms['users']['owner'])
     
     return user_perms
 
 #general predicates
 async def owner_pred(ctx: commands.Context) -> bool:
-    appinfo = await ctx.bot.application_info()
-    return appinfo.owner == ctx.author
+    return await ctx.bot.is_owner(ctx.author)
 
 async def mod_pred(ctx: commands.Context) -> bool:
     perms = ctx.channel.permissions_for(ctx.author)
@@ -95,6 +94,7 @@ def in_vc():
         return True
     return commands.check(predicate)
 
+#probably DEPRECATED in favor of commands.guild_only()
 def not_dm():
     async def predicate(ctx: commands.Context) -> bool:
         return ctx.guild != None
