@@ -117,7 +117,7 @@ class Music:
     # User commands:
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     @checks.in_vc()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
@@ -190,7 +190,7 @@ class Music:
 
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     @checks.in_vc()
     async def search(self, ctx, *, query):
         '''Search for a song'''
@@ -283,7 +283,7 @@ class Music:
     
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     @checks.in_vc()
     async def jingle(self, ctx, number:int = None):
         """Enqueues a jingle"""
@@ -311,7 +311,7 @@ class Music:
 
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     @checks.in_vc()
     async def skip(self, ctx):
         """Registers that you want to skip the current song."""
@@ -343,7 +343,7 @@ class Music:
         
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     @checks.in_vc()
     async def unskip(self, ctx):
         """Removes your vote to skip the current song."""
@@ -378,7 +378,7 @@ class Music:
 
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     @checks.in_vc()
     async def like(self, ctx):
         """'Like' the currently playing song"""
@@ -482,7 +482,7 @@ class Music:
 
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def queue(self, ctx):
         """Shows the current queue."""
         if self.bot.queue:
@@ -510,7 +510,7 @@ class Music:
 
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def np(self, ctx):
         """Gets the currently playing song"""
         if self.bot.queue:
@@ -537,7 +537,7 @@ class Music:
 
     @category('music')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def dequeue(self, ctx):
         '''Remove your song(s) from the queue'''
         for i in self.bot.queue[1:]:
@@ -551,7 +551,7 @@ class Music:
     # Mod commands:
     @category('modding')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def remsong(self, ctx, *, song):
         '''Remove a song from the queue.
         `song` can either be the number of the song in the queue
@@ -583,7 +583,7 @@ class Music:
 
     @category('bot')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
         """Joins a voice channel"""
 
@@ -594,7 +594,7 @@ class Music:
 
     @category('bot')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def summon(self, ctx):
         """Join the voice channel you're in."""
         voice = ctx.author.voice
@@ -605,7 +605,7 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def volume(self, ctx, volume: int):
         """Changes the player's volume"""
 
@@ -617,7 +617,7 @@ class Music:
 
     @category('bot')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def reconnect(self, ctx):
         """Reconnects the voice client"""
         global should_continue
@@ -632,7 +632,7 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def resume(self, ctx):
         """Resumes player"""
         if ctx.voice_client.is_paused():
@@ -641,7 +641,7 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def pause(self, ctx):
         """Pause the player"""
         if ctx.voice_client.is_playing():
@@ -650,7 +650,7 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def forceskip(self, ctx):
         """Forcefully skips a song"""
 
@@ -658,7 +658,7 @@ class Music:
 
     @category('player')
     @commands.command()
-    @checks.not_dm()
+    @commands.guild_only()
     async def clear(self, ctx):
         """Stops player and clears queue"""
         self.bot.queue = []
