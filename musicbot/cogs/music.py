@@ -132,7 +132,8 @@ class Music:
             if ctx.author.voice:
                 self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
             else:
-               return await ctx.send("Not connected to a voice channel.")
+                self.bot.pending.discard(ctx.author.id)
+                return await ctx.send("Not connected to a voice channel.")
 
         perms = await checks.permissions_for(ctx)
 
@@ -144,6 +145,7 @@ class Music:
                     queued += 1
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            self.bot.pending.discard(ctx.author.id)
             return
 
         try:
@@ -151,12 +153,14 @@ class Music:
                 duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
                 if duration > perms['max_song_length']:
                     await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(perms['max_song_length'], duration))
+                    self.bot.pending.discard(ctx.author.id)
                     return
 
                 player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
                 player.channel = ctx.channel
         except youtube_dl.utils.DownloadError:
             await ctx.send('No song found.')
+            self.bot.pending.discard(ctx.author.id)
             return
 
         player.channel = ctx.channel
@@ -208,6 +212,7 @@ class Music:
                     queued += 1
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            self.bot.pending.discard(ctx.author.id)
             return
 
 
@@ -249,6 +254,7 @@ class Music:
             if not response_message:
                 await result_message.delete()
                 await confirm_message.delete()
+                self.bot.pending.discard(ctx.author.id)
                 return await ctx.send("Ok nevermind.")
 
             # They started a new search query so lets clean up and bugger off
@@ -257,6 +263,7 @@ class Music:
 
                 await result_message.delete()
                 await confirm_message.delete()
+                self.bot.pending.discard(ctx.author.id)
                 return
 
             if response_message.content.lower().startswith('y'):
@@ -269,6 +276,7 @@ class Music:
                 await ctx.send("Alright, coming right up!")
                 self.bot.pending.discard(ctx.author.id)
                 await ctx.invoke(self.play, url=e['webpage_url'])
+                self.bot.pending.discard(ctx.author.id)
                 return
             else:
                 await result_message.delete()
@@ -653,7 +661,7 @@ class Music:
     @commands.guild_only()
     async def forceskip(self, ctx):
         """Forcefully skips a song"""
-
+        ctx.send('Song forceskipped.')
         ctx.voice_client.stop()
 
     @category('player')
