@@ -661,8 +661,8 @@ class Music:
     @commands.guild_only()
     async def forceskip(self, ctx):
         """Forcefully skips a song"""
-        ctx.send('Song forceskipped.')
         ctx.voice_client.stop()
+        await ctx.send('Song forceskipped.')
 
     @category('player')
     @commands.command()
