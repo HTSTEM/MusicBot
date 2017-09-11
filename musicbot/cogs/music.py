@@ -190,7 +190,7 @@ class Music:
                     len(self.bot.queue) - 1, 
                     time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
                     ))
-            self.bot.pending.discard(ctx.author.id)
+        self.bot.pending.discard(ctx.author.id)
 
     @category('music')
     @commands.command()
@@ -217,7 +217,9 @@ class Music:
 
 
         if not query:
-            return await ctx.send('Please specify a search query.')
+            await ctx.send('Please specify a search query.')
+            self.bot.pending.discard(ctx.author.id)
+            return 
 
         search_query = 'ytsearch{}:{}'.format(self.bot.config['search_limit'], query)
 
@@ -227,6 +229,7 @@ class Music:
             info = await YTDLSource.search(search_query, download=False, process=True)
         except Exception as e:
             await search_msg.edit(content=str(e))
+            self.bot.pending.discard(ctx.author.id)
             raise e
         else:
             await search_msg.delete()
@@ -238,7 +241,9 @@ class Music:
             valid_message = (
                 m.content.lower()[0] in 'yn' or
                 # hardcoded function name weeee
-                m.content.lower().startswith('{}{}'.format(ctx.prefix, 'search')) or
+                # Umm, what was this line for again?
+                # Also I fixed the hardcoded problem
+                m.content.lower().startswith('{}{}'.format(ctx.prefix, ctx.command.name)) or
                 m.content.lower().startswith('exit'))
             is_author = m.author == ctx.author
             is_channel = m.channel == ctx.channel
@@ -254,8 +259,9 @@ class Music:
             if not response_message:
                 await result_message.delete()
                 await confirm_message.delete()
+                await ctx.send("Ok nevermind.")
                 self.bot.pending.discard(ctx.author.id)
-                return await ctx.send("Ok nevermind.")
+                return 
 
             # They started a new search query so lets clean up and bugger off
             elif response_message.content.startswith(ctx.prefix) or \
@@ -274,7 +280,6 @@ class Music:
                 except discord.errors.Forbidden:
                     pass
                 await ctx.send("Alright, coming right up!")
-                self.bot.pending.discard(ctx.author.id)
                 await ctx.invoke(self.play, url=e['webpage_url'])
                 self.bot.pending.discard(ctx.author.id)
                 return
