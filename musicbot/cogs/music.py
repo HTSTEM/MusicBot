@@ -42,7 +42,6 @@ class Music:
 
     # Callbacks:
     def music_finished(self, e, ctx):
-        print(should_continue)
         if should_continue and not ctx.bot.dying:
             coro = self.read_queue(ctx)
             fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
@@ -639,9 +638,14 @@ class Music:
         source = ctx.voice_client.source
         await ctx.voice_client.disconnect()
         ctx.bot.voice[ctx.guild.id] = await channel.connect()
-        new_source = source.duplicate() #gets a fresh copy, breaks if isn't done
-        await self.start_playing(ctx, new_source)
+        if source is not None:
+            new_source = source.duplicate() #gets a fresh copy, breaks if isn't done
+            await self.start_playing(ctx, new_source)
+        else:
+            await self.read_queue(ctx)
+            
         should_continue = True
+            
 
     @category('player')
     @commands.command()
