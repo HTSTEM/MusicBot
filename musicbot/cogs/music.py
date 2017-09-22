@@ -497,11 +497,14 @@ class Music:
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
 
-            message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
-                playing.title,
+            message = 'Now playing: **{}**'.format(playing.title)
+            if playing.user: message += ' added by {}'.format(playing.user.name)
+            message += ' `[{}/{}]`'.format(
                 time.strftime("%M:%S", time.gmtime(max(0,playing_time))),  
                 time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
                 )
+            if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
+            message += '\n\n'
             message += '\n'.join([
                 '`{}.` **{}** added by **{}**'.format(n + 1, i.title, i.user.name) for n, i in enumerate(self.bot.queue[1:])
             ])
@@ -520,18 +523,13 @@ class Music:
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
 
-            if ctx.voice_client.is_paused():
-                message = 'Now playing: **{}** `[{}/{}]` (**PAUSED**)\n\n'.format(
-                    playing.title,
-                    time.strftime("%M:%S", time.gmtime(max(0,playing_time))),  # here's a hack for now
+            message = 'Now playing: **{}**'.format(playing.title)
+            if playing.user: message += ' added by {}'.format(playing.user.name)
+            message += ' `[{}/{}]`'.format(
+                    time.strftime("%M:%S", time.gmtime(max(0,playing_time))), 
                     time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
                     )
-            else:
-                message = 'Now playing: **{}** `[{}/{}]`\n\n'.format(
-                    playing.title,
-                    time.strftime("%M:%S", time.gmtime(max(0,playing_time))),  # here's a hack for now
-                    time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
-                    )
+            if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
         else:
             message = 'Not playing anything.'
         await ctx.send(message)
