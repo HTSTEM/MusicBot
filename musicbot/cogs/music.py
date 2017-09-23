@@ -118,174 +118,164 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @checks.command_processed()
     async def play(self, ctx, *, url):
         """Streams from a url (almost anything youtube_dl supports)"""
-        try:
-            if ctx.author.id in self.bot.pending:
-                return await ctx.send('Wait until I\'m done processing your first request!')
-            self.bot.pending.add(ctx.author.id)
+        url = url.strip('<>')
 
-            url = url.strip('<>')
-
-            if ctx.voice_client is None:
-                if ctx.author.voice:
-                    self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
-                else:
-                    return await ctx.send("Not connected to a voice channel.")
-
-            perms = await checks.permissions_for(ctx)
-
-            # Check the queue limit before bothering to download the song
-            queued = 0
-            for i in self.bot.queue[1:]:
-                if i.user is not None:
-                    if i.user.id == ctx.author.id:
-                        queued += 1
-            if queued >= perms['max_songs_queued']:
-                await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
-                return
-
-            try:
-                with ctx.typing():
-                    duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
-                    if duration > perms['max_song_length']:
-                        await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(perms['max_song_length'], duration))
-                        return
-
-                    player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
-                    player.channel = ctx.channel
-            except youtube_dl.utils.DownloadError:
-                return await ctx.send('No song found.')
-            except ValueError:
-                return await ctx.send('A network error occured.')
-
-            player.channel = ctx.channel
-
-            if not self.bot.queue:
-                self.bot.queue.append(player)
-
-                if ctx.voice_client.is_playing():
-                    ctx.voice_client.stop()
-
-                await self.start_playing(ctx, player)
+        if ctx.voice_client is None:
+            if ctx.author.voice:
+                self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
             else:
-                ttp = 0
-                for i in self.bot.queue:
-                    ttp += i.duration
-                playing = self.bot.queue[0]
-                playing_time = int(time.time()-playing.start_time)
-                if ctx.voice_client.is_paused():
-                    playing_time -= time.time() - ctx.voice_client.source.pause_start
-                ttp -= playing_time
+                return await ctx.send("Not connected to a voice channel.")
 
-                self.bot.queue.append(player)
+        perms = await checks.permissions_for(ctx)
 
-                await ctx.send(
-                    'Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
-                        player.title, 
-                        len(self.bot.queue) - 1, 
-                        time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
-                        ))
-        finally:
-            self.bot.pending.discard(ctx.author.id)
+        # Check the queue limit before bothering to download the song
+        queued = 0
+        for i in self.bot.queue[1:]:
+            if i.user is not None:
+                if i.user.id == ctx.author.id:
+                    queued += 1
+        if queued >= perms['max_songs_queued']:
+            await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            return
+
+        try:
+            with ctx.typing():
+                duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
+                if duration > perms['max_song_length']:
+                    await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(perms['max_song_length'], duration))
+                    return
+
+                player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+                player.channel = ctx.channel
+        except youtube_dl.utils.DownloadError:
+            return await ctx.send('No song found.')
+        except ValueError:
+            return await ctx.send('A network error occured.')
+
+        player.channel = ctx.channel
+
+        if not self.bot.queue:
+            self.bot.queue.append(player)
+
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+
+            await self.start_playing(ctx, player)
+        else:
+            ttp = 0
+            for i in self.bot.queue:
+                ttp += i.duration
+            playing = self.bot.queue[0]
+            playing_time = int(time.time()-playing.start_time)
+            if ctx.voice_client.is_paused():
+                playing_time -= time.time() - ctx.voice_client.source.pause_start
+            ttp -= playing_time
+
+            self.bot.queue.append(player)
+
+            await ctx.send(
+                'Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
+                    player.title, 
+                    len(self.bot.queue) - 1, 
+                    time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
+                    ))
 
     @category('music')
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @checks.command_processed()
     async def search(self, ctx, *, query):
         '''Search for a song'''
+
+        perms = await checks.permissions_for(ctx)
+        # Check the queue limit before bothering to download the song
+        queued = 0
+        for i in self.bot.queue[1:]:
+            if i.user is not None:
+                if i.user.id == ctx.author.id:
+                    queued += 1
+        if queued >= perms['max_songs_queued']:
+            await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            return
+
+
+        if not query:
+            await ctx.send('Please specify a search query.')
+            return 
+
+        search_query = 'ytsearch{}:{}'.format(self.bot.config['search_limit'], query)
+
+        search_msg = await ctx.send("Searching for videos...")
+        await ctx.channel.trigger_typing()
         try:
-            if ctx.author.id in self.bot.pending:
-                return await ctx.send('Wait until I\'m done processing your first request!')
-            self.bot.pending.add(ctx.author.id)
-            
-            perms = await checks.permissions_for(ctx)
-            # Check the queue limit before bothering to download the song
-            queued = 0
-            for i in self.bot.queue[1:]:
-                if i.user is not None:
-                    if i.user.id == ctx.author.id:
-                        queued += 1
-            if queued >= perms['max_songs_queued']:
-                await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
-                return
+            info = await YTDLSource.search(search_query, download=False, process=True)
+        except Exception as e:
+            await search_msg.edit(content=str(e))
+            raise e
+        else:
+            await search_msg.delete()
 
+        if not info:
+            await ctx.send("No videos found.")
 
-            if not query:
-                await ctx.send('Please specify a search query.')
+        def check(m):
+            valid_message = (
+                m.content.lower()[0] in 'yn' or
+                m.content.lower().startswith('exit'))
+            is_author = m.author == ctx.author
+            is_channel = m.channel == ctx.channel
+            return valid_message and is_author and is_channel
+
+        for e in info['entries']:
+            result_message = await ctx.send( "Result {}/{}: {}".format(
+                info['entries'].index(e) + 1, len(info['entries']), e['webpage_url']))
+
+            confirm_message = await ctx.send("Is this ok? Type `y`, `n` or `exit`")
+            response_message = await ctx.bot.wait_for('message', check=check)
+
+            if not response_message:
+                await result_message.delete()
+                await confirm_message.delete()
+                await ctx.send("Ok nevermind.")
                 return 
 
-            search_query = 'ytsearch{}:{}'.format(self.bot.config['search_limit'], query)
+            # They started a new search query so lets clean up and bugger off
+            elif response_message.content.startswith(ctx.prefix) or \
+                    response_message.content.lower().startswith('exit'):
 
-            search_msg = await ctx.send("Searching for videos...")
-            await ctx.channel.trigger_typing()
-            try:
-                info = await YTDLSource.search(search_query, download=False, process=True)
-            except Exception as e:
-                await search_msg.edit(content=str(e))
-                raise e
+                await result_message.delete()
+                await confirm_message.delete()
+                return
+
+            if response_message.content.lower().startswith('y'):
+                await result_message.delete()
+                await confirm_message.delete()
+                try:
+                    await response_message.delete()
+                except discord.errors.Forbidden:
+                    pass
+                await ctx.send("Alright, coming right up!")
+                await ctx.invoke(self.play, url=e['webpage_url'])
+                return
             else:
-                await search_msg.delete()
-
-            if not info:
-                await ctx.send("No videos found.")
-
-            def check(m):
-                valid_message = (
-                    m.content.lower()[0] in 'yn' or
-                    m.content.lower().startswith('exit'))
-                is_author = m.author == ctx.author
-                is_channel = m.channel == ctx.channel
-                return valid_message and is_author and is_channel
-
-            for e in info['entries']:
-                result_message = await ctx.send( "Result {}/{}: {}".format(
-                    info['entries'].index(e) + 1, len(info['entries']), e['webpage_url']))
-
-                confirm_message = await ctx.send("Is this ok? Type `y`, `n` or `exit`")
-                response_message = await ctx.bot.wait_for('message', check=check)
-
-                if not response_message:
-                    await result_message.delete()
-                    await confirm_message.delete()
-                    await ctx.send("Ok nevermind.")
-                    return 
-
-                # They started a new search query so lets clean up and bugger off
-                elif response_message.content.startswith(ctx.prefix) or \
-                        response_message.content.lower().startswith('exit'):
-
-                    await result_message.delete()
-                    await confirm_message.delete()
-                    return
-
-                if response_message.content.lower().startswith('y'):
-                    await result_message.delete()
-                    await confirm_message.delete()
-                    try:
-                        await response_message.delete()
-                    except discord.errors.Forbidden:
-                        pass
-                    await ctx.send("Alright, coming right up!")
-                    await ctx.invoke(self.play, url=e['webpage_url'])
-                    return
-                else:
-                    await result_message.delete()
-                    await confirm_message.delete()
-                    try:
-                        await response_message.delete()
-                    except discord.errors.Forbidden:
-                        pass
-                    
-            await ctx.send("Oh well :frowning:")
-        finally:
-            self.bot.pending.discard(ctx.author.id)
+                await result_message.delete()
+                await confirm_message.delete()
+                try:
+                    await response_message.delete()
+                except discord.errors.Forbidden:
+                    pass
+                
+        await ctx.send("Oh well :frowning:")
     
     @category('music')
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @checks.command_processed()
     async def jingle(self, ctx, number:int = None):
         """Enqueues a jingle"""
         perms = await checks.permissions_for(ctx)
@@ -309,6 +299,19 @@ class Music:
             return await ctx.send('I can\'t play a jingle that doesn\'t exist!')
         
         await ctx.invoke(self.play, url=ctx.bot.jingles[number-1])
+        
+        
+    @jingle.before_invoke
+    @search.before_invoke
+    @play.before_invoke
+    async def add_pending(self, ctx):
+        ctx.bot.pending.add(ctx.author.id)
+        
+    @jingle.after_invoke
+    @search.after_invoke
+    @play.after_invoke
+    async def clear_pending(self, ctx):
+        ctx.bot.pending.discard(ctx.author.id)
 
     @category('music')
     @commands.command()

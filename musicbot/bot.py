@@ -79,6 +79,8 @@ class MusicBot(commands.Bot):
                 await ctx.send('I\'m not in a voice channel on this server.')
             elif 'user_in_vc' in exception.args:
                 await ctx.send('You must be in `{}` to use that command.'.format(ctx.bot.voice[ctx.guild.id].channel.name))
+            elif 'request_pending' in exception.args:
+                await ctx.send('Wait until I\'m done processing your first request!')
             else:
                 await ctx.send('You can\'t do that.')
         elif isinstance(exception, commands.CommandNotFound):

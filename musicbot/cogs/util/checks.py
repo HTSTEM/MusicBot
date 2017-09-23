@@ -94,6 +94,14 @@ def in_vc():
         return True
     return commands.check(predicate)
 
+def command_processed():
+    async def predicate(ctx: commands.Context) -> bool:
+        if ctx.author.id in ctx.bot.pending:
+            raise commands.CheckFailure('request_pending')
+        else:
+            return True
+    return commands.check(predicate)
+
 #probably DEPRECATED in favor of commands.guild_only()
 def not_dm():
     async def predicate(ctx: commands.Context) -> bool:
