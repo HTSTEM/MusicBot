@@ -538,7 +538,7 @@ class Music:
         await ctx.send(message)
 
     @category('music')
-    @commands.command()
+    @commands.command(aliases=['unqueue'])
     @commands.guild_only()
     async def dequeue(self, ctx):
         '''Remove your song(s) from the queue'''
