@@ -126,13 +126,13 @@ class MusicBot(commands.Bot):
         os.remove('error.txt')
 
     async def on_voice_state_update(self, member, before, after):
-        if not ((after.channel is None) ^ (before.channel is None)):
+        if (after.channel is None) and (before.channel is None):
             return
 
         if after.channel is None:
             channel = before.channel
             left = True
-        else:
+        else:   
             channel = after.channel
             left = False
 
