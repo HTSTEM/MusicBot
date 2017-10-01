@@ -330,7 +330,7 @@ class Music:
             self.bot.queue[0].skips.append(ctx.author.id)
 
         # Skip the song
-        num_needed = min(8, int(len(ctx.voice_client.channel.members) / 2))
+        num_needed = min(8, len(ctx.voice_client.channel.members) // 2)
         if self.bot.queue[0].user is not None and ctx.author.id == self.bot.queue[0].user.id:
             await ctx.send('The current song was force-skipped by the queuer.')
             if ctx.voice_client.is_playing():

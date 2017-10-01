@@ -4,6 +4,7 @@ import time
 import os
 import re
 import sys
+import asyncio
 
 import discord
 
@@ -124,6 +125,18 @@ class MusicBot(commands.Bot):
                                 .format(dev, type(e).__name__ + ': ' + str(e)))
             
         os.remove('error.txt')
+        
+    async def wait_for_source(self, voice_client, timeout = 10):
+        if timeout is None or timeout <= 0:
+            while voice_client.source is None: await asyncio.sleep(0.5)
+        else:
+            for i in range(2*timeout):
+                if voice_client.source is not None: break
+                else: await asyncio.sleep(0.5)
+                
+        if voice_client.source is None: raise asyncio.TimeoutError
+        else: return voice_client.source
+        
 
     async def on_voice_state_update(self, member, before, after):
         if (after.channel is None) and (before.channel is None):
@@ -143,6 +156,7 @@ class MusicBot(commands.Bot):
 
             if len(channel.members) <= 1:
                 self.logger.info('{} empty. Pausing.'.format(channel.name))
+                await self.wait_for_source(vc)
                 if vc.is_playing():
                     vc.pause()
                     vc.source.pause_start = time.time()
