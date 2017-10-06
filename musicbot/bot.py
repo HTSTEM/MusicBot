@@ -11,7 +11,7 @@ import discord
 from ruamel.yaml import YAML
 from discord.ext import commands
 
-from cogs.util.checks import NotInVCError, can_use
+from cogs.util.checks import can_use
 
 
 class MusicBot(commands.Bot):

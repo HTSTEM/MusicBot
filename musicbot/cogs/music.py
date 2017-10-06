@@ -508,11 +508,16 @@ class Music:
                 )
             if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
             message += '\n\n'
-            message += '\n'.join([
-                '`{}.` **{}** added by **{}**'.format(n + 1, i.title, i.user.name) for n, i in enumerate(self.bot.queue[1:])
-            ])
+            for n, entry in enumerate(self.bot.queue[1:]):
+                to_add = '`{}.` **{}** added by **{}**\n'.format(n + 1, entry.title, entry.user.name)
+                if len(message) + len(to_add) > 10:
+                    message += '*{} more*...'.format(len(self.bot.queue)-n-1)
+                else:
+                    message += to_add
+
         else:
             message = 'Not playing anything.'
+
         await ctx.send(message)
 
     @category('music')
