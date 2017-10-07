@@ -487,6 +487,31 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
+    async def minewhen(self, ctx):
+        if self.bot.queue:
+            ttp = int(self.bot.queue[0].start_time-time.time())
+        else:
+            ttp = 0
+            
+        for i, entry in enumerate(self.bot.queue):
+            if ctx.author == entry.user:
+                if i == 0:
+                    await ctx.send(f'Your song **{entry.title}** is playing right now!')
+                else:
+                    ttp = time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
+                    await ctx.send(
+                        f'Your song {entry.title} is at position {i} in the queue and will be playing in {ttp}.'
+                    )
+                return
+            else:
+                ttp += entry.duration
+        else:
+            await ctx.send('You don\'t have a song in the queue!')
+
+
+    @category('music')
+    @commands.command()
+    @commands.guild_only()
     async def queue(self, ctx):
         """Shows the current queue."""
         if self.bot.queue:
