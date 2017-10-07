@@ -4,6 +4,9 @@ search_limit: 3
 # How many seconds a song must be played before it can be skipped
 skip_grace: 5
 
+# How many items need to be in the queue before it becomes moderator-only
+public_queue_max: 10
+
 # The bot will auto-join and start playing in these.
 # <guild id>: <voice channel id>
 default_channels:

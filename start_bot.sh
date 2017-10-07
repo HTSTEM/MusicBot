@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 while true
-do 
-python3 musicbot/bot.py
+do
+python3.6 musicbot/bot.py
 done

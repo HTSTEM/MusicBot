@@ -541,7 +541,7 @@ class Music:
                 if len(message) + len(to_add) > 1900:
                     message += '*{} more*...'.format(len(self.bot.queue)-n-1)
                     break
-                elif n > 10 and not manage_channels:
+                elif n > self.bot.config['public_queue_max'] and not manage_channels:
                     message += '*{} more, ask a mod to see the entire queue*...'.format(len(self.bot.queue) - n - 1)
                     break
                 else:
