@@ -335,6 +335,33 @@ class Misc:
         else:
             await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
 
+    @category('bot')
+    @commands.group(invoke_without_command=True)
+    async def reload(self, ctx, *, cog: str):
+        '''Reloads an extension'''
+        try:
+            ctx.bot.unload_extension(cog)
+            ctx.bot.load_extension(cog)
+        except Exception as e:
+            await ctx.send('Failed to load: `{}`\n```py\n{}\n```'.format(cog, e))
+        else:
+            await ctx.send('\N{OK HAND SIGN} Reloaded cog {} successfully'.format(cog))
+
+    @category('bot')
+    @reload.command(name='all')
+    async def reload_all(self, ctx):
+        '''Reloads all extensions'''
+        import importlib
+        importlib.reload(sys.modules['cogs.util'])
+        for extension in ctx.bot.extensions.copy():
+            ctx.bot.unload_extension(extension)
+            try:
+                ctx.bot.load_extension(extension)
+            except Exception as e:
+                await ctx.send('Failed to load `{}`:\n```py\n{}\n```'.format(extension, e))
+
+        await ctx.send('\N{OK HAND SIGN} Reloaded {} cogs successfully'.format(len(ctx.bot.extensions)))
+
         
     @category('bot')
     @commands.command(aliases=['exception'])
