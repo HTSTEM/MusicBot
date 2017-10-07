@@ -14,7 +14,7 @@ from discord.ext import commands
 from cogs.util.checks import can_use
 
 
-class MusicBot(commands.Bot):
+class MusicBot(commands.AutoShardedBot):
     def __init__(self, command_prefix='!', *args, **kwargs):
         self.queue = []
         self.pending = set()
@@ -26,7 +26,7 @@ class MusicBot(commands.Bot):
         self.yaml = YAML(typ='safe')
         with open('config/config.yml') as conf_file:
             self.config = self.yaml.load(conf_file)
-        
+
         with open('config/permissions.yml') as conf_file:
             self.permissions = self.yaml.load(conf_file)
 
@@ -61,25 +61,59 @@ class MusicBot(commands.Bot):
         with open('config/likes.yml', 'w') as conf_file:
             self.yaml.dump(self.likes, conf_file)
 
+    # Async methods
     async def close(self):
         await super().close()
 
+    async def notify_devs(self, info, ctx=None):
+        with open('error.txt', 'w') as error_file:
+            error_file.write(info)
+
+        for dev_id in self.config['developers']:
+            dev = self.get_user(dev_id)
+            if dev is None:
+                self.logger.warning(f'Could not get developer with an ID of {dev.id}, skipping.')
+                continue
+            try:
+                with open('error.txt', 'r') as error_file:
+                    if ctx is None:
+                        await dev.send(file=discord.File(error_file))
+                    else:
+                        await dev.send(f'{ctx.author}: {ctx.message.content}',file=discord.File(error_file))
+            except Exception as e:
+                self.logger.error('Couldn\'t send error embed to developer {0.id}. {1}'
+                                .format(dev, type(e).__name__ + ': ' + str(e)))
+
+        os.remove('error.txt')
+
+    async def wait_for_source(self, voice_client, timeout = 10):
+        if timeout is None or timeout <= 0:
+            while voice_client.source is None: await asyncio.sleep(0.5)
+        else:
+            for i in range(2*timeout):
+                if voice_client.source is not None: break
+                else: await asyncio.sleep(0.5)
+
+        if voice_client.source is None: raise asyncio.TimeoutError
+        else: return voice_client.source
+
+    # Client events
     async def on_command_error(self, ctx: commands.Context, exception: Exception):
         if isinstance(exception, commands.CommandInvokeError):
             if isinstance(exception.original, discord.Forbidden):
-                try: await ctx.send('Permissions error: `{}`'.format(exception))
+                try: await ctx.send(f'Permissions error: `{exception}`')
                 except discord.Forbidden: pass
                 return
-            
+
             lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
             self.logger.error(''.join(lines))
-            await ctx.send('{}, the devs have been notified.'.format(exception.original))
+            await ctx.send(f'{exception.original}, the devs have been notified.')
             await self.notify_devs(''.join(lines), ctx)
         elif isinstance(exception, commands.CheckFailure):
             if 'bot_in_vc' in exception.args:
                 await ctx.send('I\'m not in a voice channel on this server.')
             elif 'user_in_vc' in exception.args:
-                await ctx.send('You must be in `{}` to use that command.'.format(ctx.bot.voice[ctx.guild.id].channel.name))
+                await ctx.send(f'You must be in `{ctx.bot.voice[ctx.guild.id].channel.name}` to use that command.')
             elif 'request_pending' in exception.args:
                 await ctx.send('Wait until I\'m done processing your first request!')
             else:
@@ -96,47 +130,14 @@ class MusicBot(commands.Bot):
         else:
             info = traceback.format_exception(type(exception), exception, exception.__traceback__, chain=False)
             self.logger.error('Unhandled command exception - {}'.format(''.join(info)))
-            await ctx.send('{}, the devs have been notified.'.format(exception))
+            await ctx.send(f'{exception}, the devs have been notified.')
             await self.notify_devs(''.join(info), ctx)
-            
+
     async def on_error(self, event_method, *args, **kwargs):
         info = sys.exc_info()
         info = traceback.format_exception(*info, chain=False)
         self.logger.error('Unhandled exception - {}'.format(''.join(info)))
         await self.notify_devs(''.join(info))
-    
-    async def notify_devs(self, info, ctx=None):
-        with open('error.txt', 'w') as error_file:
-            error_file.write(info)
-        
-        for dev_id in self.config['developers']:
-            dev = self.get_user(dev_id)
-            if dev is None:
-                self.logger.warning('Could not get developer with an ID of {0.id}, skipping.'.format(dev))
-                continue
-            try:
-                with open('error.txt', 'r') as error_file:
-                    if ctx is None:
-                        await dev.send(file=discord.File(error_file))
-                    else:
-                        await dev.send('{}: {}'.format(ctx.author, ctx.message.content),file=discord.File(error_file))
-            except Exception as e:
-                self.logger.error('Couldn\'t send error embed to developer {0.id}. {1}'
-                                .format(dev, type(e).__name__ + ': ' + str(e)))
-            
-        os.remove('error.txt')
-        
-    async def wait_for_source(self, voice_client, timeout = 10):
-        if timeout is None or timeout <= 0:
-            while voice_client.source is None: await asyncio.sleep(0.5)
-        else:
-            for i in range(2*timeout):
-                if voice_client.source is not None: break
-                else: await asyncio.sleep(0.5)
-                
-        if voice_client.source is None: raise asyncio.TimeoutError
-        else: return voice_client.source
-        
 
     async def on_voice_state_update(self, member, before, after):
         if (after.channel is None) and (before.channel is None):
@@ -145,7 +146,7 @@ class MusicBot(commands.Bot):
         if after.channel is None:
             channel = before.channel
             left = True
-        else:   
+        else:
             channel = after.channel
             left = False
 
@@ -155,13 +156,13 @@ class MusicBot(commands.Bot):
             if vc.channel != channel: return
 
             if len(channel.members) <= 1:
-                self.logger.info('{} empty. Pausing.'.format(channel.name))
+                self.logger.info(f'{channel.name} empty. Pausing.')
                 await self.wait_for_source(vc)
                 if vc.is_playing():
                     vc.pause()
                     vc.source.pause_start = time.time()
             else:
-                self.logger.info('Someone appeared in {}! Resuming.'.format(channel.name))
+                self.logger.info(f'Someone appeared in {channel.name}! Resuming.')
                 if vc.is_paused():
                     vc.resume()
                     vc.source.start_time += time.time() - vc.source.pause_start
@@ -182,10 +183,10 @@ class MusicBot(commands.Bot):
         await self.process_commands(message)
 
     async def on_ready(self):
-        self.logger.info('Connected to Discord')
-        self.logger.info('Guilds  : {}'.format(len(self.guilds)))
-        self.logger.info('Users   : {}'.format(len(set(self.get_all_members()))))
-        self.logger.info('Channels: {}'.format(len(list(self.get_all_channels()))))
+        self.logger.info(f'Connected to Discord')
+        self.logger.info(f'Guilds  : {len(self.guilds)}')
+        self.logger.info(f'Users   : {len(set(self.get_all_members()))}')
+        self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
 
         if 'default_channels' in self.config:
             class Holder:
@@ -197,17 +198,17 @@ class MusicBot(commands.Bot):
             for guild_id in dc:
                 guild = self.get_guild(guild_id)
                 if guild is not None:
-                    self.logger.info(' - Found guild \'{}\'.'.format(guild.name))
+                    self.logger.info(f' - Found guild \'{guild.name}\'.')
                     channel = guild.get_channel(dc[guild_id])
                     if channel is None:
-                        self.logger.info('   - Channel {} not found.'.format(dc[guild_id]))
+                        self.logger.info(f'   - Channel {dc[guild_id]} not found.')
                     elif not isinstance(channel, discord.VoiceChannel):
-                        self.logger.info('   - Channel \'{}\' found, but is not voice channel.'.format(channel.name))
+                        self.logger.info(f'   - Channel \'{channel.name}\' found, but is not voice channel.')
                     else:
-                        self.logger.info('   - Channel \'{}\' found. Joining.'.format(channel.name))
+                        self.logger.info(f'   - Channel \'{channel.name}\' found. Joining.')
                         vc = await channel.connect()
                         self.voice[guild_id] = vc
-                        
+
                         self.logger.info('   - Joined. Starting auto-playlist.')
                         cctx = Holder()
                         cctx.voice_client = vc
@@ -216,14 +217,14 @@ class MusicBot(commands.Bot):
                         cctx.send = c.send
                         cctx.channel = c
                         await self.cogs['Music'].auto_playlist(cctx)
-                        
+
                         if len(vc.channel.members) <= 1:
-                            self.logger.info('   - {} empty. Pausing.'.format(vc.channel.name))
+                            self.logger.info(f'   - {vc.channel.name} empty. Pausing.')
                             if vc.is_playing():
                                 vc.pause()
                                 vc.source.pause_start = time.time()
                 else:
-                    self.logger.info(' - Guild {} not found.'.format(guild_id))
+                    self.logger.info(f' - Guild {guild_id} not found.')
             self.logger.info('Done.')
 
     def run(self, token):
@@ -234,11 +235,12 @@ class MusicBot(commands.Bot):
             try:
                 self.load_extension(cog)
             except Exception as e:
-                self.logger.exception('Failed to load cog {}.'.format(cog))
+                self.logger.exception(f'Failed to load cog {cog}:')
+                self.logger.exception(e)
             else:
-                self.logger.info('Loaded cog {}.'.format(cog))
-                
-        self.logger.info('Loaded {} cogs'.format(len(self.cogs)))
+                self.logger.info(f'Loaded cog {cog}.')
+
+        self.logger.info(f'Loaded {len(self.cogs)} cogs')
         super().run(token)
 
 if __name__ == '__main__':

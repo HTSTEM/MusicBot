@@ -20,26 +20,6 @@ class Music:
         self.bot = bot
         self.jingle_last = False
 
-    '''
-    @commands.command()
-    async def playLocal(self, ctx, *, query):
-        """Plays a file from the local filesystem"""
-
-        if ctx.voice_client is None:
-            if ctx.author.voice.channel:
-                await ctx.author.voice.channel.connect()
-            else:
-                return await ctx.send("Not connected to a voice channel.")
-
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
-
-        source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(query))
-        ctx.voice_client.play(source, after=lambda e: print('Player error: %s' % e) if e else None)
-
-        await ctx.send('Now playing: {}'.format(query))
-    '''
-
     # Callbacks:
     def music_finished(self, e, ctx):
         if should_continue and not ctx.bot.dying:
@@ -105,13 +85,12 @@ class Music:
         if announce:
             if player.user is None:
                 c = player.channel if player.channel is not None else ctx.channel
-                await c.send('Now playing: **{}**'.format(player.title))
+                await c.send(f'Now playing: **{player.title}**')
             else:
                 c = player.channel if player.channel is not None else ctx.channel
-                await c.send('<@{}>, your song **{}** is now playing in {}!'.format(player.user.id, player.title, ctx.voice_client.channel.name))
+                await c.send(f'<@{player.user.id}>, your song **{player.title}** is now playing in {ctx.voice_client.channel.name}!')
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
-
 
     # User commands:
     @category('music')
@@ -120,14 +99,14 @@ class Music:
     @checks.in_vc()
     @checks.command_processed()
     async def play(self, ctx, *, url):
-        """Streams from a url (almost anything youtube_dl supports)"""
+        '''Streams from a url (almost anything youtube_dl supports)'''
         url = url.strip('<>')
 
         if ctx.voice_client is None:
             if ctx.author.voice:
                 self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
             else:
-                return await ctx.send("Not connected to a voice channel.")
+                return await ctx.send('Not connected to a voice channel.')
 
         perms = await checks.permissions_for(ctx)
 
@@ -145,7 +124,7 @@ class Music:
             with ctx.typing():
                 duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
                 if duration > perms['max_song_length']:
-                    await ctx.send('You don\'t have permission to queue songs longer than {}s. ({}s)'.format(perms['max_song_length'], duration))
+                    await ctx.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
                     return
 
                 player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
@@ -178,9 +157,9 @@ class Music:
 
             await ctx.send(
                 'Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
-                    player.title, 
-                    len(self.bot.queue) - 1, 
-                    time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
+                    player.title,
+                    len(self.bot.queue) - 1,
+                    time.strftime('%H:%M:%S', time.gmtime(max(0,ttp)))
                     ))
 
     @category('music')
@@ -205,11 +184,11 @@ class Music:
 
         if not query:
             await ctx.send('Please specify a search query.')
-            return 
+            return
 
-        search_query = 'ytsearch{}:{}'.format(self.bot.config['search_limit'], query)
-
-        search_msg = await ctx.send("Searching for videos...")
+        search_query = f'ytsearch{self.bot.config["search_limit"]}:{query}'
+        
+        search_msg = await ctx.send('Searching for videos...')
         await ctx.channel.trigger_typing()
         try:
             info = await YTDLSource.search(search_query, download=False, process=True)
@@ -220,7 +199,7 @@ class Music:
             await search_msg.delete()
 
         if not info:
-            await ctx.send("No videos found.")
+            await ctx.send('No videos found.')
 
         def check(m):
             if not m.content: return False
@@ -232,17 +211,17 @@ class Music:
             return valid_message and is_author and is_channel
 
         for e in info['entries']:
-            result_message = await ctx.send( "Result {}/{}: {}".format(
+            result_message = await ctx.send( 'Result {}/{}: {}'.format(
                 info['entries'].index(e) + 1, len(info['entries']), e['webpage_url']))
 
-            confirm_message = await ctx.send("Is this ok? Type `y`, `n` or `exit`")
+            confirm_message = await ctx.send('Is this ok? Type `y`, `n` or `exit`')
             response_message = await ctx.bot.wait_for('message', check=check)
 
             if not response_message:
                 await result_message.delete()
                 await confirm_message.delete()
-                await ctx.send("Ok nevermind.")
-                return 
+                await ctx.send('Ok nevermind.')
+                return
 
             # They started a new search query so lets clean up and bugger off
             elif response_message.content.startswith(ctx.prefix) or \
@@ -259,7 +238,7 @@ class Music:
                     await response_message.delete()
                 except discord.errors.Forbidden:
                     pass
-                await ctx.send("Alright, coming right up!")
+                await ctx.send('Alright, coming right up!')
                 await ctx.invoke(self.play, url=e['webpage_url'])
                 return
             else:
@@ -269,16 +248,16 @@ class Music:
                     await response_message.delete()
                 except discord.errors.Forbidden:
                     pass
-                
-        await ctx.send("Oh well :frowning:")
-    
+
+        await ctx.send('Oh well :frowning:')
+
     @category('music')
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
     @checks.command_processed()
     async def jingle(self, ctx, number:int = None):
-        """Enqueues a jingle"""
+        '''Enqueues a jingle'''
         perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
         queued = 0
@@ -289,25 +268,24 @@ class Music:
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
             return
-        
+
         if number is None:
             await ctx.invoke(self.play, url=random.choice(ctx.bot.jingles))
             return
-        
+
         if number > len(ctx.bot.jingles):
-            return await ctx.send('There\'s only {} jingles!'.format(len(ctx.bot.jingles)))
+            return await ctx.send(f'There\'s only {len(ctx.bot.jingles)} jingles!')
         elif number < 1:
             return await ctx.send('I can\'t play a jingle that doesn\'t exist!')
-        
+
         await ctx.invoke(self.play, url=ctx.bot.jingles[number-1])
-        
-        
+
     @jingle.before_invoke
     @search.before_invoke
     @play.before_invoke
     async def add_pending(self, ctx):
         ctx.bot.pending.add(ctx.author.id)
-        
+
     @jingle.after_invoke
     @search.after_invoke
     @play.after_invoke
@@ -319,7 +297,7 @@ class Music:
     @commands.guild_only()
     @checks.in_vc()
     async def skip(self, ctx):
-        """Registers that you want to skip the current song."""
+        '''Registers that you want to skip the current song.'''
         skip_grace = self.bot.config['skip_grace']
         # Register skips
         if not self.bot.queue:
@@ -341,20 +319,20 @@ class Music:
                 ctx.voice_client.stop()
             return
         if len(self.bot.queue[0].skips) >= num_needed:
-            await ctx.send('The skip ratio has been reached, skipping song...'.format(ctx.author.id))
+            await ctx.send('The skip ratio has been reached, skipping song...')
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
             return
 
         left = num_needed - len(self.bot.queue[0].skips)
         await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
-        
+
     @category('music')
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
     async def unskip(self, ctx):
-        """Removes your vote to skip the current song."""
+        '''Removes your vote to skip the current song.'''
 
         if not self.bot.queue:
             return await ctx.send('There\'s nothing playing.')
@@ -362,7 +340,7 @@ class Music:
             pass
         else:
             self.bot.queue[0].skips.remove(ctx.author.id)
-            return await ctx.send('{} You have removed your vote to skip this song.'.format(ctx.author.mention))
+            return await ctx.send(f'{ctx.author.mention} You have removed your vote to skip this song.')
 
     @category('music')
     @commands.command()
@@ -377,11 +355,11 @@ class Music:
         if len(m) < 2000:
             await ctx.author.send(m)
         else:
-            with open('{}-likes.txt'.format(ctx.author.id), 'wb') as f:
+            with open(f'{ctx.author.id}-likes.txt', 'wb') as f:
                 f.write(m.encode('utf-8'))
-            with open('{}-likes.txt'.format(ctx.author.id), 'rb') as f:
+            with open(f'{ctx.author.id}-likes.txt', 'rb') as f:
                 await ctx.author.send(file=discord.File(f))
-            os.remove('{}-likes.txt'.format(ctx.author.id))
+            os.remove(f'{ctx.author.id}-likes.txt')
         await ctx.send(':mailbox_with_mail:')
 
     @category('music')
@@ -389,7 +367,7 @@ class Music:
     @commands.guild_only()
     @checks.in_vc()
     async def like(self, ctx):
-        """'Like' the currently playing song"""
+        ''''Like' the currently playing song'''
         if not self.bot.queue:
             await ctx.send('There\'s nothing playing.')
             return
@@ -417,7 +395,7 @@ class Music:
                     if ctx.author.id not in self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title]:
                         self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title].append(ctx.author.id)
 
-        await ctx.send('<@{}>, your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
+        await ctx.send(f'<@{ctx.author.id}>, your \'like\' for **{self.bot.queue[0].title}** was acknowledged.')
 
     @category('music')
     @commands.command(aliases=['remlike', 'dislike'])
@@ -440,14 +418,14 @@ class Music:
         # P.S.
         #  I might write my own algorithm one day to use that handles
         #  this better. :P
-        
+
         if ctx.author.id not in self.bot.likes:
-            return await ctx.send('<@{}>, you\'ve never liked any songs.'.format(ctx.author.id))
-        
+            return await ctx.send(f'<@{ctx.author.id}>, you\'ve never liked any songs.')
+
         for i in self.bot.likes[ctx.author.id]:
             i = base64.b64decode(i.encode('ascii')).decode('utf-8')
             if song.lower() in i.lower():  # Replace with better algorithm later
-                
+
                 def check(m):
                     if not m.content: return False
                     valid_message = (
@@ -457,9 +435,9 @@ class Music:
                     is_channel = m.channel == ctx.channel
                     return valid_message and is_author and is_channel
 
-                result_message = await ctx.send("I found **{}**".format(i))
+                result_message = await ctx.send(f'I found **{i}**')
 
-                confirm_message = await ctx.send("Is this ok? Type `y`, `n` or `exit`")
+                confirm_message = await ctx.send('Is this ok? Type `y`, `n` or `exit`')
                 response_message = await ctx.bot.wait_for('message', check=check)
 
                 try:
@@ -470,24 +448,24 @@ class Music:
                 if not response_message:
                     await result_message.delete()
                     await confirm_message.delete()
-                    return await ctx.send("Ok nevermind.")
+                    return await ctx.send('Ok nevermind.')
                 elif response_message.content.lower().startswith('exit'):
                     await result_message.delete()
                     await confirm_message.delete()
-                    return await ctx.send("Ok nevermind.")
+                    return await ctx.send('Ok nevermind.')
 
                 if response_message.content.lower().startswith('y'):
                     await result_message.delete()
                     await confirm_message.delete()
-                    
-                    await ctx.send("<@{}>, **{}** has been removed from your likes.".format(ctx.author.id, i))
+
+                    await ctx.send(f'<@{ctx.author.id}>, **{i}** has been removed from your likes.')
                     self.bot.likes[ctx.author.id].remove(base64.b64encode(i.encode('utf-8')).decode('ascii'))
                     self.bot.save_likes()
                     return
                 else:
                     await result_message.delete()
                     await confirm_message.delete()
-        await ctx.send("<@{}>, no song could be found. Sorry.".format(ctx.author.id))
+        await ctx.send('<@{ctx.author.id}>, no song could be found. Sorry.')
 
     @category('music')
     @commands.command()
@@ -503,7 +481,7 @@ class Music:
                 if i == 0:
                     await ctx.send(f'Your song **{entry.title}** is playing right now!')
                 else:
-                    ttp = time.strftime("%H:%M:%S", time.gmtime(max(0,ttp)))
+                    ttp = time.strftime('%H:%M:%S', time.gmtime(max(0,ttp)))
                     await ctx.send(
                         f'Your song {entry.title} is at position {i} in the queue and will be playing in {ttp}.'
                     )
@@ -518,7 +496,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def queue(self, ctx):
-        """Shows the current queue."""
+        '''Shows the current queue.'''
         if self.bot.queue:
 
             manage_channels = ctx.channel.permissions_for(ctx.author).manage_channels
@@ -528,21 +506,21 @@ class Music:
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
 
-            message = 'Now playing: **{}**'.format(playing.title)
+            message = f'Now playing: **{playing.title}**'
             if playing.user: message += ' added by {}'.format(playing.user.name)
             message += ' `[{}/{}]`'.format(
-                time.strftime("%M:%S", time.gmtime(max(0,playing_time))),  
-                time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
+                time.strftime('%M:%S', time.gmtime(max(0,playing_time))),
+                time.strftime('%M:%S', time.gmtime(max(0,playing.duration)))
                 )
             if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
             message += '\n\n'
             for n, entry in enumerate(self.bot.queue[1:]):
-                to_add = '`{}.` **{}** added by **{}**\n'.format(n + 1, entry.title, entry.user.name)
+                to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
                 if len(message) + len(to_add) > 1900:
-                    message += '*{} more*...'.format(len(self.bot.queue)-n-1)
+                    message += f'*{len(self.bot.queue)-n-1} more*...'
                     break
                 elif n > self.bot.config['public_queue_max'] and not manage_channels:
-                    message += '*{} more, ask a mod to see the entire queue*...'.format(len(self.bot.queue) - n - 1)
+                    message += f'*{len(self.bot.queue)-n-1} more, ask a mod to see the entire queue*...'
                     break
                 else:
                     message += to_add
@@ -556,18 +534,18 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def np(self, ctx):
-        """Gets the currently playing song"""
+        '''Gets the currently playing song'''
         if self.bot.queue:
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
 
-            message = 'Now playing: **{}**'.format(playing.title)
-            if playing.user: message += ' added by {}'.format(playing.user.name)
+            message = f'Now playing: **{playing.title}**'
+            if playing.user: message += f' added by {playing.user.name}'
             message += ' `[{}/{}]`'.format(
-                    time.strftime("%M:%S", time.gmtime(max(0,playing_time))), 
-                    time.strftime("%M:%S", time.gmtime(max(0,playing.duration)))
+                    time.strftime('%M:%S', time.gmtime(max(0,playing_time))),
+                    time.strftime('%M:%S', time.gmtime(max(0,playing.duration)))
                     )
             if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
         else:
@@ -583,9 +561,9 @@ class Music:
             if i.user is not None:
                 if i.user.id == ctx.author.id:
                     self.bot.queue.remove(i)
-                    await ctx.send('<@{}>, your song **{}** has been removed from the queue.'.format(ctx.author.id, i.title))
+                    await ctx.send(f'<@{ctx.author.id}>, your song **{i.title}** has been removed from the queue.')
                     return
-        await ctx.send('<@{}>, you don\'t appear to have any songs in the queue.'.format(ctx.author.id))
+        await ctx.send(f'<@{ctx.author.id}>, you don\'t appear to have any songs in the queue.')
 
     # Mod commands:
     @category('modding')
@@ -604,27 +582,27 @@ class Music:
 
         if is_int:
             if song < 1 or song >= len(self.bot.queue):
-                await ctx.send('<@{}>, song must be in range 1-{} or the title.'.format(ctx.author.id, len(self.bot.queue) - 1))
+                await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queue)-1} or the title.')
                 return
             else:
                 player = self.bot.queue.pop(song)
-                await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))
+                await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
         else:
             for i in self.bot.queue[1:]:
                 if song.lower() in i.title.lower():
                     player = i
                     break
             else:
-                await ctx.send('<@{}>, no song found matching `{}` in the queue.'.format(ctx.author.id, song))
+                await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
                 return
             self.bot.queue.remove(player)
-            await ctx.send('<@{}>, the song **{}** has been removed from the queue.'.format(ctx.author.id, player.title))
+            await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
 
     @category('bot')
     @commands.command()
     @commands.guild_only()
     async def join(self, ctx, *, channel: discord.VoiceChannel):
-        """Joins a voice channel"""
+        '''Joins a voice channel'''
 
         if ctx.voice_client is not None:
             return await ctx.voice_client.move_to(channel)
@@ -635,7 +613,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def summon(self, ctx):
-        """Join the voice channel you're in."""
+        '''Join the voice channel you're in.'''
         voice = ctx.author.voice
         if voice is None:
             return await ctx.send('You are not in a voice channel!')
@@ -646,19 +624,19 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def volume(self, ctx, volume: int):
-        """Changes the player's volume"""
+        '''Changes the player's volume'''
 
         if ctx.voice_client is None:
-            return await ctx.send("Not connected to a voice channel.")
+            return await ctx.send('Not connected to a voice channel.')
 
         ctx.voice_client.source.volume = volume / 100
-        await ctx.send("Changed volume to {}%".format(volume))
+        await ctx.send('Changed volume to {volume}%')
 
     @category('bot')
     @commands.command()
     @commands.guild_only()
     async def reconnect(self, ctx):
-        """Reconnects the voice client"""
+        '''Reconnects the voice client'''
         global should_continue
         should_continue = False  # prevent music_finished from running
         channel = ctx.voice_client.channel
@@ -670,15 +648,14 @@ class Music:
             await self.start_playing(ctx, new_source)
         else:
             await self.read_queue(ctx)
-            
+
         should_continue = True
-            
 
     @category('player')
     @commands.command()
     @commands.guild_only()
     async def resume(self, ctx):
-        """Resumes player"""
+        '''Resumes player'''
         if ctx.voice_client.is_paused():
             ctx.voice_client.resume()
             ctx.voice_client.source.start_time += time.time() - ctx.voice_client.source.pause_start
@@ -687,7 +664,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def pause(self, ctx):
-        """Pause the player"""
+        '''Pause the player'''
         if ctx.voice_client.is_playing():
             ctx.voice_client.pause()
             ctx.voice_client.source.pause_start = time.time()
@@ -696,7 +673,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def forceskip(self, ctx):
-        """Forcefully skips a song"""
+        '''Forcefully skips a song'''
         ctx.voice_client.stop()
         await ctx.send('Song forceskipped.')
 
@@ -704,7 +681,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def clear(self, ctx):
-        """Stops player and clears queue"""
+        '''Stops player and clears queue'''
         self.bot.queue = []
         ctx.voice_client.stop()
 

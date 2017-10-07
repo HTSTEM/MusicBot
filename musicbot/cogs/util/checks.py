@@ -6,13 +6,13 @@ class NotInVCError(BaseException): pass
 async def permissions_for(ctx):
     bot_perms = ctx.bot.permissions
     member = ctx.author
-        
+
     user_perms = {
         'categories': {cat.lower() for cat in bot_perms['default']['whitelist']},
         'max_song_length': bot_perms['default']['max_song_length'],
         'max_songs_queued': bot_perms['default']['max_songs_queued'],
         }
-    
+
     if not isinstance(ctx.author, Member):
         for serv_id in ctx.bot.config['bot_channels'].keys():
             guild = ctx.bot.get_guild(serv_id)
@@ -21,19 +21,19 @@ async def permissions_for(ctx):
                 break
         else:
             return user_perms
-    
+
     def add_perms(perms):
         if 'blacklist' in perms: user_perms['categories'] -= {cat.lower() for cat in perms['blacklist']}
         if 'whitelist' in perms: user_perms['categories'] |= {cat.lower() for cat in perms['whitelist']}
         if 'max_song_length' in perms: user_perms['max_song_length'] = perms['max_song_length']
         if 'max_songs_queued' in perms: user_perms['max_songs_queued'] = perms['max_songs_queued']
-        
+
     for role in sorted(member.roles):
         if role.id in bot_perms['roles']: add_perms(bot_perms['roles'][role.id])
-    
+
     if member.id in bot_perms['users']: add_perms(bot_perms['users'][member.id])
     if 'owner' in bot_perms['users'] and await owner_pred(ctx): add_perms(bot_perms['users']['owner'])
-    
+
     return user_perms
 
 #general predicates
@@ -46,13 +46,13 @@ async def mod_pred(ctx: commands.Context) -> bool:
 
 
 #checks
-#proper perms/user 
+#proper perms/user
 
 async def can_use(ctx: commands.Context) -> bool:
     perms = await permissions_for(ctx)
     cat = 'misc'
     if hasattr(ctx.command,'category'): cat = ctx.command.category.lower()
-    
+
     if cat in perms['categories']: return True
     else: return False
 

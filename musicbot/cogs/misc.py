@@ -19,11 +19,203 @@ class Misc:
     def __init__(self, bot):
         self.bot = bot
 
-    @category('misc')
+    # Comp. category
+    @category('comp')
+    @commands.command(aliases=['startcomp'])
+    @commands.guild_only()
+    async def start_comp(self, ctx):
+        '''Start a competition'''
+        if self.bot.like_comp_active:
+            return await ctx.send('There is already a competition going on.')
+        self.bot.like_comp_active = True
+        self.bot.like_comp = {}
+        await ctx.send('A like competition has been started! Woot?')
+
+    @category('comp')
+    @commands.command(aliases=['cancelcomp'])
+    @commands.guild_only()
+    async def cancel_comp(self, ctx):
+        '''Cancel any current competitions'''
+        if not self.bot.like_comp_active:
+            return await ctx.send('There isn\'t a competition going on..')
+        self.bot.like_comp_active = False
+        self.bot.like_comp = {}
+        await ctx.send('The like competition has been canceled.')
+
+    @category('comp')
+    @commands.command(aliases=['endcomp'])
+    @commands.guild_only()
+    async def end_comp(self, ctx):
+        '''End the current competition'''
+        if not self.bot.like_comp_active:
+            return await ctx.send('There isn\'t a competition going on..')
+        self.bot.like_comp_active = False
+
+        m = 'The like competition has ended.\n**Results:**\n'
+        likes = []
+        for user in self.bot.like_comp:
+            for song in self.bot.like_comp[user]:
+                likes.append((user, song, len(self.bot.like_comp[user][song])))
+        likes.sort(key=lambda x:x[2], reverse=True)
+
+        m += '\n'.join('`{}`: **{}** with the song **{}** and **{} like{}**'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '') for n, i in enumerate(likes[:10]))
+
+        self.bot.like_comp = {}
+        await ctx.send(m)
+
+    # Mederation category
+    @category('modding')
     @commands.command()
-    async def id(self, ctx):
-        '''Get your user id'''
-        await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
+    async def bldump(self, ctx):
+        '''Gets a list of every blacklisted user.'''
+
+        m = '**Blacklisted users:\n**'
+        m += '\n'.join(str(i) for i in self.bot.blacklist)
+        await ctx.author.send(m)
+        await ctx.send(':mailbox_with_mail:')
+
+    @category('modding')
+    @commands.command()
+    async def blacklist(self, ctx, mode, id):
+        """Blacklist a user from using commands"""
+        mode = mode.lower()
+        if mode not in ['+', '-', 'add', 'remove']:
+            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
+            return
+
+        try:
+            id = int(id)
+        except ValueError:
+            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
+            return
+
+        if mode in ['+', 'add']:
+            user = ctx.guild.get_member(id)
+            if user is None or not user.permissions_in(ctx.channel).manage_channels:
+                if id not in self.bot.blacklist:
+                    self.bot.blacklist.append(id)
+                    self.bot.save_bl()
+                    await ctx.send('The user with the id `{}` has been blacklisted.'.format(id))
+                else:
+                    await ctx.send('The user with the id `{}` has already been blacklisted.'.format(id))
+            else:
+                await ctx.send('You can\'t blacklist someone with `Manage Channels`. Please ask a developer if you *must* blacklist them.')
+        else:
+            if id not in self.bot.blacklist:
+                await ctx.send('`{}` isn\'t in the blacklist.'.format(id))
+            else:
+                while id in self.bot.blacklist:
+                    self.bot.blacklist.remove(id)
+                self.bot.save_bl()
+                await ctx.send('The user with the id `{}` has been removed from the blacklist.'.format(id))
+
+    # Git category
+    @category('git')
+    @commands.command(aliases=['git_pull'])
+    async def update(self, ctx):
+        '''Updates the bot from git'''
+
+        await ctx.send(':warning: Warning! Pulling from git!')
+
+        if sys.platform == 'win32':
+            process = subprocess.run('git pull', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.stdout, process.stderr
+        else:
+            process = await asyncio.create_subprocess_exec('git', 'pull', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate()
+        stdout = stdout.decode().splitlines()
+        stdout = '\n'.join('+ ' + i for i in stdout)
+        stderr = stderr.decode().splitlines()
+        stderr = '\n'.join('- ' + i for i in stderr)
+
+        await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+        await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
+
+    @category('git')
+    @commands.command()
+    async def revert(self, ctx, commit):
+        '''Revert local copy to specified commit'''
+
+        await ctx.send(':warning: Warning! Reverting!')
+
+        if sys.platform == 'win32':
+            process = subprocess.run('git reset --hard {}'.format(commit), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.stdout, process.stderr
+        else:
+            process = await asyncio.create_subprocess_exec('git', 'reset', '--hard', commit, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate()
+        stdout = stdout.decode().splitlines()
+        stdout = '\n'.join('+ ' + i for i in stdout)
+        stderr = stderr.decode().splitlines()
+        stderr = '\n'.join('- ' + i for i in stderr)
+
+        await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+        await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
+
+    @category('git')
+    @commands.command(aliases=['gitlog'])
+    async def git_log(self, ctx, commits:int = 20):
+        '''Shows the latest commits. Defaults to 20 commits.'''
+
+        if sys.platform == 'win32':
+            process = subprocess.run('git log --pretty=oneline --abbrev-commit', shell=True,
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.stdout, process.stderr
+        else:
+            process = await asyncio.create_subprocess_exec('git', 'log', '--pretty=oneline', '--abbrev-commit',
+                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate()
+        stdout = stdout.decode().splitlines()
+        stdout = '\n'.join('+ ' + i[:90] for i in stdout[:commits])
+        stderr = stderr.decode().splitlines()
+        stderr = '\n'.join('- ' + i for i in stderr)
+
+        if commits > 10:
+            try:
+                await ctx.author.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+            except discord.errors.HTTPException:
+                import os
+                with open('gitlog.txt', 'w') as log_file:
+                    log_file.write('{}\n{}'.format(stdout,stderr))
+                with open('gitlog.txt', 'r') as log_file:
+                    await ctx.author.send(file=discord.File(log_file))
+                os.remove('gitlog.txt')
+        else:
+            await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
+
+    # Bot category
+    @category('bot')
+    @commands.group(invoke_without_command=True)
+    async def reload(self, ctx, *, cog: str):
+        '''Reloads an extension'''
+        try:
+            ctx.bot.unload_extension(cog)
+            ctx.bot.load_extension(cog)
+        except Exception as e:
+            await ctx.send('Failed to load: `{}`\n```py\n{}\n```'.format(cog, e))
+        else:
+            await ctx.send('\N{OK HAND SIGN} Reloaded cog {} successfully'.format(cog))
+
+    @category('bot')
+    @reload.command(name='all')
+    async def reload_all(self, ctx):
+        '''Reloads all extensions'''
+        import importlib
+        importlib.reload(sys.modules['cogs.util'])
+        for extension in ctx.bot.extensions.copy():
+            ctx.bot.unload_extension(extension)
+            try:
+                ctx.bot.load_extension(extension)
+            except Exception as e:
+                await ctx.send('Failed to load `{}`:\n```py\n{}\n```'.format(extension, e))
+
+        await ctx.send('\N{OK HAND SIGN} Reloaded {} cogs successfully'.format(len(ctx.bot.extensions)))
+
+    @category('bot')
+    @commands.command(aliases=['exception'])
+    async def error(self, ctx, *, text: str = None):
+        '''Raises an error. Testing purposes only, please don't use.'''
+        raise Exception(text or 'Woo! Errors!')
 
     @category('bot')
     @commands.command()
@@ -79,48 +271,12 @@ class Misc:
         await ctx.send('Shutting down the bot. If the bot is in a restart loop, it will start back up.\nPlease use `{}die` in future as it is a more accurate command.'.format(ctx.prefix))
         await ctx.bot.logout()
 
-    @category('comp')
-    @commands.command(aliases=['startcomp'])
-    @commands.guild_only()
-    async def start_comp(self, ctx):
-        '''Start a competition'''
-        if self.bot.like_comp_active:
-            return await ctx.send('There is already a competition going on.')
-        self.bot.like_comp_active = True
-        self.bot.like_comp = {}
-        await ctx.send('A like competition has been started! Woot?')
-
-    @category('comp')
-    @commands.command(aliases=['cancelcomp'])
-    @commands.guild_only()
-    async def cancel_comp(self, ctx):
-        '''Cancel any current competitions'''
-        if not self.bot.like_comp_active:
-            return await ctx.send('There isn\'t a competition going on..')
-        self.bot.like_comp_active = False
-        self.bot.like_comp = {}
-        await ctx.send('The like competition has been canceled.')
-
-    @category('comp')
-    @commands.command(aliases=['endcomp'])
-    @commands.guild_only()
-    async def end_comp(self, ctx):
-        '''End the current competition'''
-        if not self.bot.like_comp_active:
-            return await ctx.send('There isn\'t a competition going on..')
-        self.bot.like_comp_active = False
-
-        m = 'The like competition has ended.\n**Results:**\n'
-        likes = []
-        for user in self.bot.like_comp:
-            for song in self.bot.like_comp[user]:
-                likes.append((user, song, len(self.bot.like_comp[user][song])))
-        likes.sort(key=lambda x:x[2], reverse=True)
-
-        m += '\n'.join('`{}`: **{}** with the song **{}** and **{} like{}**'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '') for n, i in enumerate(likes[:10]))
-
-        self.bot.like_comp = {}
-        await ctx.send(m)
+    # Misc. category
+    @category('misc')
+    @commands.command()
+    async def id(self, ctx):
+        '''Get your user id'''
+        await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
 
     @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
@@ -156,7 +312,7 @@ class Misc:
             if cmd.category.lower() not in cats:
                 cats[cmd.category.lower()] = []
             cats[cmd.category.lower()].append(cmd)
-        
+
         print(cats)
         for cat in perms['categories']:
             if cat in cats:
@@ -217,158 +373,6 @@ class Misc:
 
         os.remove(filename)
 
-    @category('modding')
-    @commands.command()
-    async def bldump(self, ctx):
-        '''Gets a list of every blacklisted user.'''
-
-        m = '**Blacklisted users:\n**'
-        m += '\n'.join(str(i) for i in self.bot.blacklist)
-        await ctx.author.send(m)
-        await ctx.send(':mailbox_with_mail:')
-
-    @category('modding')
-    @commands.command()
-    async def blacklist(self, ctx, mode, id):
-        """Blacklist a user from using commands"""
-        mode = mode.lower()
-        if mode not in ['+', '-', 'add', 'remove']:
-            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
-            return
-
-        try:
-            id = int(id)
-        except ValueError:
-            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
-            return
-
-        if mode in ['+', 'add']:
-            user = ctx.guild.get_member(id)
-            if user is None or not user.permissions_in(ctx.channel).manage_channels:
-                if id not in self.bot.blacklist:
-                    self.bot.blacklist.append(id)
-                    self.bot.save_bl()
-                    await ctx.send('The user with the id `{}` has been blacklisted.'.format(id))
-                else:
-                    await ctx.send('The user with the id `{}` has already been blacklisted.'.format(id))
-            else:
-                await ctx.send('You can\'t blacklist someone with `Manage Channels`. Please ask a developer if you *must* blacklist them.')
-        else:
-            if id not in self.bot.blacklist:
-                await ctx.send('`{}` isn\'t in the blacklist.'.format(id))
-            else:
-                while id in self.bot.blacklist:
-                    self.bot.blacklist.remove(id)
-                self.bot.save_bl()
-                await ctx.send('The user with the id `{}` has been removed from the blacklist.'.format(id))
-
-    @category('git')
-    @commands.command(aliases=['git_pull'])
-    async def update(self, ctx):
-        '''Updates the bot from git'''
-
-        await ctx.send(':warning: Warning! Pulling from git!')
-
-        if sys.platform == 'win32':
-            process = subprocess.run('git pull', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = process.stdout, process.stderr
-        else:
-            process = await asyncio.create_subprocess_exec('git', 'pull', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = await process.communicate()
-        stdout = stdout.decode().splitlines()
-        stdout = '\n'.join('+ ' + i for i in stdout)
-        stderr = stderr.decode().splitlines()
-        stderr = '\n'.join('- ' + i for i in stderr)
-
-        await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
-        await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
-        
-    @category('git')
-    @commands.command()
-    async def revert(self, ctx, commit):
-        '''Revert local copy to specified commit'''
-
-        await ctx.send(':warning: Warning! Reverting!')
-
-        if sys.platform == 'win32':
-            process = subprocess.run('git reset --hard {}'.format(commit), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = process.stdout, process.stderr
-        else:
-            process = await asyncio.create_subprocess_exec('git', 'reset', '--hard', commit, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = await process.communicate()
-        stdout = stdout.decode().splitlines()
-        stdout = '\n'.join('+ ' + i for i in stdout)
-        stderr = stderr.decode().splitlines()
-        stderr = '\n'.join('- ' + i for i in stderr)
-
-        await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
-        await ctx.send('These changes will only come into effect next time you restart the bot. Use `{0}die` or `{0}restart` now (or later) to do that.'.format(ctx.prefix))
-        
-    @category('git')
-    @commands.command(aliases=['gitlog'])
-    async def git_log(self, ctx, commits:int = 20):
-        '''Shows the latest commits. Defaults to 20 commits.'''
-
-        if sys.platform == 'win32':
-            process = subprocess.run('git log --pretty=oneline --abbrev-commit', shell=True, 
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = process.stdout, process.stderr
-        else:
-            process = await asyncio.create_subprocess_exec('git', 'log', '--pretty=oneline', '--abbrev-commit', 
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = await process.communicate()
-        stdout = stdout.decode().splitlines()
-        stdout = '\n'.join('+ ' + i[:90] for i in stdout[:commits])
-        stderr = stderr.decode().splitlines()
-        stderr = '\n'.join('- ' + i for i in stderr)
-        
-        if commits > 10:
-            try:
-                await ctx.author.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
-            except discord.errors.HTTPException:
-                import os
-                with open('gitlog.txt', 'w') as log_file:
-                    log_file.write('{}\n{}'.format(stdout,stderr))
-                with open('gitlog.txt', 'r') as log_file:
-                    await ctx.author.send(file=discord.File(log_file))
-                os.remove('gitlog.txt')
-        else:
-            await ctx.send('`Git` response: ```diff\n{}\n{}```'.format(stdout, stderr))
-
-    @category('bot')
-    @commands.group(invoke_without_command=True)
-    async def reload(self, ctx, *, cog: str):
-        '''Reloads an extension'''
-        try:
-            ctx.bot.unload_extension(cog)
-            ctx.bot.load_extension(cog)
-        except Exception as e:
-            await ctx.send('Failed to load: `{}`\n```py\n{}\n```'.format(cog, e))
-        else:
-            await ctx.send('\N{OK HAND SIGN} Reloaded cog {} successfully'.format(cog))
-
-    @category('bot')
-    @reload.command(name='all')
-    async def reload_all(self, ctx):
-        '''Reloads all extensions'''
-        import importlib
-        importlib.reload(sys.modules['cogs.util'])
-        for extension in ctx.bot.extensions.copy():
-            ctx.bot.unload_extension(extension)
-            try:
-                ctx.bot.load_extension(extension)
-            except Exception as e:
-                await ctx.send('Failed to load `{}`:\n```py\n{}\n```'.format(extension, e))
-
-        await ctx.send('\N{OK HAND SIGN} Reloaded {} cogs successfully'.format(len(ctx.bot.extensions)))
-
-        
-    @category('bot')
-    @commands.command(aliases=['exception'])
-    async def error(self, ctx, *, text: str = None):
-        '''Raises an error. Testing purposes only, please don't use.'''
-        raise Exception(text or 'Woo! Errors!')
-
     @category('misc')
     @commands.command()
     async def help(self, ctx, *args):
@@ -387,14 +391,14 @@ class Misc:
                 cats[cmd.category].append(cmd)
             cats = list(cats.keys())
             cats.sort()
-            
+
             width = max([len(cat) for cat in cats]) + 2
             d += '**Categories:**\n'
             for cat in zip(cats[0::2], cats[1::2]):
                 d += '**`{}`**{}**`{}`**\n'.format(cat[0],' ' * int(2.3 * (width-len(cat[0]))), cat[1])
             if len(cats)%2 == 1:
                 d += '**`{}`**\n'.format(cats[-1])
-            
+
             d += '\nUse `{0}help <category>` to list commands in a category.\n'.format(ctx.prefix)
             d += 'Use `{0}help <command>` to get in depth help for a command.\n'.format(ctx.prefix)
 
@@ -520,6 +524,6 @@ class Misc:
 
         d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
         return await ctx.send(d)
-    
+
 def setup(bot):
     bot.add_cog(Misc(bot))
