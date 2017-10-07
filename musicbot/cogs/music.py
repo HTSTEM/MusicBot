@@ -225,7 +225,7 @@ class Music:
         def check(m):
             if not m.content: return False
             valid_message = (
-                m.content.lower()[0] in 'yn' or
+                (m.content and m.content.lower()[0] in 'yn') or
                 m.content.lower().startswith('exit'))
             is_author = m.author == ctx.author
             is_channel = m.channel == ctx.channel
@@ -451,7 +451,7 @@ class Music:
                 def check(m):
                     if not m.content: return False
                     valid_message = (
-                        m.content.lower()[0] in 'yn' or
+                        (m.content and m.content.lower()[0] in 'yn') or
                         m.content.lower().startswith('exit'))
                     is_author = m.author == ctx.author
                     is_channel = m.channel == ctx.channel
@@ -651,7 +651,7 @@ class Music:
         if ctx.voice_client is None:
             return await ctx.send("Not connected to a voice channel.")
 
-        ctx.voice_client.source.volume = volume/100
+        ctx.voice_client.source.volume = volume / 100
         await ctx.send("Changed volume to {}%".format(volume))
 
     @category('bot')
@@ -660,13 +660,13 @@ class Music:
     async def reconnect(self, ctx):
         """Reconnects the voice client"""
         global should_continue
-        should_continue = False #prevent music_finished from running
+        should_continue = False  # prevent music_finished from running
         channel = ctx.voice_client.channel
         source = ctx.voice_client.source
         await ctx.voice_client.disconnect()
         ctx.bot.voice[ctx.guild.id] = await channel.connect()
         if source is not None:
-            new_source = source.duplicate() #gets a fresh copy, breaks if isn't done
+            new_source = source.duplicate()  # gets a fresh copy, breaks if isn't done
             await self.start_playing(ctx, new_source)
         else:
             await self.read_queue(ctx)
