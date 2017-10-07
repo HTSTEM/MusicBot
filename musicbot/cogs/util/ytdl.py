@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import youtube_dl
 
 from discord import PCMVolumeTransformer, FFmpegPCMAudio
@@ -23,6 +24,27 @@ ffmpeg_options = {
 }
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+
+
+
+def cleanup(self):
+    log = logging.getLogger('discord.player')
+
+    proc = self._process
+    if proc is None:
+        return
+
+    log.debug('Preparing to terminate ffmpeg process %s.', proc.pid)
+    proc.kill()
+    if proc.poll() is None:
+        log.debug('ffmpeg process %s has not terminated. Waiting to terminate...', proc.pid)
+        proc.communicate()
+        log.debug('ffmpeg process %s should have terminated with a return code of %s.', proc.pid, proc.returncode)
+    else:
+        log.debug('ffmpeg process %s successfully terminated with return code of %s.', proc.pid, proc.returncode)
+
+    self._process = None        
+FFmpegPCMAudio.cleanup = cleanup
 
 
 class YTDLSource(PCMVolumeTransformer):
@@ -78,3 +100,4 @@ class YTDLSource(PCMVolumeTransformer):
         return YTDLSource(
             FFmpegPCMAudio(ytdl.prepare_filename(self.data), **ffmpeg_options), 
             self.user, self.duration, data=self.data)
+    

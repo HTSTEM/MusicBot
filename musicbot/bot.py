@@ -156,16 +156,29 @@ class MusicBot(commands.AutoShardedBot):
             if vc.channel != channel: return
 
             if len(channel.members) <= 1:
-                self.logger.info(f'{channel.name} empty. Pausing.')
                 await self.wait_for_source(vc)
                 if vc.is_playing():
+                    self.logger.info(f'{channel.name} empty. Pausing.')    
                     vc.pause()
                     vc.source.pause_start = time.time()
             else:
-                self.logger.info(f'Someone appeared in {channel.name}! Resuming.')
-                if vc.is_paused():
-                    vc.resume()
-                    vc.source.start_time += time.time() - vc.source.pause_start
+                empty = True
+                
+                for m in channel.members:
+                    if (not (m.voice.deaf or m.voice.self_deaf)) and (not m.bot):
+                        empty = False
+                
+                if not empty:
+                    if vc.is_paused():
+                        self.logger.info(f'Someone appeared in {channel.name}! Resuming.')
+                        vc.resume()
+                        vc.source.start_time += time.time() - vc.source.pause_start
+                else:
+                    await self.wait_for_source(vc)
+                    if vc.is_playing():
+                        self.logger.info(f'{channel.name} empty. Pausing.')    
+                        vc.pause()
+                        vc.source.pause_start = time.time()            
 
     async def on_message(self, message):
         #if message.guild is None:  # DMs
