@@ -436,9 +436,9 @@ class Misc:
                         for p in params:
                             print(p[1], p[1].default, p[1].empty)
                             if p[1].default == p[1].empty:
-                                p_str += ' [{}]'.format(p[0])
-                            else:
                                 p_str += ' <{}>'.format(p[0])
+                            else:
+                                p_str += ' [{}]'.format(p[0])
                         d += '`{}{}{}`\n'.format(ctx.prefix, cmd.name, p_str)
                     
                     if type(cmd) == commands.core.Group:
