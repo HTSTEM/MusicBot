@@ -319,13 +319,16 @@ class Music:
     @checks.in_vc()
     async def skip(self, ctx):
         """Registers that you want to skip the current song."""
-
+        skip_grace = self.bot.config['skip_grace']
         # Register skips
         if not self.bot.queue:
-            await ctx.send('There\'s nothing playing.')
-            return
+            return await ctx.send('There\'s nothing playing.')
         elif ctx.author.id in self.bot.queue[0].skips:
             pass
+        elif time.time()-self.bot.queue[0].start_time < skip_grace:
+            return await ctx.send(
+                f'{ctx.author.mention} At least listen to {skip_grace} seconds of the song!'
+            )
         else:
             self.bot.queue[0].skips.append(ctx.author.id)
 
@@ -516,9 +519,7 @@ class Music:
         """Shows the current queue."""
         if self.bot.queue:
 
-            if len(self.bot.queue) > 10 and not ctx.channel.permissions_for(ctx.author).manage_channels:
-                message = 'The queue has {} items. Ask a mod to see the queue.\n'.format(len(self.bot.queue))
-                return await ctx.send(message)
+            manage_channels = ctx.channel.permissions_for(ctx.author).manage_channels
 
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
@@ -535,8 +536,12 @@ class Music:
             message += '\n\n'
             for n, entry in enumerate(self.bot.queue[1:]):
                 to_add = '`{}.` **{}** added by **{}**\n'.format(n + 1, entry.title, entry.user.name)
-                if len(message) + len(to_add) > 10:
+                if len(message) + len(to_add) > 1900:
                     message += '*{} more*...'.format(len(self.bot.queue)-n-1)
+                    break
+                elif n > 10 and not manage_channels:
+                    message += '*{} more, ask a mod to see the entire queue*...'.format(len(self.bot.queue) - n - 1)
+                    break
                 else:
                     message += to_add
 

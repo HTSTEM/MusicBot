@@ -1,6 +1,9 @@
 # This limits how many songs will be searched by the !search function
 search_limit: 3
 
+# How many seconds a song must be played before it can be skipped
+skip_grace: 5
+
 # The bot will auto-join and start playing in these.
 # <guild id>: <voice channel id>
 default_channels:
