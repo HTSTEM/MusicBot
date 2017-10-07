@@ -492,7 +492,7 @@ class Music:
             ttp = int(self.bot.queue[0].start_time-time.time())
         else:
             ttp = 0
-            
+
         for i, entry in enumerate(self.bot.queue):
             if ctx.author == entry.user:
                 if i == 0:
