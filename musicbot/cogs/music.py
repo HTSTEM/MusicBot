@@ -419,8 +419,8 @@ class Music:
         await ctx.send('<@{}>, your \'like\' for **{}** was acknowledged.'.format(ctx.author.id, self.bot.queue[0].title))
 
     @category('music')
-    @commands.command()
-    async def remlike(self, ctx, song):
+    @commands.command(aliases=['remlike', 'dislike'])
+    async def unlike(self, ctx, song):
         '''Remove your 'like' from a song.
         This does not affect like competitions.'''
         # Notes for any other developers:
