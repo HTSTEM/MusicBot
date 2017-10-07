@@ -483,7 +483,7 @@ class Music:
                 else:
                     ttp = time.strftime('%H:%M:%S', time.gmtime(max(0,ttp)))
                     await ctx.send(
-                        f'Your song {entry.title} is at position {i} in the queue and will be playing in {ttp}.'
+                        f'Your song **{entry.title}** is at position {i} in the queue and will be playing in {ttp}.'
                     )
                 return
             else:
