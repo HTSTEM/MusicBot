@@ -186,7 +186,7 @@ class Misc:
     # Bot category
     @category('bot')
     @commands.group(invoke_without_command=True)
-    async def reload(self, ctx, *, cog: str):
+    async def reload(self, ctx, *, cog=''):
         '''Reloads an extension'''
         try:
             ctx.bot.unload_extension(cog)
@@ -430,26 +430,29 @@ class Misc:
                     d = 'Help for command `{}`:\n'.format(cmd.name)
                     d += '\n**Usage:**\n'
 
-                    if type(cmd) != commands.core.Group:
+                    if type(cmd) != commands.core.Group or cmd.invoke_without_command:
                         params = list(cmd.clean_params.items())
                         p_str = ''
                         for p in params:
+                            print(p[1], p[1].default, p[1].empty)
                             if p[1].default == p[1].empty:
                                 p_str += ' [{}]'.format(p[0])
                             else:
                                 p_str += ' <{}>'.format(p[0])
                         d += '`{}{}{}`\n'.format(ctx.prefix, cmd.name, p_str)
-                    else:
+                    
+                    if type(cmd) == commands.core.Group:
                         d += '`{}{} '.format(ctx.prefix, cmd.name)
-                        if cmd.invoke_without_command:
-                            d += '['
-                        else:
-                            d += '<'
+                        #if cmd.invoke_without_command:
+                        #    d += '['
+                        #else:
+                        #    d += '<'
                         d += '|'.join(cmd.all_commands.keys())
-                        if cmd.invoke_without_command:
-                            d += ']`\n'
-                        else:
-                            d += '>`\n'
+                        #if cmd.invoke_without_command:
+                        #    d += ']`\n'
+                        #else:
+                        #    d += '>`\n'
+                        d += '`\n'
 
                     d += '\n**Description:**\n'
                     d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
