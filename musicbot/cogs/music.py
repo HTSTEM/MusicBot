@@ -223,6 +223,7 @@ class Music:
             await ctx.send("No videos found.")
 
         def check(m):
+            if not m.content: return False
             valid_message = (
                 m.content.lower()[0] in 'yn' or
                 m.content.lower().startswith('exit'))
@@ -448,6 +449,7 @@ class Music:
             if song.lower() in i.lower():  # Replace with better algorithm later
                 
                 def check(m):
+                    if not m.content: return False
                     valid_message = (
                         m.content.lower()[0] in 'yn' or
                         m.content.lower().startswith('exit'))
