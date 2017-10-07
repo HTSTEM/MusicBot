@@ -325,7 +325,7 @@ class Music:
             return
 
         left = num_needed - len(self.bot.queue[0].skips)
-        await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} is required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person' if left == 1 else 'people'))
+        await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person is' if left == 1 else 'people are'))
 
     @category('music')
     @commands.command()
