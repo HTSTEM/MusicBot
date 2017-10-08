@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import asyncio
+import sqlite3
 
 import discord
 
@@ -12,11 +13,14 @@ from ruamel.yaml import YAML
 from discord.ext import commands
 
 from cogs.util.checks import can_use
+from cogs.util.cache import CachedList
 
 
 class MusicBot(commands.AutoShardedBot):
     def __init__(self, command_prefix='!', *args, **kwargs):
-        self.queue = []
+        self.database = sqlite3.connect('musicbot/database.sqlite', check_same_thread=False)
+        self.queue = None
+
         self.pending = set()
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
@@ -51,7 +55,7 @@ class MusicBot(commands.AutoShardedBot):
         self.dying = False
         self.like_comp_active = False
         self.like_comp = {}
-
+        
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
 
     def save_bl(self):
@@ -200,6 +204,10 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.info(f'Guilds  : {len(self.guilds)}')
         self.logger.info(f'Users   : {len(set(self.get_all_members()))}')
         self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
+        
+        self.queue = CachedList(self, 'queue')
+        
+        await self.queue._populate()
 
         if 'default_channels' in self.config:
             class Holder:
@@ -240,6 +248,7 @@ class MusicBot(commands.AutoShardedBot):
                     self.logger.info(f' - Guild {guild_id} not found.')
             self.logger.info('Done.')
 
+            
     def run(self, token):
         cogs = ['cogs.music', 'cogs.misc']
         self.remove_command("help")

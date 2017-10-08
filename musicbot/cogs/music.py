@@ -52,6 +52,12 @@ class Music:
             await self.auto_playlist(ctx)
 
     async def auto_playlist(self, ctx):
+        if self.bot.queue:
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            await self.start_playing(ctx, self.bot.queue[0])
+            return
+    
         found = False
         while not found and not self.bot.queue:
             if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
@@ -82,6 +88,7 @@ class Music:
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
+
         if announce:
             if player.user is None:
                 c = player.channel if player.channel is not None else ctx.channel
@@ -89,6 +96,7 @@ class Music:
             else:
                 c = player.channel if player.channel is not None else ctx.channel
                 await c.send(f'<@{player.user.id}>, your song **{player.title}** is now playing in {ctx.voice_client.channel.name}!')
+
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
 
