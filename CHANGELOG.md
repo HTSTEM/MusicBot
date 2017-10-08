@@ -1,4 +1,4 @@
-# Gregory [UNCONFIRMED]
+# Gregory
 ---
 ### 2017-10-08
 #### Added
