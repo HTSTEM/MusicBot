@@ -2,21 +2,12 @@ import asyncio
 import logging
 import youtube_dl
 
+from ruamel.yaml import YAML
 from discord import PCMVolumeTransformer, FFmpegPCMAudio
 
-ytdl_format_options = {
-    'format': 'bestaudio/best',
-    'outtmpl': 'audio_cache/%(extractor)s-%(id)s-%(title)s.%(ext)s',
-    'restrictfilenames': True,
-    'noplaylist': True,
-    'nocheckcertificate': True,
-    'ignoreerrors': False,
-    'logtostderr': False,
-    'quiet': True,
-    'no_warnings': True,
-    'default_search': 'auto',
-    'source_address': '0.0.0.0' # ipv6 addresses cause issues sometimes
-}
+yaml = YAML(typ='safe')
+with open('config/ytdl.yml') as conf_file:
+    ytdl_format_options = yaml.load(conf_file)
 
 ffmpeg_options = {
     'before_options': '-nostdin',
