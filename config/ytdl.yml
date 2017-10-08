@@ -1,4 +1,4 @@
-format: bestaudio/best
+format: 249/250/140/best
 outtmpl: audio_cache/%(extractor)s-%(id)s-%(title)s.%(ext)s
 restrictfilenames: true
 noplaylist: true
