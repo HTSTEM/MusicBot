@@ -20,6 +20,7 @@ class MusicBot(commands.AutoShardedBot):
     def __init__(self, command_prefix='!', *args, **kwargs):
         self.database = sqlite3.connect('musicbot/database.sqlite', check_same_thread=False)
         self.queue = None
+        self.pqueues = {}
 
         self.pending = set()
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
@@ -206,7 +207,17 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
         
         self.queue = QueueTable(self, 'queue')
-        
+
+        cur = self.database.cursor()
+
+        dbs = cur.fetchall()
+        cur.close()
+        for db in dbs:
+            db = db[0]
+            if db != 'queue':
+                self.pqueues[db] = QueueTable(self, db)
+                await self.pqueues[db]._populate()
+
         await self.queue._populate()
 
         if 'default_channels' in self.config:

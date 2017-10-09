@@ -261,7 +261,10 @@ class Misc:
         """Shuts down the bot"""
         ctx.bot.dying = True
         await ctx.send(':wave:')
+        ctx.bot.database.commit()
+        ctx.bot.database.close()
         await ctx.bot.logout()
+        await ctx.bot.close()
 
     @category('bot')
     @commands.command()
@@ -527,6 +530,38 @@ class Misc:
 
         d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
         return await ctx.send(d)
+
+    @category('owner')
+    @commands.command(aliases=['eval'])
+    async def evaluate(self, ctx, *, code: str):
+        async with ctx.channel.typing():
+            env = {
+                'channel': ctx.channel,
+                'author': ctx.author,
+                'bot': ctx.bot,
+                'message': ctx.message,
+                'ctx': ctx,
+                'queue': ctx.bot.queue
+            }
+            env.update(globals())
+
+            try:
+                result = eval(code, env)
+
+                if inspect.isawaitable(result):
+                    result = await result
+
+                colour = 0x00FF00
+            except Exception as e:
+                result = type(e).__name__ + ': ' + str(e)
+                colour = 0xFF0000
+
+            embed = discord.Embed(colour=colour, title=code, description='```py\n{}```'.format(result))
+            embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        try:
+            await ctx.channel.send(embed=embed)
+        except discord.errors.Forbidden:
+            pass
 
 def setup(bot):
     bot.add_cog(Misc(bot))

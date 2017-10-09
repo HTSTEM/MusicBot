@@ -9,11 +9,13 @@ class QueueTable(collections.MutableSequence):
         self._name = name
         self._bot = bot
         self._database = bot.database
+        self._populated = False
         
     async def _populate(self):
         self._bot.logger.info('Populating queue from last save..')
         if self._check_table_exists(self._name):
-            res = self.execute(f"""SELECT * FROM {self._name}""")
+            res = self.execute(f"""SELECT * FROM "{self._name}" """)
+            self._bot.logger.info(res)
             temp = [None] * len(res)
             for i in res:
                 user = self._bot.get_user(i[1])
@@ -22,7 +24,10 @@ class QueueTable(collections.MutableSequence):
             for i in temp:
                 self.append(i)
         else:
-            self.execute("""CREATE TABLE {} (idx INTEGER, queuer INTEGER, url TEXT)""".format(self._name))
+            self._bot.logger.info(f'Creating table {self._name}')
+            self.execute(f"""CREATE TABLE "{self._name}" (idx INTEGER, queuer INTEGER, url TEXT)""")
+
+        self._populated = True
 
         
     def _check_table_exists(self, tablename):
@@ -45,13 +50,18 @@ class QueueTable(collections.MutableSequence):
         cur.close()
         return result
 
+    @property
+    def populated(self):
+        return self._populated
+
     def __setitem__(self, key: int, value: YTDLSource):
         self._list[key] = value
-        self.execute(f"""
-        UPDATE {self._name} 
-        SET queuer = ?, url = ?
-        WHERE idx = {key}
-        """, value.user and value.user.id, value.origin_url)
+        if self.populated:
+            self.execute(f"""
+            UPDATE "{self._name}"
+            SET queuer = ?, url = ?
+            WHERE idx = {key}
+            """, value.user and value.user.id, value.origin_url)
 
         return value
 
@@ -59,16 +69,19 @@ class QueueTable(collections.MutableSequence):
         return self._list[key]
 
     def __delitem__(self, key):
+        if key < 0: key %= len(self)
         del self._list[key]
-        self.execute(f"""
-        DELETE FROM {self._name} 
-        WHERE idx = {key}
-        """)
-        self.execute(f"""
-        UPDATE {self._name}
-        SET idx = idx - 1
-        WHERE idx > {key}
-        """)
+        if self.populated:
+            self.execute(f"""
+            DELETE FROM "{self._name}"
+            WHERE idx = {key}
+            """)
+
+            self.execute(f"""
+            UPDATE "{self._name}"
+            SET idx = idx - 1
+            WHERE idx > {key}
+            """)
         return key
 
     def __len__(self):
@@ -78,15 +91,17 @@ class QueueTable(collections.MutableSequence):
         for x in self._list:
             yield x
 
+
     def insert(self, index, item: YTDLSource):
         self._list.insert(index, item)
-        self.execute(f"""
-        UPDATE {self._name}
-        SET idx = idx + 1
-        WHERE idx >= {index}
-        """, commit = False)
+        if self.populated:
+            self.execute(f"""
+            UPDATE "{self._name}"
+            SET idx = idx + 1
+            WHERE idx >= {index}
+            """, commit = False)
 
-        self.execute(f"""
-        INSERT INTO {self._name}
-        VALUES (?, ?, ?)
-        """, min(len(self), index), item.user and item.user.id, item.origin_url)
+            self.execute(f"""
+            INSERT INTO "{self._name}"
+            VALUES (?, ?, ?)
+            """, min(len(self), index), item.user and item.user.id, item.origin_url)

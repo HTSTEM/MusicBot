@@ -49,7 +49,7 @@ class YTDLSource(PCMVolumeTransformer):
         self.origin_url = data.get('origin_url')
         self.user = user
         self.duration = duration
-        self.start_time = 0 #idk, super hacky
+        self.start_time = 0 # idk, super hacky
         self.pause_start = 0
 
         self.channel = None

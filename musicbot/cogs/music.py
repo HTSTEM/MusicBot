@@ -12,6 +12,7 @@ from discord.ext import commands
 from cogs.util import checks
 from cogs.util.ytdl import YTDLSource
 from cogs.util.categories import category
+from cogs.util.cache import QueueTable
 
 should_continue = True
 
@@ -261,6 +262,46 @@ class Music:
 
     @category('music')
     @commands.command()
+    async def personal_queue(self, ctx, *, url):
+        '''Adds something to your personal queue.'''
+        url = url.strip('<>')
+
+        if ctx.voice_client is None:
+            if ctx.author.voice:
+                self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
+            else:
+                return await ctx.send('Not connected to a voice channel.')
+
+        perms = await checks.permissions_for(ctx)
+
+        try:
+            with ctx.typing():
+                duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
+                if duration > perms['max_song_length']:
+                    await ctx.send(
+                        f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
+                    return
+
+                player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+                player.channel = ctx.channel
+        except youtube_dl.utils.DownloadError:
+            return await ctx.send('No song found.')
+        except ValueError:
+            return await ctx.send('A network error occured.')
+
+        if ctx.author.id not in self.bot.pqueues:
+            self.bot.pqueues[ctx.author.id] = QueueTable(self.bot, str(ctx.author.id))
+            await self.bot.pqueues[ctx.author.id]._populate()
+
+        self.bot.pqueues[ctx.author.id].append(player)
+        await ctx.send(
+            f'Added **{player.title}** to your personal queue.' +
+            f'It will play once you have less than {perms["max_songs_queued"]} song in the queue.'
+            )
+
+
+    @category('music')
+    @commands.command()
     @commands.guild_only()
     @checks.in_vc()
     @checks.command_processed()
@@ -410,22 +451,6 @@ class Music:
     async def unlike(self, ctx, song):
         '''Remove your 'like' from a song.
         This does not affect like competitions.'''
-        # Notes for any other developers:
-        # I was originally using levenshtein, however there is one
-        # problem I have found with it in the past:
-        # If the search string is short, then levenshtein will weight
-        # other short strings higher, even if they have nothing to do
-        # with your target. For example, if I searched 'abcd' looking
-        # for 'abcdefghijklmnop', 'jlki' would have a higher priority
-        # than what you really want. For this reason, I'm just using
-        # `in`.
-        #
-        # TL;DR:
-        # Levenshtein sucks as a general search algorithm.
-        #
-        # P.S.
-        #  I might write my own algorithm one day to use that handles
-        #  this better. :P
 
         if ctx.author.id not in self.bot.likes:
             return await ctx.send(f'<@{ctx.author.id}>, you\'ve never liked any songs.')
