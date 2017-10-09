@@ -45,9 +45,6 @@ class Music:
                     await just_played.channel.send('The song **{}** recieved **{}** like{}.'.format(
                         just_played.title, len(just_played.likes), '' if len(just_played.likes) == 1 else 's'))
 
-            if just_played.user:
-                await self.next_pqueue(ctx, just_played.user)
-
         if self.bot.queue:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
@@ -101,7 +98,8 @@ class Music:
                 await c.send(f'Now playing: **{player.title}**')
             else:
                 c = player.channel if player.channel is not None else ctx.channel
-                await c.send(f'<@{player.user.id}>, your song **{player.title}** is now playing in {ctx.voice_client.channel.name}!')
+                await c.send(f'{player.user.mention}, your song **{player.title}** is now playing in {ctx.voice_client.channel.name}!')
+                await self.next_pqueue(ctx, player.user)
 
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
