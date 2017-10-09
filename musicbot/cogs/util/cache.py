@@ -15,7 +15,6 @@ class QueueTable(collections.MutableSequence):
         self._bot.logger.info('Populating queue from last save..')
         if self._check_table_exists(self._name):
             res = self.execute(f"""SELECT * FROM "{self._name}" """)
-            self._bot.logger.info(res)
             temp = [None] * len(res)
             for i in res:
                 user = self._bot.get_user(i[1])
