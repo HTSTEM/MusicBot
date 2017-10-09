@@ -1,13 +1,9 @@
 import collections
-import threading
-import asyncio
-import pickle
-import time
 
 from .ytdl import YTDLSource
 
 
-class CachedList(collections.MutableSequence):
+class QueueTable(collections.MutableSequence):
     def __init__(self, bot, name):
         self._list = []
         self._name = name
@@ -16,22 +12,18 @@ class CachedList(collections.MutableSequence):
         
     async def _populate(self):
         self._bot.logger.info('Populating queue from last save..')
-    
-        if self._name == 'queue':
-            if self._check_table_exists(self._name):
-                cur = self._database.cursor()
-                cur.execute("""SELECT * FROM {}""".format(self._name))
-                
-                res = cur.fetchall()
-                temp = [None] * len(res)
-                for i in res:
-                    user = self._bot.get_user(i[1])
-                    
-                    temp[i[0]] = await YTDLSource.from_url(i[2], user=user)
-                cur.close()
-                self._database.commit()
-                for i in temp:
-                    self.append(i)
+        if self._check_table_exists(self._name):
+            res = self.execute(f"""SELECT * FROM {self._name}""")
+            temp = [None] * len(res)
+            for i in res:
+                user = self._bot.get_user(i[1])
+                temp[i[0]] = await YTDLSource.from_url(i[2], user=user)
+
+            for i in temp:
+                self.append(i)
+        else:
+            self.execute("""CREATE TABLE {} (idx INTEGER, queuer INTEGER, url TEXT)""".format(self._name))
+
         
     def _check_table_exists(self, tablename):
         dbcur = self._database.cursor()
@@ -44,44 +36,57 @@ class CachedList(collections.MutableSequence):
 
         dbcur.close()
         return False
-        
-    def _save(self):
+
+    def execute(self, command, *args, commit=True):
         cur = self._database.cursor()
-        
-        if self._check_table_exists(self._name):
-            cur.execute("""DROP TABLE {}""".format(self._name))
-        
-        if self._name == 'queue':
-            cur.execute("""CREATE TABLE {} (idx INTEGER, queuer INTEGER, url TEXT)""".format(self._name))
-            
-            n = 0
-            for i in self:
-                if i.user:
-                    cur.execute("""INSERT INTO {} (idx, queuer, url) VALUES (?, ?, ?)""".format(self._name),
-                        (
-                         n, i.user.id, i.origin_url
-                        ))
-                    n += 1
-            
-            self._database.commit()
-        else:
-            self._bot.logger.warning(f'WARNING! TRIED TO SAVE CACHED LIST {self._name} BUT NOT RECOGNISED!')
-            
+        cur.execute(command, args)
+        result = cur.fetchall()
+        if commit: self._database.commit()
         cur.close()
-        
+        return result
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: int, value: YTDLSource):
         self._list[key] = value
-        return self._save()
+        self.execute(f"""
+        UPDATE {self._name} 
+        SET queuer = ?, url = ?
+        WHERE idx = {key}
+        """, value.user and value.user.id, value.origin_url)
 
-    def __getitem__(self, key):
+        return value
+
+    def __getitem__(self, key: int):
         return self._list[key]
 
     def __delitem__(self, key):
         del self._list[key]
-        return self._save()
+        self.execute(f"""
+        DELETE FROM {self._name} 
+        WHERE idx = {key}
+        """)
+        self.execute(f"""
+        UPDATE {self._name}
+        SET idx = idx - 1
+        WHERE idx > {key}
+        """)
+        return key
 
-    def __len__(self): return len(self._list)
-    def insert(self, index, item):
+    def __len__(self):
+        return len(self._list)
+
+    def __iter__(self):
+        for x in self._list:
+            yield x
+
+    def insert(self, index, item: YTDLSource):
         self._list.insert(index, item)
-        return self._save()
+        self.execute(f"""
+        UPDATE {self._name}
+        SET idx = idx + 1
+        WHERE idx >= {index}
+        """, commit = False)
+
+        self.execute(f"""
+        INSERT INTO {self._name}
+        VALUES (?, ?, ?)
+        """, min(len(self), index), item.user and item.user.id, item.origin_url)

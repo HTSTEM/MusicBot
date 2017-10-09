@@ -523,7 +523,8 @@ class Music:
             if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
             message += '\n\n'
             for n, entry in enumerate(self.bot.queue[1:]):
-                to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
+                if entry.user: to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
+                else: to_add = f'`{n+1}.` **{entry.title}**\n'
                 if len(message) + len(to_add) > 1900:
                     message += f'*{len(self.bot.queue)-n-1} more*...'
                     break
