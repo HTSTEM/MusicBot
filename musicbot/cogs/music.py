@@ -479,6 +479,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def minewhen(self, ctx):
+        '''Tells you when your song will play'''
         if self.bot.queue:
             ttp = int(self.bot.queue[0].start_time-time.time())
         else:
