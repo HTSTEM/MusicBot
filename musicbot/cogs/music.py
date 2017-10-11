@@ -729,9 +729,13 @@ class Music:
         '''Reconnects the voice client'''
         global should_continue
         should_continue = False  # prevent music_finished from running
-        channel = ctx.voice_client.channel
-        source = ctx.voice_client.source
-        await ctx.voice_client.disconnect()
+        if ctx.voice_client is not None:
+            channel = ctx.voice_client.channel
+            source = ctx.voice_client.source
+            await ctx.voice_client.disconnect()
+        else:
+            channel = ctx.bot.get_channel(ctx.bot.config['default_channels'][ctx.guild.id])
+            source = None
         ctx.bot.voice[ctx.guild.id] = await channel.connect()
         if source is not None:
             new_source = source.duplicate()  # gets a fresh copy, breaks if isn't done

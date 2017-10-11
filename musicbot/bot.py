@@ -243,8 +243,11 @@ class MusicBot(commands.AutoShardedBot):
                         self.logger.info(f'   - Channel \'{channel.name}\' found, but is not voice channel.')
                     else:
                         self.logger.info(f'   - Channel \'{channel.name}\' found. Joining.')
-                        vc = await channel.connect()
-                        self.voice[guild_id] = vc
+                        try:
+                            vc = await channel.connect()
+                            self.voice[guild_id] = vc
+                        except discord.ClientException:
+                            pass
 
                         self.logger.info('   - Joined. Starting auto-playlist.')
                         cctx = Holder()
