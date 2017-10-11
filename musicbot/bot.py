@@ -13,14 +13,13 @@ from ruamel.yaml import YAML
 from discord.ext import commands
 
 from cogs.util.checks import can_use
-from cogs.util.cache import QueueTable
+from cogs.util.cache import CachedList
 
 
 class MusicBot(commands.AutoShardedBot):
     def __init__(self, command_prefix='!', *args, **kwargs):
         self.database = sqlite3.connect('musicbot/database.sqlite', check_same_thread=False)
         self.queue = None
-        self.pqueues = {}
 
         self.pending = set()
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
@@ -206,23 +205,8 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.info(f'Users   : {len(set(self.get_all_members()))}')
         self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
         
-        self.queue = QueueTable(self, 'queue')
-
-        cur = self.database.cursor()
-        cur.execute("SELECT name FROM sqlite_master")
-        dbs = cur.fetchall()
-        self.logger.info(dbs)
-        cur.close()
-        for db in dbs:
-            try:
-                db = int(db[0])
-            except ValueError:
-                continue
-            if db != 'queue':
-                db = int(db)
-                self.pqueues[db] = QueueTable(self, str(db))
-                await self.pqueues[db]._populate()
-
+        self.queue = CachedList(self, 'queue')
+        
         await self.queue._populate()
 
         if 'default_channels' in self.config:

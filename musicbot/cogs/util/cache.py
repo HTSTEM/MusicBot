@@ -1,33 +1,37 @@
 import collections
+import threading
+import asyncio
+import pickle
+import time
 
 from .ytdl import YTDLSource
 
 
-class QueueTable(collections.MutableSequence):
+class CachedList(collections.MutableSequence):
     def __init__(self, bot, name):
         self._list = []
         self._name = name
         self._bot = bot
         self._database = bot.database
-        self._populated = False
         
     async def _populate(self):
         self._bot.logger.info('Populating queue from last save..')
-        if self._check_table_exists(self._name):
-            res = self.execute(f"""SELECT * FROM "{self._name}" """)
-            temp = [None] * len(res)
-            for i in res:
-                user = self._bot.get_user(i[1])
-                temp[i[0]] = await YTDLSource.from_url(i[2], user=user)
-
-            for i in temp:
-                self.append(i)
-        else:
-            self._bot.logger.info(f'Creating table {self._name}')
-            self.execute(f"""CREATE TABLE "{self._name}" (idx INTEGER, queuer INTEGER, url TEXT)""")
-
-        self._populated = True
-
+    
+        if self._name == 'queue':
+            if self._check_table_exists(self._name):
+                cur = self._database.cursor()
+                cur.execute("""SELECT * FROM {}""".format(self._name))
+                
+                res = cur.fetchall()
+                temp = [None] * len(res)
+                for i in res:
+                    user = self._bot.get_user(i[1])
+                    
+                    temp[i[0]] = await YTDLSource.from_url(i[2], user=user)
+                cur.close()
+                self._database.commit()
+                for i in temp:
+                    self.append(i)
         
     def _check_table_exists(self, tablename):
         dbcur = self._database.cursor()
@@ -40,67 +44,44 @@ class QueueTable(collections.MutableSequence):
 
         dbcur.close()
         return False
-
-    def execute(self, command, *args, commit=True):
+        
+    def _save(self):
         cur = self._database.cursor()
-        cur.execute(command, args)
-        result = cur.fetchall()
-        if commit: self._database.commit()
+        
+        if self._check_table_exists(self._name):
+            cur.execute("""DROP TABLE {}""".format(self._name))
+        
+        if self._name == 'queue':
+            cur.execute("""CREATE TABLE {} (idx INTEGER, queuer INTEGER, url TEXT)""".format(self._name))
+            
+            n = 0
+            for i in self:
+                if i.user:
+                    cur.execute("""INSERT INTO {} (idx, queuer, url) VALUES (?, ?, ?)""".format(self._name),
+                        (
+                         n, i.user.id, i.origin_url
+                        ))
+                    n += 1
+            
+            self._database.commit()
+        else:
+            self._bot.logger.warning(f'WARNING! TRIED TO SAVE CACHED LIST {self._name} BUT NOT RECOGNISED!')
+            
         cur.close()
-        return result
+        
 
-    @property
-    def populated(self):
-        return self._populated
-
-    def __setitem__(self, key: int, value: YTDLSource):
+    def __setitem__(self, key, value):
         self._list[key] = value
-        if self.populated:
-            self.execute(f"""
-            UPDATE "{self._name}"
-            SET queuer = ?, url = ?
-            WHERE idx = {key}
-            """, value.user and value.user.id, value.origin_url)
+        return self._save()
 
-        return value
-
-    def __getitem__(self, key: int):
+    def __getitem__(self, key):
         return self._list[key]
 
     def __delitem__(self, key):
-        if key < 0: key %= len(self)
         del self._list[key]
-        if self.populated:
-            self.execute(f"""
-            DELETE FROM "{self._name}"
-            WHERE idx = {key}
-            """)
+        return self._save()
 
-            self.execute(f"""
-            UPDATE "{self._name}"
-            SET idx = idx - 1
-            WHERE idx > {key}
-            """)
-        return key
-
-    def __len__(self):
-        return len(self._list)
-
-    def __iter__(self):
-        for x in self._list:
-            yield x
-
-
-    def insert(self, index, item: YTDLSource):
+    def __len__(self): return len(self._list)
+    def insert(self, index, item):
         self._list.insert(index, item)
-        if self.populated:
-            self.execute(f"""
-            UPDATE "{self._name}"
-            SET idx = idx + 1
-            WHERE idx >= {index}
-            """, commit = False)
-
-            self.execute(f"""
-            INSERT INTO "{self._name}"
-            VALUES (?, ?, ?)
-            """, min(len(self), index), item.user and item.user.id, item.origin_url)
+        return self._save()
