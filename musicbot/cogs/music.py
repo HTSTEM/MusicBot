@@ -112,7 +112,7 @@ class Music:
         except IndexError:
             return
 
-        if self.get_queued(user) > perms['max_songs_queued']:
+        if self.get_queued(user) >= perms['max_songs_queued']:
             return await ctx.send(
                 f'{user.mention} your song {player.title} will be queued ' +
                 f'once you have less than {perms["max_songs_queued"]} song in the queue.'

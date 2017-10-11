@@ -209,13 +209,18 @@ class MusicBot(commands.AutoShardedBot):
         self.queue = QueueTable(self, 'queue')
 
         cur = self.database.cursor()
-
+        cur.execute("SELECT name FROM sqlite_master")
         dbs = cur.fetchall()
+        self.logger.info(dbs)
         cur.close()
         for db in dbs:
-            db = db[0]
+            try:
+                db = int(db[0])
+            except ValueError:
+                continue
             if db != 'queue':
-                self.pqueues[db] = QueueTable(self, db)
+                db = int(db)
+                self.pqueues[db] = QueueTable(self, str(db))
                 await self.pqueues[db]._populate()
 
         await self.queue._populate()
