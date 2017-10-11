@@ -6,3 +6,4 @@ config/config.yml
 error.txt
 musicbot/database.sqlite
 .idea/*
+
