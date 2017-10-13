@@ -52,6 +52,12 @@ class Music:
             await self.auto_playlist(ctx)
 
     async def auto_playlist(self, ctx):
+        if self.bot.queue:
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+            await self.start_playing(ctx, self.bot.queue[0])
+            return
+    
         found = False
         while not found and not self.bot.queue:
             if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
@@ -82,6 +88,7 @@ class Music:
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
+
         if announce:
             if player.user is None:
                 c = player.channel if player.channel is not None else ctx.channel
@@ -89,6 +96,7 @@ class Music:
             else:
                 c = player.channel if player.channel is not None else ctx.channel
                 await c.send(f'<@{player.user.id}>, your song **{player.title}** is now playing in {ctx.voice_client.channel.name}!')
+
         game = discord.Game(name=player.title)
         await self.bot.change_presence(game=game)
 
@@ -471,6 +479,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     async def minewhen(self, ctx):
+        '''Tells you when your song will play'''
         if self.bot.queue:
             ttp = int(self.bot.queue[0].start_time-time.time())
         else:
@@ -639,9 +648,13 @@ class Music:
         '''Reconnects the voice client'''
         global should_continue
         should_continue = False  # prevent music_finished from running
-        channel = ctx.voice_client.channel
-        source = ctx.voice_client.source
-        await ctx.voice_client.disconnect()
+        if ctx.voice_client is not None:
+            channel = ctx.voice_client.channel
+            source = ctx.voice_client.source
+            await ctx.voice_client.disconnect()
+        else:
+            channel = ctx.bot.get_channel(ctx.bot.config['default_channels'][ctx.guild.id])
+            source = None
         ctx.bot.voice[ctx.guild.id] = await channel.connect()
         if source is not None:
             new_source = source.duplicate()  # gets a fresh copy, breaks if isn't done
