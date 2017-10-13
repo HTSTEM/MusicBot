@@ -20,6 +20,11 @@ class MusicBot(commands.AutoShardedBot):
         self.pending = set()
         logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
         self.logger = logging.getLogger('bot')
+        hdlr = logging.FileHandler('musicbot.log')
+        formatter = logging.Formatter('[%(name)s %(levelname)s] %(message)s')
+        hdlr.setFormatter(formatter)
+        self.logger.addHandler(hdlr) 
+        
         self.autoplaylist = open('config/autoplaylist.txt').read().split('\n')
         self.jingles = open('config/jingles.txt').read().split('\n')
 
