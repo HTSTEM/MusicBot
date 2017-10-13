@@ -22,13 +22,14 @@ class MusicBot(commands.AutoShardedBot):
         self.queue = None
 
         self.pending = set()
-        logging.basicConfig(level=logging.INFO, format='[%(name)s %(levelname)s] %(message)s')
+        logging.basicConfig(
+            level=logging.INFO,
+            format='[%(name)s %(levelname)s] %(message)s',
+            handlers=[logging.FileHandler('musicbot.log'),
+                      logging.StreamHandler()]
+              )
         self.logger = logging.getLogger('bot')
-        hdlr = logging.FileHandler('musicbot.log')
-        formatter = logging.Formatter('[%(name)s %(levelname)s] %(message)s')
-        hdlr.setFormatter(formatter)
-        self.logger.addHandler(hdlr) 
-        
+
         self.autoplaylist = open('config/autoplaylist.txt').read().split('\n')
         self.jingles = open('config/jingles.txt').read().split('\n')
 
@@ -60,7 +61,7 @@ class MusicBot(commands.AutoShardedBot):
         self.dying = False
         self.like_comp_active = False
         self.like_comp = {}
-        
+
         super().__init__(command_prefix=command_prefix, *args, **kwargs)
 
     def save_bl(self):
@@ -167,16 +168,16 @@ class MusicBot(commands.AutoShardedBot):
             if len(channel.members) <= 1:
                 await self.wait_for_source(vc)
                 if vc.is_playing():
-                    self.logger.info(f'{channel.name} empty. Pausing.')    
+                    self.logger.info(f'{channel.name} empty. Pausing.')
                     vc.pause()
                     vc.source.pause_start = time.time()
             else:
                 empty = True
-                
+
                 for m in channel.members:
                     if (not (m.voice.deaf or m.voice.self_deaf)) and (not m.bot):
                         empty = False
-                
+
                 if not empty:
                     if vc.is_paused():
                         self.logger.info(f'Someone appeared in {channel.name}! Resuming.')
@@ -185,9 +186,9 @@ class MusicBot(commands.AutoShardedBot):
                 else:
                     await self.wait_for_source(vc)
                     if vc.is_playing():
-                        self.logger.info(f'{channel.name} empty. Pausing.')    
+                        self.logger.info(f'{channel.name} empty. Pausing.')
                         vc.pause()
-                        vc.source.pause_start = time.time()            
+                        vc.source.pause_start = time.time()
 
     async def on_message(self, message):
         #if message.guild is None:  # DMs
@@ -209,9 +210,9 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.info(f'Guilds  : {len(self.guilds)}')
         self.logger.info(f'Users   : {len(set(self.get_all_members()))}')
         self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
-        
+
         self.queue = CachedList(self, 'queue')
-        
+
         await self.queue._populate()
 
         if 'default_channels' in self.config:
@@ -256,7 +257,7 @@ class MusicBot(commands.AutoShardedBot):
                     self.logger.info(f' - Guild {guild_id} not found.')
             self.logger.info('Done.')
 
-            
+
     def run(self, token):
         cogs = ['cogs.music', 'cogs.misc']
         self.remove_command("help")
