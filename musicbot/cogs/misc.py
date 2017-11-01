@@ -1,9 +1,7 @@
 import subprocess
 import asyncio
-import inspect
 import base64
 import sys
-import re
 import os
 
 
@@ -11,8 +9,8 @@ import discord
 
 from discord.ext import commands
 
-from cogs.util import checks
-from cogs.util.categories import category
+from .util import checks
+from .util.categories import category
 
 
 class Misc:
@@ -375,6 +373,7 @@ class Misc:
 
     @category('misc')
     @commands.command()
+    @commands.guild_only()
     async def help(self, ctx, *args):
         '''This help message'''
         cmds = {i for i in ctx.bot.all_commands.values()}

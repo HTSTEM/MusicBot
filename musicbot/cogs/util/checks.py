@@ -1,4 +1,5 @@
-from discord import Member
+import discord
+
 from discord.ext import commands
 
 class NotInVCError(BaseException): pass
@@ -13,7 +14,7 @@ async def permissions_for(ctx):
         'max_songs_queued': bot_perms['default']['max_songs_queued'],
         }
 
-    if not isinstance(ctx.author, Member):
+    if not isinstance(ctx.author, discord.Member):
         for serv_id in ctx.bot.config['bot_channels'].keys():
             guild = ctx.bot.get_guild(serv_id)
             if guild is not None and guild.get_member(ctx.author.id) is not None:

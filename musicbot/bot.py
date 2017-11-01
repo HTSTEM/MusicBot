@@ -119,6 +119,10 @@ class MusicBot(commands.AutoShardedBot):
             self.logger.error(''.join(lines))
             await ctx.send(f'{exception.original}, the devs have been notified.')
             await self.notify_devs(''.join(lines), ctx)
+
+        elif isinstance(exception, commands.NoPrivateMessage):
+            return
+
         elif isinstance(exception, commands.CheckFailure):
             if 'bot_in_vc' in exception.args:
                 await ctx.send('I\'m not in a voice channel on this server.')

@@ -1,8 +1,4 @@
 import collections
-import threading
-import asyncio
-import pickle
-import time
 
 from .ytdl import YTDLSource
 
