@@ -114,6 +114,8 @@ class MusicBot(commands.AutoShardedBot):
                 try: await ctx.send(f'Permissions error: `{exception}`')
                 except discord.Forbidden: pass
                 return
+            if isinstance(exception.original, discord.ClientException):
+                return await ctx.send(str(exception.original))
 
             lines = traceback.format_exception(type(exception), exception, exception.__traceback__)
             self.logger.error(''.join(lines))
@@ -149,6 +151,7 @@ class MusicBot(commands.AutoShardedBot):
 
     async def on_error(self, event_method, *args, **kwargs):
         info = sys.exc_info()
+        if info[0] == discord.ClientException: return
         info = traceback.format_exception(*info, chain=False)
         self.logger.error('Unhandled exception - {}'.format(''.join(info)))
         await self.notify_devs(''.join(info))
