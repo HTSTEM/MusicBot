@@ -100,20 +100,19 @@ class Music:
         if not user: return queue.append(song)
         queued = self.get_queued(user) + 1
         users = {}
+
         for n, entry in reversed(list(enumerate(queue))):
             if entry.user and entry.user.id != user.id:
-                if entry.user.id not in users:
-                    users[entry.user.id] = self.get_queued(entry.user, before=n)
-                else:
-                    users[entry.user.id] -= 1
+                users[entry.user.id] = self.get_queued(entry.user, before=n+1)
 
-            if users and all(queued >= x for x in users.values()):
-                if any(queued > x for x in users.values()): n += 1
-                queue.insert(n, song)
-                return n
+            if all(queued >= x for x in users.values()):
+                queue.insert(n+1, song)
+                return n+1
+
+            if entry.user.id in users: users[entry.user.id] -= 1
 
         queue.append(song)
-        return len(queue)
+        return len(queue) - 1
 
 
     async def start_playing(self, ctx, player, announce=True):
