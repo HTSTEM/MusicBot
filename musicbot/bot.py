@@ -13,7 +13,7 @@ from ruamel.yaml import YAML
 from discord.ext import commands
 
 from cogs.util.checks import can_use
-from cogs.util.cache import CachedList
+from cogs.util.cache import QueueTable
 
 
 class MusicBot(commands.AutoShardedBot):
@@ -215,7 +215,7 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.info(f'Users   : {len(set(self.get_all_members()))}')
         self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
 
-        self.queue = CachedList(self, 'queue')
+        self.queue = QueueTable(self, 'queue')
 
         await self.queue._populate()
 

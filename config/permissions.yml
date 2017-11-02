@@ -12,7 +12,7 @@ default:
   max_song_length: 900
 
   # This is the number of songs that a user may have in the queue at one
-  max_songs_queued: 1
+  max_songs_queued: 100
 
 # add specific perms for users here
 # perms stated under users have precedence of perms under roles

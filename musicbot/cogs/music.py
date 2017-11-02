@@ -9,9 +9,9 @@ import discord
 
 from discord.ext import commands
 
-from cogs.util import checks
-from cogs.util.ytdl import YTDLSource
-from cogs.util.categories import category
+from .util import checks
+from .util.ytdl import YTDLSource
+from .util.categories import category
 
 should_continue = True
 
@@ -85,6 +85,37 @@ class Music:
 
             await self.start_playing(ctx, player, announce=False)
 
+    def get_queued(self, user, after=0, before=None) -> int:
+        queued = 0
+        for i in self.bot.queue[after:before]:
+            if i.user is not None:
+                if i.user.id == user.id:
+                    queued += 1
+
+        return queued
+
+    def insert_song(self, song):
+        queue = self.bot.queue
+        user = song.user
+        if not user: return queue.append(song)
+        queued = self.get_queued(user) + 1
+        users = {}
+        for n, entry in reversed(list(enumerate(queue))):
+            if entry.user and entry.user.id != user.id:
+                if entry.user.id not in users:
+                    users[entry.user.id] = self.get_queued(entry.user, before=n)
+                else:
+                    users[entry.user.id] -= 1
+
+            if users and all(queued >= x for x in users.values()):
+                if any(queued > x for x in users.values()): n += 1
+                queue.insert(n, song)
+                return n
+
+        queue.append(song)
+        return len(queue)
+
+
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
         ctx.voice_client.play(player, after=lambda e: self.music_finished(e, ctx))
@@ -119,18 +150,14 @@ class Music:
         perms = await checks.permissions_for(ctx)
 
         # Check the queue limit before bothering to download the song
-        queued = 0
-        for i in self.bot.queue[1:]:
-            if i.user is not None:
-                if i.user.id == ctx.author.id:
-                    queued += 1
+        queued = self.get_queued(ctx.author)
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
             return
 
         try:
             with ctx.typing():
-                duration = await YTDLSource.get_duration(url, ctx.author, loop=self.bot.loop)
+                duration = await YTDLSource.get_duration(url, loop=self.bot.loop)
                 if duration > perms['max_song_length']:
                     await ctx.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
                     return
@@ -152,8 +179,9 @@ class Music:
 
             await self.start_playing(ctx, player)
         else:
+            position = self.insert_song(player)
             ttp = 0
-            for i in self.bot.queue:
+            for i in self.bot.queue[:position]:
                 ttp += i.duration
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
@@ -161,12 +189,10 @@ class Music:
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
             ttp -= playing_time
 
-            self.bot.queue.append(player)
-
             await ctx.send(
                 'Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
                     player.title,
-                    len(self.bot.queue) - 1,
+                    position,
                     time.strftime('%H:%M:%S', time.gmtime(max(0,ttp)))
                     ))
 
@@ -180,11 +206,8 @@ class Music:
 
         perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
-        queued = 0
-        for i in self.bot.queue[1:]:
-            if i.user is not None:
-                if i.user.id == ctx.author.id:
-                    queued += 1
+        queued = self.get_queued(ctx.author)
+
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
             return
@@ -268,11 +291,8 @@ class Music:
         '''Enqueues a jingle'''
         perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
-        queued = 0
-        for i in self.bot.queue[1:]:
-            if i.user is not None:
-                if i.user.id == ctx.author.id:
-                    queued += 1
+        queued = self.get_queued(ctx.author)
+
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
             return

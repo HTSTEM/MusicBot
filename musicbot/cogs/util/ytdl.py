@@ -57,7 +57,7 @@ class YTDLSource(PCMVolumeTransformer):
         self.likes = []
 
     @classmethod
-    async def get_duration(cls, url, user=None, *, loop=None):    
+    async def get_duration(cls, url, *, loop=None):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
         duration = 0
