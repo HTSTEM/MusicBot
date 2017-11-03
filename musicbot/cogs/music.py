@@ -156,13 +156,19 @@ class Music:
 
         try:
             with ctx.typing():
-                duration = await YTDLSource.get_duration(url, loop=self.bot.loop)
-                if duration > perms['max_song_length']:
-                    await ctx.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
-                    return
+                data = await YTDLSource.data_for(url, loop=self.bot.loop)
+                if await YTDLSource.is_playlist(url, data=data, loop=self.bot.loop):
+                    await ctx.send('Playlist detected! Queueing all songs.')
+                    for url, title in await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop):
+                        await self.play.callback(self=self, ctx=ctx, url=url)
+                    return await ctx.send('Finished queueing playlist.')
+                else:
+                    duration = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
+                    if duration > perms['max_song_length']:
+                        await ctx.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
+                        return
 
-                player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
-                player.channel = ctx.channel
+                    player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
         except youtube_dl.utils.DownloadError:
             return await ctx.send('No song found.')
         except ValueError:

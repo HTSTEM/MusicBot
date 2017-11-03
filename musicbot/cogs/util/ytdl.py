@@ -57,9 +57,10 @@ class YTDLSource(PCMVolumeTransformer):
         self.likes = []
 
     @classmethod
-    async def get_duration(cls, url, *, loop=None):
+    async def get_duration(cls, url, *, data=None, loop=None):
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+        if data is None:
+            data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
         duration = 0
         if 'entries' in data and data['entries']:
             # take first item from a playlist
@@ -68,6 +69,31 @@ class YTDLSource(PCMVolumeTransformer):
         if 'duration' in data: duration = data['duration']
 
         return duration
+
+    @classmethod
+    async def is_playlist(cls, url, *, data=None, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        if data is None:
+            data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+
+        return 'entries' in data
+    
+    @classmethod
+    async def load_playlist(cls, url, user=None, *, data=None, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        if data is None:
+            data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+
+        if 'entries' not in data:
+            return []
+        
+        return [(entry.get('webpage_url'), entry.get('title')) for entry in data['entries']]
+
+    @classmethod
+    async def data_for(cls, url, *, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+        return data
 
     @classmethod
     async def from_url(cls, url, user=None, *, loop=None):
