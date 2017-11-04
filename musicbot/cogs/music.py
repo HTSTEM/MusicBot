@@ -137,19 +137,19 @@ class Music:
         queued = self.get_queued(ctx.author)
         if queued >= perms['max_songs_queued']:
             await channel.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
-            return
+            return 'Max songs'
 
         with ctx.typing():
             if data is None:
                 data = await YTDLSource.data_for(url, loop=self.bot.loop)
             if await YTDLSource.is_playlist(url, data=data, loop=self.bot.loop):
-                return
+                return 'Is playlist'
 
             duration = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
 
             if duration > perms['max_song_length']:
                 await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
-                return
+                return 'Max length'
 
             player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
 
@@ -226,8 +226,13 @@ class Music:
 
                     await ctx.send(f'Queueing {len(songs)} songs from **{pl_title}**!')
 
+                    print(songs)
+
                     for url, title in songs:
-                        await self.queue_url(url, ctx, dm=True, data=data)
+                        try:
+                            await self.queue_url(url, ctx, dm=True)
+                        except Exception as e:
+                            await ctx.send(str(e))
 
                     return await ctx.send('Finished queueing playlist.')
                 else:
