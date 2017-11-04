@@ -158,8 +158,16 @@ class Music:
             with ctx.typing():
                 data = await YTDLSource.data_for(url, loop=self.bot.loop)
                 if await YTDLSource.is_playlist(url, data=data, loop=self.bot.loop):
-                    await ctx.send('Playlist detected! Queueing all songs.')
-                    for url, title in await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop):
+                    pl_title, songs = await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop)
+
+                    if len(songs) > perms['max_playlist_length']:
+                        if len(songs) == 56:
+                            return await ctx.send(f'It appears you have tried to queue a YouTube mix. Try putting some of the songs into a playlist that\'s got a maximum of {perms["max_playlist_length"]} songs.')
+                        return await ctx.send(f'You can queue a maximun of {perms["max_playlist_length"]} songs from a playlist at once. ({len(songs)})')
+
+                    await ctx.send(f'Queueing all songs from **{pl_title}**!')
+                    
+                    for title, url in songs:
                         await self.play.callback(self=self, ctx=ctx, url=url)
                     return await ctx.send('Finished queueing playlist.')
                 else:

@@ -87,7 +87,7 @@ class YTDLSource(PCMVolumeTransformer):
         if 'entries' not in data:
             return []
         
-        return [(entry.get('webpage_url'), entry.get('title')) for entry in data['entries']]
+        return data.get('title'), [(entry.get('webpage_url'), entry.get('title')) for entry in data['entries']]
 
     @classmethod
     async def data_for(cls, url, *, loop=None):
