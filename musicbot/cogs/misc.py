@@ -439,7 +439,7 @@ class Misc:
                             else:
                                 p_str += ' [{}]'.format(p[0])
                         d += '`{}{}{}`\n'.format(ctx.prefix, cmd.name, p_str)
-                    
+
                     if type(cmd) == commands.core.Group:
                         d += '`{}{} '.format(ctx.prefix, cmd.name)
                         #if cmd.invoke_without_command:

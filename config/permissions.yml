@@ -14,6 +14,9 @@ default:
   # This is the number of songs that a user may have in the queue at one
   max_songs_queued: 100
 
+  # This is the maximum length of a playlist that can be queued
+  max_playlist_length: 15
+
 # add specific perms for users here
 # perms stated under users have precedence of perms under roles
 users:
@@ -28,10 +31,14 @@ users:
       - owner
       - git
       #owner isn't used yet, but might be in the future
-    
+    max_playlist_length: 100
+
   #use user ids
   000000000000000: {}
-  
+
+  140564059417346049:
+    max_playlist_length: 100
+
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
 roles:
@@ -45,25 +52,25 @@ roles:
       - comp
       - git
     # idk, do we want to give mods perms to use all songs?
-  
+
   #event team
   344352523466833930:
     # adds default stuff
     # this equals default stuff + comp stuff
     whitelist:
       - comp
-  
+
   #developer
   334341418334027776:
     whitelist:
       - git
       - bot
-      
+
   #memelord
   334301546710040576:
     # blacklist memelords
     blacklist:
       - player
       - misc
-      
+
   # I just set everything up for htc, set things up for your servers if you want

@@ -34,7 +34,7 @@ def cleanup(self):
     else:
         log.debug('ffmpeg process %s successfully terminated with return code of %s.', proc.pid, proc.returncode)
 
-    self._process = None        
+    self._process = None
 FFmpegPCMAudio.cleanup = cleanup
 
 
@@ -57,9 +57,10 @@ class YTDLSource(PCMVolumeTransformer):
         self.likes = []
 
     @classmethod
-    async def get_duration(cls, url, *, loop=None):
+    async def get_duration(cls, url, *, data=None, loop=None):
         loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+        if data is None:
+            data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
         duration = 0
         if 'entries' in data and data['entries']:
             # take first item from a playlist
@@ -68,6 +69,31 @@ class YTDLSource(PCMVolumeTransformer):
         if 'duration' in data: duration = data['duration']
 
         return duration
+
+    @classmethod
+    async def is_playlist(cls, url, *, data=None, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        if data is None:
+            data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+
+        return 'entries' in data and len(data['entries']) > 1
+
+    @classmethod
+    async def load_playlist(cls, url, user=None, *, data=None, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        if data is None:
+            data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+
+        if 'entries' not in data:
+            return []
+
+        return data.get('title'), [(entry.get('webpage_url'), entry.get('title')) for entry in data['entries']]
+
+    @classmethod
+    async def data_for(cls, url, *, loop=None):
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
+        return data
 
     @classmethod
     async def from_url(cls, url, user=None, *, loop=None):
@@ -88,10 +114,9 @@ class YTDLSource(PCMVolumeTransformer):
     @classmethod
     async def search(cls, query, *args, **kwargs):
         return ytdl.extract_info(query, *args, **kwargs)
-    
+
     #produces a fresh copy
     def duplicate(self):
         return YTDLSource(
-            FFmpegPCMAudio(ytdl.prepare_filename(self.data), **ffmpeg_options), 
+            FFmpegPCMAudio(ytdl.prepare_filename(self.data), **ffmpeg_options),
             self.user, self.duration, data=self.data)
-    

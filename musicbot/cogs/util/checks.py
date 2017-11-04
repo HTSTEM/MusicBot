@@ -12,6 +12,7 @@ async def permissions_for(ctx):
         'categories': {cat.lower() for cat in bot_perms['default']['whitelist']},
         'max_song_length': bot_perms['default']['max_song_length'],
         'max_songs_queued': bot_perms['default']['max_songs_queued'],
+        'max_playlist_length': bot_perms['default']['max_playlist_length'],
         }
 
     if not isinstance(ctx.author, discord.Member):
@@ -28,6 +29,8 @@ async def permissions_for(ctx):
         if 'whitelist' in perms: user_perms['categories'] |= {cat.lower() for cat in perms['whitelist']}
         if 'max_song_length' in perms: user_perms['max_song_length'] = perms['max_song_length']
         if 'max_songs_queued' in perms: user_perms['max_songs_queued'] = perms['max_songs_queued']
+
+        if 'max_playlist_length' in perms: user_perms['max_playlist_length'] = perms['max_playlist_length']
 
     for role in sorted(member.roles):
         if role.id in bot_perms['roles']: add_perms(bot_perms['roles'][role.id])
