@@ -182,7 +182,7 @@ class Music:
                 ttp += i.duration
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
-                playing_time -= time.time() - ctx.voice_client.source.pause_start
+            playing_time -= time.time() - ctx.voice_client.source.pause_start
             ttp -= playing_time
 
             await channel.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
@@ -792,8 +792,11 @@ class Music:
     @commands.guild_only()
     async def clear(self, ctx):
         '''Stops player and clears queue'''
-        while self.bot.queue: self.bot.queue.pop()
+        while self.bot.queue:
+            self.bot.queue.pop()
+
         ctx.voice_client.stop()
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
