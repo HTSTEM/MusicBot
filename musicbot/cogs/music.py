@@ -102,7 +102,7 @@ class Music:
         users = {}
 
         for n, entry in reversed(list(enumerate(queue))):
-            if entry.user and entry.user.id != user.id:
+            if entry.user and entry.user.id != user.id and entry.user.id not in users:
                 users[entry.user.id] = self.get_queued(entry.user, before=n+1)
 
             if all(queued >= x for x in users.values()):
