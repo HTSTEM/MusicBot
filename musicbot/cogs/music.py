@@ -182,7 +182,8 @@ class Music:
                 ttp += i.duration
             playing = self.bot.queue[0]
             playing_time = int(time.time()-playing.start_time)
-            playing_time -= time.time() - ctx.voice_client.source.pause_start
+            if ctx.voice_client.is_paused():
+                playing_time -= time.time() - ctx.voice_client.source.pause_start
             ttp -= playing_time
 
             await channel.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
