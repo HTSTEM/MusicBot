@@ -114,6 +114,18 @@ class Music:
         queue.append(song)
         return len(queue) - 1
 
+    def remove_from_queue(self, player):
+        queue = self.bot.queue
+        if not player.user: return queue.remove(player)
+
+        i = queue.index(player)
+        for n, p in list(enumerate(queue))[i+1:]:
+            if p.user == player.user:
+                queue[i] = p
+                player = p
+                i = n
+
+        queue.remove(player)
 
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
@@ -585,13 +597,32 @@ class Music:
     @commands.guild_only()
     async def dequeue(self, ctx):
         '''Remove your song(s) from the queue'''
-        for i in self.bot.queue[1:]:
-            if i.user is not None:
-                if i.user.id == ctx.author.id:
-                    self.bot.queue.remove(i)
-                    await ctx.send(f'<@{ctx.author.id}>, your song **{i.title}** has been removed from the queue.')
-                    return
-        await ctx.send(f'<@{ctx.author.id}>, you don\'t appear to have any songs in the queue.')
+        songs = []
+        for player in self.bot.queue[1:]:
+            if player.user and player.user.id == ctx.author.id:
+                songs.append(player)
+
+        if len(songs) == 0:
+            await ctx.send(f'<@{ctx.author.id}>, you don\'t appear to have any songs in the queue.')
+        elif len(songs) == 1:
+            player = songs[0]
+        else:
+            song_list = '\n'.join([f'**{song.title}**' for song in songs])
+            mess = await ctx.send(f'Which song would you like to remove? \n{song_list}')
+            def check(m): return m.channel == ctx.channel and m.author == ctx.author
+            try: resp = await ctx.bot.wait_for('message', check=check, timeout=120)
+            except asyncio.TimeoutError: pass
+            for song in songs:
+                if resp.content in song.title:
+                    player = song
+                    break
+            await mess.delete()
+
+        self.remove_from_queue(player)
+
+        await ctx.send(f'<@{ctx.author.id}>, your song **{player.title}** has been removed from the queue.')
+
+
 
     # Mod commands:
     @category('modding')
@@ -714,7 +745,7 @@ class Music:
     @commands.guild_only()
     async def clear(self, ctx):
         '''Stops player and clears queue'''
-        self.bot.queue = []
+        while self.bot.queue: self.bot.queue.pop()
         ctx.voice_client.stop()
 
 def setup(bot):
