@@ -125,7 +125,7 @@ class Music:
                 player = p
                 i = n
 
-        queue.remove(player)
+        queue.pop(i)
 
     async def queue_url(self, url, ctx, dm=False, data=None):
         if dm:

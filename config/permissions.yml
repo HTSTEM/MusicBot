@@ -21,7 +21,7 @@ default:
 # perms stated under users have precedence of perms under roles
 users:
   # special bot owner field
-  161508165672763392:
+  owner:
     # access to all commands
     whitelist:
       - bot
