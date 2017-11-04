@@ -247,11 +247,11 @@ class MusicBot(commands.AutoShardedBot):
                                 vc = await channel.connect()
                                 self.voice[guild_id] = vc
                                 success = True
-                            except discord.ClientException as e:
+                            except discord.ClientException:
                                 if guild_id in self.voice:
                                     vc = self.voice[guild_id]
                                 else:
-                                    self.logger.info('   - Error! Trying again in 1 second.' + str(e))
+                                    self.logger.info('   - Error! Trying again in 1 second.')
                                     await asyncio.sleep(1)
 
                         self.logger.info('   - Joined. Starting auto-playlist.')
