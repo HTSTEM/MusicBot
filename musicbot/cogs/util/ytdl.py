@@ -34,7 +34,7 @@ def cleanup(self):
     else:
         log.debug('ffmpeg process %s successfully terminated with return code of %s.', proc.pid, proc.returncode)
 
-    self._process = None        
+    self._process = None
 FFmpegPCMAudio.cleanup = cleanup
 
 
@@ -76,8 +76,8 @@ class YTDLSource(PCMVolumeTransformer):
         if data is None:
             data = await loop.run_in_executor(None, lambda:ytdl.extract_info(url, download=False))
 
-        return 'entries' in data
-    
+        return 'entries' in data and len(data['entries']) > 1
+
     @classmethod
     async def load_playlist(cls, url, user=None, *, data=None, loop=None):
         loop = loop or asyncio.get_event_loop()
@@ -86,7 +86,7 @@ class YTDLSource(PCMVolumeTransformer):
 
         if 'entries' not in data:
             return []
-        
+
         return data.get('title'), [(entry.get('webpage_url'), entry.get('title')) for entry in data['entries']]
 
     @classmethod
@@ -114,10 +114,9 @@ class YTDLSource(PCMVolumeTransformer):
     @classmethod
     async def search(cls, query, *args, **kwargs):
         return ytdl.extract_info(query, *args, **kwargs)
-    
+
     #produces a fresh copy
     def duplicate(self):
         return YTDLSource(
-            FFmpegPCMAudio(ytdl.prepare_filename(self.data), **ffmpeg_options), 
+            FFmpegPCMAudio(ytdl.prepare_filename(self.data), **ffmpeg_options),
             self.user, self.duration, data=self.data)
-    

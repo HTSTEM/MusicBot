@@ -57,7 +57,7 @@ class Music:
                 ctx.voice_client.stop()
             await self.start_playing(ctx, self.bot.queue[0])
             return
-    
+
         found = False
         while not found and not self.bot.queue:
             if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
@@ -114,6 +114,70 @@ class Music:
         queue.append(song)
         return len(queue) - 1
 
+    async def queue_url(self, url, ctx, dm=False, data=None):
+        if dm:
+            channel = ctx.author.dm_channel
+            if channel is None:
+                await ctx.author.create_dm()
+                channel = ctx.author.dm_channel
+        else:
+            channel = ctx
+
+        url = url.strip('<>')
+
+        if ctx.voice_client is None:
+            if ctx.author.voice:
+                self.bot.voice[ctx.guild.id] = await ctx.author.voice.channel.connect()
+            else:
+                return await ctx.send('Not connected to a voice channel.')
+
+        perms = await checks.permissions_for(ctx)
+
+        # Check the queue limit before bothering to download the song
+        queued = self.get_queued(ctx.author)
+        if queued >= perms['max_songs_queued']:
+            await channel.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
+            return
+
+        with ctx.typing():
+            if data is None:
+                data = await YTDLSource.data_for(url, loop=self.bot.loop)
+            if await YTDLSource.is_playlist(url, data=data, loop=self.bot.loop):
+                return
+
+            duration = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
+
+            if duration > perms['max_song_length']:
+                await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
+                return
+
+            player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+
+        player.channel = ctx.channel
+
+        if not self.bot.queue:
+            self.bot.queue.append(player)
+
+            if ctx.voice_client.is_playing():
+                ctx.voice_client.stop()
+
+            await self.start_playing(ctx, player)
+        else:
+            position = self.insert_song(player)
+            ttp = 0
+            for i in self.bot.queue[:position]:
+                ttp += i.duration
+            playing = self.bot.queue[0]
+            playing_time = int(time.time()-playing.start_time)
+            if ctx.voice_client.is_paused():
+                playing_time -= time.time() - ctx.voice_client.source.pause_start
+            ttp -= playing_time
+
+            await channel.send('Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
+                      player.title,
+                      position,
+                      time.strftime('%H:%M:%S', time.gmtime(max(0,ttp)))
+                      ))
 
     async def start_playing(self, ctx, player, announce=True):
         player.start_time = time.time()
@@ -148,15 +212,10 @@ class Music:
 
         perms = await checks.permissions_for(ctx)
 
-        # Check the queue limit before bothering to download the song
-        queued = self.get_queued(ctx.author)
-        if queued >= perms['max_songs_queued']:
-            await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
-            return
-
         try:
             with ctx.typing():
                 data = await YTDLSource.data_for(url, loop=self.bot.loop)
+
                 if await YTDLSource.is_playlist(url, data=data, loop=self.bot.loop):
                     pl_title, songs = await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop)
 
@@ -165,49 +224,18 @@ class Music:
                             return await ctx.send(f'It appears you have tried to queue a YouTube mix. Try putting some of the songs into a playlist that\'s got a maximum of {perms["max_playlist_length"]} songs.')
                         return await ctx.send(f'You can queue a maximun of {perms["max_playlist_length"]} songs from a playlist at once. ({len(songs)})')
 
-                    await ctx.send(f'Queueing all songs from **{pl_title}**!')
-                    
-                    for title, url in songs:
-                        await self.play.callback(self=self, ctx=ctx, url=url)
+                    await ctx.send(f'Queueing {len(songs)} songs from **{pl_title}**!')
+
+                    for url, title in songs:
+                        await self.queue_url(url, ctx, dm=True, data=data)
+
                     return await ctx.send('Finished queueing playlist.')
                 else:
-                    duration = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
-                    if duration > perms['max_song_length']:
-                        await ctx.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
-                        return
-
-                    player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
+                    await self.queue_url(url, ctx, data=data)
         except youtube_dl.utils.DownloadError:
             return await ctx.send('No song found.')
         except ValueError:
             return await ctx.send('A network error occured.')
-
-        player.channel = ctx.channel
-
-        if not self.bot.queue:
-            self.bot.queue.append(player)
-
-            if ctx.voice_client.is_playing():
-                ctx.voice_client.stop()
-
-            await self.start_playing(ctx, player)
-        else:
-            position = self.insert_song(player)
-            ttp = 0
-            for i in self.bot.queue[:position]:
-                ttp += i.duration
-            playing = self.bot.queue[0]
-            playing_time = int(time.time()-playing.start_time)
-            if ctx.voice_client.is_paused():
-                playing_time -= time.time() - ctx.voice_client.source.pause_start
-            ttp -= playing_time
-
-            await ctx.send(
-                'Enqueued **{}** to be played. Position in queue: {} - estimated time until playing: {}'.format(
-                    player.title,
-                    position,
-                    time.strftime('%H:%M:%S', time.gmtime(max(0,ttp)))
-                    ))
 
     @category('music')
     @commands.command()
@@ -231,7 +259,7 @@ class Music:
             return
 
         search_query = f'ytsearch{self.bot.config["search_limit"]}:{query}'
-        
+
         search_msg = await ctx.send('Searching for videos...')
         await ctx.channel.trigger_typing()
         try:
