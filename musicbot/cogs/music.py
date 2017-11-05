@@ -158,7 +158,7 @@ class Music:
             if await YTDLSource.is_playlist(url, data=data, loop=self.bot.loop):
                 return 'Is playlist'
 
-            duration = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
+            duration, url = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
 
             if duration > perms['max_song_length']:
                 await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')

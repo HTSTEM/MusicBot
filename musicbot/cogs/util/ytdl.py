@@ -67,8 +67,9 @@ class YTDLSource(PCMVolumeTransformer):
             data = data['entries'][0]
 
         if 'duration' in data: duration = data['duration']
+        if 'webpage_url' in data: url = data['webpage_url']
 
-        return duration
+        return (duration, url)
 
     @classmethod
     async def is_playlist(cls, url, *, data=None, loop=None):
