@@ -677,6 +677,17 @@ class Music:
         await ctx.send(f'<@{ctx.author.id}>, your song **{player.title}** has been removed from the queue.')
 
 
+    @category('music')
+    @commands.command()
+    @commands.guild_only()
+    async def remall(self, ctx):
+        '''Remove all of your songs from the queue'''
+        songs = [song for song in ctx.bot.queue[1:] if song.user.id == ctx.author.id]
+        for song in songs:
+            ctx.bot.queue.remove(song)
+
+        await ctx.send(f'{ctx.author.mention} all of your songs have been removed from the queue!')
+
 
     # Mod commands:
     @category('modding')

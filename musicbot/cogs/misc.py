@@ -212,6 +212,7 @@ class Misc:
     @category('bot')
     @reload.command(name='perms')
     async def reload_perms(self, ctx):
+        '''Reload the permissions'''
         with open('config/permissions.yml') as conf_file:
             ctx.bot.permissions = ctx.bot.yaml.load(conf_file)
 
