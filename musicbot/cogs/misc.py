@@ -210,6 +210,12 @@ class Misc:
         await ctx.send('\N{OK HAND SIGN} Reloaded {} cogs successfully'.format(len(ctx.bot.extensions)))
 
     @category('bot')
+    @reload.command(name='perms')
+    async def reload_perms(self, ctx):
+        with open('config/permissions.yml') as conf_file:
+            ctx.bot.permissions = ctx.bot.yaml.load(conf_file)
+
+    @category('bot')
     @commands.command(aliases=['exception'])
     async def error(self, ctx, *, text: str = None):
         '''Raises an error. Testing purposes only, please don't use.'''
