@@ -643,7 +643,7 @@ class Music:
     @category('music')
     @commands.command(aliases=['unqueue'])
     @commands.guild_only()
-    async def dequeue(self, ctx):
+    async def dequeue(self, ctx, *, title= None):
         '''Remove your song(s) from the queue'''
         songs = []
         for player in self.bot.queue[1:]:
@@ -655,16 +655,22 @@ class Music:
         elif len(songs) == 1:
             player = songs[0]
         else:
-            song_list = '\n'.join([f'**{song.title}**' for song in songs])
-            mess = await ctx.send(f'Which song would you like to remove? \n{song_list}')
-            def check(m): return m.channel == ctx.channel and m.author == ctx.author
-            try: resp = await ctx.bot.wait_for('message', check=check, timeout=120)
-            except asyncio.TimeoutError: pass
+            if not title:
+                song_list = '\n'.join([f'**{song.title}**' for song in songs])
+                mess = await ctx.send(f'Which song would you like to remove? \n{song_list}')
+                def check(m): return m.channel == ctx.channel and m.author == ctx.author
+                try: resp = await ctx.bot.wait_for('message', check=check, timeout=120)
+                except asyncio.TimeoutError: return await ctx.send(f'{ctx.author.mention} nvm.')
+                finally: await mess.delete()
+                title = resp.content
+
             for song in songs:
-                if resp.content in song.title:
+                if title in song.title:
                     player = song
                     break
-            await mess.delete()
+            else:
+                return await ctx.send('Song not found.')
+
 
         self.remove_from_queue(player)
 
