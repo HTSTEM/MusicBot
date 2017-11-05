@@ -39,6 +39,9 @@ users:
   140564059417346049:
     max_playlist_length: 100
 
+  240995021208289280:
+    max_playlist_length: 100
+
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
 roles:
