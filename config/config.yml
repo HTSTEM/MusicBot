@@ -10,8 +10,6 @@ public_queue_max: 10
 # The bot will auto-join and start playing in these.
 # <guild id>: <voice channel id>
 default_channels:
-  290573725366091787: 290573725366091788
-  297811083308171264: 297811083308171266
   184755239952318464: 334325676469518337
 
 # These are the channels where the bot will respond to user commands.
@@ -19,8 +17,6 @@ default_channels:
 # <guild id>: [<text channel id>, <text channel id>, ...]
 bot_channels:
   184755239952318464: [334296431789604864]
-  290573725366091787: [290757101914030080, 290756934523551744]
-  297811083308171264: [297811083308171264]
 
 # This is the location of the bot's token. The token must be placed on
 # the first line of the file
