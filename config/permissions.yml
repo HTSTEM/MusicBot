@@ -15,7 +15,7 @@ default:
   max_songs_queued: 15
 
   # This is the maximum length of a playlist that can be queued
-  max_playlist_length: 65
+  max_playlist_length: 15
 
 # add specific perms for users here
 # perms stated under users have precedence of perms under roles
