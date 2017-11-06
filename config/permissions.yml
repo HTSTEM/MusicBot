@@ -37,7 +37,9 @@ users:
   000000000000000: {}
 
   #patrons!
-  154825973278310400: #satomi, $1
+  154825973278310400: #satomi, $1/mo
+    max_songs_queued: 25
+  198191547970355200: #sills, $1/mo
     max_songs_queued: 25
 
 # add specific perms for roles

@@ -289,6 +289,9 @@ class Misc:
     @commands.command()
     async def patreon(self, ctx):
         '''Posts info about patreon & the patrons'''
+        m = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
+        m += 'Satomi ($1/mo, total $1)'
+        m += 'sills ($1/mo, total $1)'
         await ctx.send('The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the hosting of the MusicBot and other HTC bots:\nSatomi ($1)')
 
     @category('misc')
