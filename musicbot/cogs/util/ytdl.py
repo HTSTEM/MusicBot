@@ -44,7 +44,7 @@ class YTDLSource(PCMVolumeTransformer):
 
         self.data = data
 
-        self.title = data.get('title')
+        self.title = data.get('title').replace('*', '\*')
         self.url = data.get('url')
         self.origin_url = data.get('origin_url')
         self.user = user
