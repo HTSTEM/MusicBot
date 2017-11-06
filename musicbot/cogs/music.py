@@ -3,6 +3,7 @@ import base64
 import random
 import time
 import os
+import re
 
 import youtube_dl
 import discord
@@ -15,6 +16,12 @@ from .util.categories import category
 
 
 should_continue = True
+
+URL_REGEX = re.compile(r'^\w+://(?:\w+\.)*?(\w+)\.(?:co\.)?\w+(?:$|/.*$)')
+WHITELIST = [
+    'youtube',
+    'soundcloud'
+]
 
 #silent failure
 class QueueLimitError(commands.CommandNotFound): pass
@@ -163,6 +170,15 @@ class Music:
                 return 'Is playlist'
 
             duration, url = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
+
+            match = URL_REGEX.match(url)
+
+            if match is None:
+                await channel.send(f'Unable to confirm URL is valid.')
+                return 'Regex failed'
+            if match.groups()[0].lower() not in WHITELIST:
+                await channel.send(f'Attempt to queue from non-listed site rejected!')
+                return 'Whitelist faied'
 
             if duration > perms['max_song_length']:
                 await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
