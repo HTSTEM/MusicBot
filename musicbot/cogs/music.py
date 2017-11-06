@@ -13,7 +13,11 @@ from .util import checks
 from .util.ytdl import YTDLSource
 from .util.categories import category
 
+
 should_continue = True
+
+#silent failure
+class QueueLimitError(commands.CommandNotFound): pass
 
 class Music:
     def __init__(self, bot):
@@ -150,7 +154,7 @@ class Music:
         queued = self.get_queued(ctx.author)
         if queued >= perms['max_songs_queued']:
             await channel.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
-            return 'Max songs'
+            raise QueueLimitError
 
         with ctx.typing():
             if data is None:
@@ -244,6 +248,8 @@ class Music:
                     for url, title in songs:
                         try:
                             await self.queue_url(url, ctx, dm=True)
+                        except QueueLimitError:
+                            break
                         except Exception as e:
                             await ctx.send(str(e))
 
