@@ -61,7 +61,7 @@ class Misc:
         self.bot.like_comp = {}
         await ctx.send(m)
 
-    # Mederation category
+    # Moderation category
     @category('modding')
     @commands.command()
     async def bldump(self, ctx):
@@ -284,6 +284,12 @@ class Misc:
     async def id(self, ctx):
         '''Get your user id'''
         await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
+
+    @category('misc')
+    @commands.command()
+    async def patreon(self, ctx):
+        '''Posts info about patreon & the patrons'''
+        await ctx.send('The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the hosting of the MusicBot and other HTC bots:\nSatomi ($1)')
 
     @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])

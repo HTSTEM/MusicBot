@@ -36,6 +36,10 @@ users:
   #use user ids
   000000000000000: {}
 
+  #patrons!
+  154825973278310400: #satomi, $1
+    max_songs_queued: 25
+
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
 roles:
