@@ -12,7 +12,7 @@ default:
   max_song_length: 900
 
   # This is the number of songs that a user may have in the queue at one
-  max_songs_queued: 50
+  max_songs_queued: 15
 
   # This is the maximum length of a playlist that can be queued
   max_playlist_length: 65
