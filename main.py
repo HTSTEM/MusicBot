@@ -3,7 +3,7 @@ import json
 
 from ruamel import yaml
 
-from bottle import Bottle, run, template, static_file, request, redirect
+from bottle import Bottle, run, template, static_file, request, redirect, abort
 from requests_oauthlib import OAuth2Session
 
 with open('./config/config.yml', 'r') as config_file:
@@ -25,11 +25,16 @@ keys = {
 
 # I'm using this for now, does bottle have sessions? I couldn't find it in the docs
 sessions = {
-    
+
 }
 
 
 app = Bottle()
+
+
+def is_mod_on_htc(id):
+    # This will tap into the aIO loop and query d.py
+    return False#True
 
 
 def make_session(token=None, state=None, scope=None):
@@ -68,8 +73,6 @@ def oauth2_complete():
 
     keys[request.remote_addr] = key
 
-    print(keys)
-
     redirect('../queue')
 
 @app.get('/queue')
@@ -87,7 +90,14 @@ def queue_requested():
     user = discord.get('https://discordapp.com/api/users/@me').json()
     guilds = discord.get('https://discordapp.com/api/users/@me/guilds').json()
     print(user)
-    print(guilds)
+    for g in guilds:
+        print(g)
+
+    user_id = user['id']
+
+    if not is_mod_on_htc(user_id):
+        abort(403, 'You\'re not a moderator on HTC.')
+        return
 
     key = keys[request.remote_addr]
     return template('queue', {'key': key})
@@ -96,6 +106,14 @@ def queue_requested():
 def api_request():
     key = request.forms.get("key")
     resource = request.forms.get("resource")
+
+    if key != keys.get(request.remote_addr):
+        data = {
+            'code': 4001,
+            'msg': 'Not authenticated',
+        }
+
+        return json.dumps(data)
 
     if resource == 'FULL_QUEUE':
         data = {
