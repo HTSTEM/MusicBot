@@ -253,9 +253,8 @@ class Music:
                     pl_title, songs = await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop)
 
                     if len(songs) > perms['max_playlist_length']:
-                        songs = songs[:perms['max_playlist_length']]
-
                         await ctx.send(f'Your playlist has been truncated to the first {perms["max_playlist_length"]} songs. (Originally {len(songs)})')
+                        songs = songs[:perms['max_playlist_length']]
                     await ctx.send(f'Queueing {len(songs)} songs from **{pl_title}**!')
 
                     for url, title in songs:
