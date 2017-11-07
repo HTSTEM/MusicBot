@@ -739,7 +739,8 @@ class Music:
                 await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queue)-1} or the title.')
                 return
             else:
-                player = self.bot.queue.pop(song)
+                player = self.bot.queue[song]
+                self.remove_from_queue(player)
                 await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
         else:
             for i in self.bot.queue[1:]:
@@ -749,7 +750,7 @@ class Music:
             else:
                 await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
                 return
-            self.bot.queue.remove(player)
+            self.remove_from_queue(player)
             await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
 
     @category('bot')
