@@ -253,13 +253,10 @@ class Music:
                     pl_title, songs = await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop)
 
                     if len(songs) > perms['max_playlist_length']:
-                        if len(songs) == 56:
-                            return await ctx.send(f'It appears you have tried to queue a YouTube mix. Try putting some of the songs into a playlist that\'s got a maximum of {perms["max_playlist_length"]} songs.')
-                        return await ctx.send(f'You can queue a maximun of {perms["max_playlist_length"]} songs from a playlist at once. ({len(songs)})')
+                        songs = songs[:perms['max_playlist_length']]
 
+                        await ctx.send(f'Your playlist has been truncated to the first {perms["max_playlist_length"]} songs. (Originally {len(songs)})')
                     await ctx.send(f'Queueing {len(songs)} songs from **{pl_title}**!')
-
-                    print(songs)
 
                     for url, title in songs:
                         try:
