@@ -14,7 +14,8 @@ OAUTH2_CLIENT_SECRET = config['secret']
 
 
 REDIRECT = 'http://localhost:8080/queue/oauth2'
-OAUTH2 = 'https://discordapp.com/api/oauth2/authorize?response_type=code&client_id=377169849744359424&scope=identify&state={state}&redirect_uri=' + REDIRECT
+
+BASE_API_URL = 'https://discordapp.com/api'
 
 if 'http://' in REDIRECT:
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
@@ -32,13 +33,14 @@ sessions = {
 app = Bottle()
 
 
-def is_mod_on_htc(id):
+def is_mod_on_htc(user_id):
     # This will tap into the aIO loop and query d.py
-    return False#True
+    return False
+    # return True
 
 
 def make_session(token=None, state=None, scope=None):
-     return OAuth2Session(
+    return OAuth2Session(
         client_id=OAUTH2_CLIENT_ID,
         token=token,
         state=state,
@@ -48,8 +50,9 @@ def make_session(token=None, state=None, scope=None):
             'client_id': OAUTH2_CLIENT_ID,
             'client_secret': OAUTH2_CLIENT_SECRET,
         },
-        auto_refresh_url='https://discordapp.com/api/oauth2/token'
+        auto_refresh_url=BASE_API_URL+'/oauth2/token'
         )
+
 
 queue = [
     ('Song name'*10, 'jim'),
@@ -59,11 +62,12 @@ queue = [
     ('Song nname', 'jim4'),
 ]*10
 
+
 @app.get('/queue/oauth2')
 def oauth2_complete():
     discord = make_session(state=sessions[request.remote_addr].get('oauth2_state'))
     token = discord.fetch_token(
-        'https://discordapp.com/api/oauth2/token',
+        BASE_API_URL+'/oauth2/token',
         client_secret=OAUTH2_CLIENT_SECRET,
         authorization_response=request.url
     )
@@ -75,20 +79,21 @@ def oauth2_complete():
 
     redirect('../queue')
 
+
 @app.get('/queue')
 def queue_requested():
     if request.remote_addr not in keys:
         discord = make_session(scope='identify guilds')
         authorization_url, state = discord.authorization_url(
-            'https://discordapp.com/api/oauth2/authorize')
+            BASE_API_URL+'/oauth2/authorize')
         sessions[request.remote_addr] = {}
         sessions[request.remote_addr]['oauth2_state'] = state
         redirect(authorization_url)
         return
 
     discord = make_session(token=sessions[request.remote_addr].get('oauth2_token'))
-    user = discord.get('https://discordapp.com/api/users/@me').json()
-    guilds = discord.get('https://discordapp.com/api/users/@me/guilds').json()
+    user = discord.get(BASE_API_URL+'/users/@me').json()
+    guilds = discord.get(BASE_API_URL+'/users/@me/guilds').json()
     print(user)
     for g in guilds:
         print(g)
@@ -101,6 +106,7 @@ def queue_requested():
 
     key = keys[request.remote_addr]
     return template('queue', {'key': key})
+
 
 @app.post('/queue')
 def api_request():
@@ -118,7 +124,7 @@ def api_request():
     if resource == 'FULL_QUEUE':
         data = {
             'code': 1000,
-            'msg': 'Queue read succesful',
+            'msg': 'Queue read successful',
             'd': {
                 'queue_length': len(queue),
                 'queue': queue
@@ -136,7 +142,6 @@ def api_request():
 
         return json.dumps(data)
 
-    return template('queue')
 
 @app.get('/<filename:re:.*\.css>')
 def stylesheets(filename):
