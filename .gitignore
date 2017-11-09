@@ -1,5 +1,6 @@
 __pycache__/
 config/token.txt
+config/likes.yml
 audio_cache/*
 error.txt
 musicbot/database.sqlite
