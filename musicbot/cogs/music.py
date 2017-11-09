@@ -253,13 +253,9 @@ class Music:
                     pl_title, songs = await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop)
 
                     if len(songs) > perms['max_playlist_length']:
-                        if len(songs) == 56:
-                            return await ctx.send(f'It appears you have tried to queue a YouTube mix. Try putting some of the songs into a playlist that\'s got a maximum of {perms["max_playlist_length"]} songs.')
-                        return await ctx.send(f'You can queue a maximun of {perms["max_playlist_length"]} songs from a playlist at once. ({len(songs)})')
-
+                        await ctx.send(f'Your playlist has been truncated to the first {perms["max_playlist_length"]} songs. (Originally {len(songs)})')
+                        songs = songs[:perms['max_playlist_length']]
                     await ctx.send(f'Queueing {len(songs)} songs from **{pl_title}**!')
-
-                    print(songs)
 
                     for url, title in songs:
                         try:
@@ -739,7 +735,8 @@ class Music:
                 await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queue)-1} or the title.')
                 return
             else:
-                player = self.bot.queue.pop(song)
+                player = self.bot.queue[song]
+                self.remove_from_queue(player)
                 await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
         else:
             for i in self.bot.queue[1:]:
@@ -749,7 +746,7 @@ class Music:
             else:
                 await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
                 return
-            self.bot.queue.remove(player)
+            self.remove_from_queue(player)
             await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
 
     @category('bot')
