@@ -525,7 +525,7 @@ class Music:
         #  this better. :P
 
         if ctx.author.id not in self.bot.likes:
-            return await ctx.send(f'<@{ctx.author.id}>, you\'ve never liked any songs.')
+            return await ctx.send(f'{ctx.author.mention}, you\'ve never liked any songs.')
 
         for i in self.bot.likes[ctx.author.id]:
             i = base64.b64decode(i.encode('ascii')).decode('utf-8')
@@ -563,14 +563,14 @@ class Music:
                     await result_message.delete()
                     await confirm_message.delete()
 
-                    await ctx.send(f'<@{ctx.author.id}>, **{i}** has been removed from your likes.')
+                    await ctx.send(f'{ctx.author.mention}, **{i}** has been removed from your likes.')
                     self.bot.likes[ctx.author.id].remove(base64.b64encode(i.encode('utf-8')).decode('ascii'))
                     self.bot.save_likes()
                     return
                 else:
                     await result_message.delete()
                     await confirm_message.delete()
-        await ctx.send('<@{ctx.author.id}>, no song could be found. Sorry.')
+        await ctx.send(f'{ctx.author.mention}, no song could be found. Sorry.')
 
     @category('music')
     @commands.command()
