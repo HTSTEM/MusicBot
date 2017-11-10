@@ -17,6 +17,55 @@ class Misc:
     def __init__(self, bot):
         self.bot = bot
 
+    def format_args(self, cmd):
+        params = list(cmd.clean_params.items())
+        p_str = ''
+        for p in params:
+            print(p[1], p[1].default, p[1].empty)
+            if p[1].default == p[1].empty:
+                p_str += f' <{p[0]}>'
+            else:
+                p_str += f' [{p[0]}]'
+
+        return p_str
+
+    def format_commands(self, prefix, cmd, name=None):
+        cmd_args = self.format_args(cmd)
+        if not name: name = cmd.name
+        name = name.replace('  ',' ')
+        d = f'`{prefix}{name}{cmd_args}`\n'
+
+        if type(cmd) == commands.core.Group:
+            cmds = sorted(list(cmd.commands), key=lambda x: x.name)
+            for subcmd in cmds:
+                d += self.format_commands(prefix, subcmd, name=f'{name} {subcmd.name}')
+
+        return d
+
+    def get_help(self, ctx, cmd, name=None):
+        d = f'Help for command `{cmd.name}`:\n'
+        d += '\n**Usage:**\n'
+
+        d += self.format_commands(ctx.prefix, cmd, name=name)
+
+        d += '\n**Description:**\n'
+        d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
+
+        if cmd.checks:
+            d += '\n**Checks:**'
+            for check in cmd.checks:
+                d += '\n{}'.format(check.__qualname__.split('.')[0])
+            d += '\n'
+
+        if cmd.aliases:
+            d += '\n**Aliases:**'
+            for alias in cmd.aliases:
+                d += f'\n`{ctx.prefix}{alias}`'
+
+            d += '\n'
+
+        return d
+
     # Comp. category
     @category('comp')
     @commands.command(aliases=['startcomp'])
@@ -73,39 +122,42 @@ class Misc:
         await ctx.send(':mailbox_with_mail:')
 
     @category('modding')
-    @commands.command()
-    async def blacklist(self, ctx, mode, id):
-        """Blacklist a user from using commands"""
-        mode = mode.lower()
-        if mode not in ['+', '-', 'add', 'remove']:
-            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
-            return
-
-        try:
-            id = int(id)
-        except ValueError:
-            await ctx.send('Usage: `{}blacklist [+|-|add|remove] <user id>`'.format(ctx.prefix))
-            return
-
-        if mode in ['+', 'add']:
-            user = ctx.guild.get_member(id)
-            if user is None or not user.permissions_in(ctx.channel).manage_channels:
-                if id not in self.bot.blacklist:
-                    self.bot.blacklist.append(id)
-                    self.bot.save_bl()
-                    await ctx.send('The user with the id `{}` has been blacklisted.'.format(id))
-                else:
-                    await ctx.send('The user with the id `{}` has already been blacklisted.'.format(id))
-            else:
-                await ctx.send('You can\'t blacklist someone with `Manage Channels`. Please ask a developer if you *must* blacklist them.')
+    @commands.group(invoke_without_command=True)
+    async def blacklist(self, ctx):
+        """Show the blacklist"""
+        blacklist = [ctx.bot.get_user(id) for id in self.bot.blacklist]
+        blacklist = [str(x) for x in blacklist if x is not None]
+        if blacklist:
+            await ctx.author.send('\n'.join(blacklist))
         else:
-            if id not in self.bot.blacklist:
-                await ctx.send('`{}` isn\'t in the blacklist.'.format(id))
-            else:
-                while id in self.bot.blacklist:
-                    self.bot.blacklist.remove(id)
+            await ctx.author.send('No one is blacklisted')
+
+
+    @category('modding')
+    @blacklist.command(name='add', aliases=['+'])
+    async def blacklist_add(self, ctx, user: discord.Member):
+        '''Add a user to the blacklist'''
+        if user is None or not user.permissions_in(ctx.channel).manage_channels:
+            if user.id not in self.bot.blacklist:
+                self.bot.blacklist.append(user.id)
                 self.bot.save_bl()
-                await ctx.send('The user with the id `{}` has been removed from the blacklist.'.format(id))
+                await ctx.send(f'**{user.name}** has been blacklisted.')
+            else:
+                await ctx.send(f'**{user.name}** has already been blacklisted.')
+        else:
+            await ctx.send('You can\'t blacklist someone with `Manage Channels`. Please ask a developer if you *must* blacklist them.')
+
+    @category('modding')
+    @blacklist.command(name='remove', aliases=['-'])
+    async def blacklist_remove(self, ctx, user: discord.Member):
+        '''Remove a user from the blacklist'''
+        if user.id not in self.bot.blacklist:
+            await ctx.send(f'**{user.name}** isn\'t in the blacklist.')
+        else:
+            while user.id in self.bot.blacklist:
+                self.bot.blacklist.remove(user.id)
+            self.bot.save_bl()
+            await ctx.send(f'**{user.name}** has been removed from the blacklist.')
 
     # Git category
     @category('git')
@@ -397,8 +449,6 @@ class Misc:
         cmds = {i for i in ctx.bot.all_commands.values()}
 
         if len(args) == 0:
-            d = ''#'**TWOWBot help:**'
-
             cats = {}
             for cmd in cmds:
                 if not hasattr(cmd, 'category'):
@@ -408,9 +458,8 @@ class Misc:
                 cats[cmd.category].append(cmd)
             cats = list(cats.keys())
             cats.sort()
-
             width = max([len(cat) for cat in cats]) + 2
-            d += '**Categories:**\n'
+            d = '**Categories:**\n'
             for cat in zip(cats[0::2], cats[1::2]):
                 d += '**`{}`**{}**`{}`**\n'.format(cat[0],' ' * int(2.3 * (width-len(cat[0]))), cat[1])
             if len(cats)%2 == 1:
@@ -427,9 +476,13 @@ class Misc:
                 if cmd.category not in cats:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
-            if args[0].title() in cats:
-                d = 'Commands in category **`{}`**:\n'.format(args[0])
-                for cmd in sorted(cats[args[0].title()], key=lambda x:x.name):
+            cats = list(cats.keys())
+            cats.sort()
+            if args[0].lower() in cats:
+                cog_name = cats[args[0].lower()]
+                d = 'Commands in category **`{}`**:\n'.format(cog_name)
+                cmds = self.bot.get_cog_commands(cog_name)
+                for cmd in sorted(list(cmds), key=lambda x:x.name):
                     d += '\n  `{}{}`'.format(ctx.prefix, cmd.name)
 
                     brief = cmd.brief
@@ -444,105 +497,30 @@ class Misc:
                     d = 'Command not found.'
                 else:
                     cmd = ctx.bot.all_commands[args[0]]
-                    d = 'Help for command `{}`:\n'.format(cmd.name)
-                    d += '\n**Usage:**\n'
-
-                    if type(cmd) != commands.core.Group or cmd.invoke_without_command:
-                        params = list(cmd.clean_params.items())
-                        p_str = ''
-                        for p in params:
-                            print(p[1], p[1].default, p[1].empty)
-                            if p[1].default == p[1].empty:
-                                p_str += ' <{}>'.format(p[0])
-                            else:
-                                p_str += ' [{}]'.format(p[0])
-                        d += '`{}{}{}`\n'.format(ctx.prefix, cmd.name, p_str)
-
-                    if type(cmd) == commands.core.Group:
-                        d += '`{}{} '.format(ctx.prefix, cmd.name)
-                        #if cmd.invoke_without_command:
-                        #    d += '['
-                        #else:
-                        #    d += '<'
-                        d += '|'.join(cmd.all_commands.keys())
-                        #if cmd.invoke_without_command:
-                        #    d += ']`\n'
-                        #else:
-                        #    d += '>`\n'
-                        d += '`\n'
-
-                    d += '\n**Description:**\n'
-                    d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
-
-                    if cmd.checks:
-                        d += '\n**Checks:**'
-                        for check in cmd.checks:
-                            d += '\n{}'.format(check.__qualname__.split('.')[0])
-                        d += '\n'
-
-                    if cmd.aliases:
-                        d += '\n**Aliases:**'
-                        for alias in cmd.aliases:
-                            d += '\n`{}{}`'.format(ctx.prefix, alias)
-
-                        d += '\n'
+                    d = self.get_help(ctx, cmd)
         else:
             d = ''
             cmd = ctx.bot
             cmd_name = ''
             for i in args:
                 i = i.replace('@', '@\u200b')
-                if hasattr(cmd, 'all_commands') and i in cmd.all_commands:
+                if cmd == ctx.bot and i in cmd.all_commands:
+                    cmd = cmd.all_commands[i]
+                    cmd_name += cmd.name + ' '
+                elif type(cmd) == commands.Group and i in cmd.all_commands:
                     cmd = cmd.all_commands[i]
                     cmd_name += cmd.name + ' '
                 else:
                     if cmd == ctx.bot:
                         d += 'Command not found.'
                     else:
-                        d += '`{}` has no sub-command `{}`.'.format(cmd.name, i)
+                        d += 'No sub-command found.'.format(cmd.name, i)
                     break
-            if cmd != ctx.bot:
-                d = 'Help for command `{}`:\n'.format(cmd_name)
-                d += '\n**Usage:**\n'
 
-                if type(cmd) != commands.core.Group:
-                    params = list(cmd.clean_params.items())
-                    p_str = ''
-                    for p in params:
-                        if p[1].default == p[1].empty:
-                            p_str += ' [{}]'.format(p[0])
-                        else:
-                            p_str += ' <{}>'.format(p[0])
-                    d += '`{}{}{}`\n'.format(ctx.prefix, cmd_name, p_str)
-                else:
-                    d += '`{}{} '.format(ctx.prefix, cmd.name)
-                    if cmd.invoke_without_command:
-                        d += '['
-                    else:
-                        d += '<'
-                    d += '|'.join(cmd.all_commands.keys())
-                    if cmd.invoke_without_command:
-                        d += ']`\n'
-                    else:
-                        d += '>`\n'
+            else:
+                d = self.get_help(ctx, cmd, name=cmd_name)
 
-                d += '\n**Description:**\n'
-                d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
-
-                if cmd.checks:
-                    d += '\n**Checks:**'
-                    for check in cmd.checks:
-                        d += '\n{}'.format(check.__qualname__.split('.')[0])
-                    d += '\n'
-
-                if cmd.aliases:
-                    d += '\n**Aliases:**'
-                    for alias in cmd.aliases:
-                        d += '\n`{}{}`'.format(ctx.prefix, alias)
-
-                    d += '\n'
-
-        d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
+        # d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
         return await ctx.send(d)
 
 def setup(bot):
