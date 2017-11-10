@@ -12,10 +12,10 @@ default:
   max_song_length: 900
 
   # This is the number of songs that a user may have in the queue at one
-  max_songs_queued: 50
+  max_songs_queued: 15
 
   # This is the maximum length of a playlist that can be queued
-  max_playlist_length: 50
+  max_playlist_length: 15
 
 # add specific perms for users here
 # perms stated under users have precedence of perms under roles
@@ -35,6 +35,12 @@ users:
 
   #use user ids
   000000000000000: {}
+
+  #patrons!
+  154825973278310400: #satomi, $1/mo
+    max_songs_queued: 25
+  198191547970355200: #sills, $1/mo
+    max_songs_queued: 25
 
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy

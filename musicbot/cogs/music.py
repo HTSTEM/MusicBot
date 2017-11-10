@@ -3,6 +3,7 @@ import base64
 import random
 import time
 import os
+import re
 
 import youtube_dl
 import discord
@@ -13,7 +14,17 @@ from .util import checks
 from .util.ytdl import YTDLSource
 from .util.categories import category
 
+
 should_continue = True
+
+URL_REGEX = re.compile(r'^\w+://(?:\w+\.)*?(\w+)\.(?:co\.)?\w+(?:$|/.*$)')
+WHITELIST = [
+    'youtube',
+    'soundcloud'
+]
+
+#silent failure
+class QueueLimitError(commands.CommandNotFound): pass
 
 class Music:
     def __init__(self, bot):
@@ -150,7 +161,7 @@ class Music:
         queued = self.get_queued(ctx.author)
         if queued >= perms['max_songs_queued']:
             await channel.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
-            return 'Max songs'
+            raise QueueLimitError
 
         with ctx.typing():
             if data is None:
@@ -159,6 +170,15 @@ class Music:
                 return 'Is playlist'
 
             duration, url = await YTDLSource.get_duration(url, data=data, loop=self.bot.loop)
+
+            match = URL_REGEX.match(url)
+
+            if match is None:
+                await channel.send(f'Unable to confirm URL is valid.')
+                return 'Regex failed'
+            if match.groups()[0].lower() not in WHITELIST:
+                await channel.send(f'Attempt to queue from non-listed site rejected!')
+                return 'Whitelist faied'
 
             if duration > perms['max_song_length']:
                 await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
@@ -238,17 +258,15 @@ class Music:
                     pl_title, songs = await YTDLSource.load_playlist(url, data=data, loop=self.bot.loop)
 
                     if len(songs) > perms['max_playlist_length']:
-                        if len(songs) == 56:
-                            return await ctx.send(f'It appears you have tried to queue a YouTube mix. Try putting some of the songs into a playlist that\'s got a maximum of {perms["max_playlist_length"]} songs.')
-                        return await ctx.send(f'You can queue a maximun of {perms["max_playlist_length"]} songs from a playlist at once. ({len(songs)})')
-
+                        await ctx.send(f'Your playlist has been truncated to the first {perms["max_playlist_length"]} songs. (Originally {len(songs)})')
+                        songs = songs[:perms['max_playlist_length']]
                     await ctx.send(f'Queueing {len(songs)} songs from **{pl_title}**!')
-
-                    print(songs)
 
                     for url, title in songs:
                         try:
                             await self.queue_url(url, ctx, dm=True)
+                        except QueueLimitError:
+                            break
                         except Exception as e:
                             await ctx.send(str(e))
 
@@ -512,7 +530,7 @@ class Music:
         #  this better. :P
 
         if ctx.author.id not in self.bot.likes:
-            return await ctx.send(f'<@{ctx.author.id}>, you\'ve never liked any songs.')
+            return await ctx.send(f'{ctx.author.mention}, you\'ve never liked any songs.')
 
         for i in self.bot.likes[ctx.author.id]:
             i = base64.b64decode(i.encode('ascii')).decode('utf-8')
@@ -550,14 +568,14 @@ class Music:
                     await result_message.delete()
                     await confirm_message.delete()
 
-                    await ctx.send(f'<@{ctx.author.id}>, **{i}** has been removed from your likes.')
+                    await ctx.send(f'{ctx.author.mention}, **{i}** has been removed from your likes.')
                     self.bot.likes[ctx.author.id].remove(base64.b64encode(i.encode('utf-8')).decode('ascii'))
                     self.bot.save_likes()
                     return
                 else:
                     await result_message.delete()
                     await confirm_message.delete()
-        await ctx.send('<@{ctx.author.id}>, no song could be found. Sorry.')
+        await ctx.send(f'{ctx.author.mention}, no song could be found. Sorry.')
 
     @category('music')
     @commands.command()
@@ -726,7 +744,8 @@ class Music:
                 await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queue)-1} or the title.')
                 return
             else:
-                player = self.bot.queue.pop(song)
+                player = self.bot.queue[song]
+                self.remove_from_queue(player)
                 await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
         else:
             for i in self.bot.queue[1:]:
@@ -736,7 +755,7 @@ class Music:
             else:
                 await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
                 return
-            self.bot.queue.remove(player)
+            self.remove_from_queue(player)
             await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
 
     @category('bot')

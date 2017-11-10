@@ -135,7 +135,8 @@ class MusicBot(commands.AutoShardedBot):
             else:
                 await ctx.send('You can\'t do that.')
         elif isinstance(exception, commands.CommandNotFound):
-            pass
+            return
+
         elif isinstance(exception, commands.UserInputError):
             error = ' '.join(exception.args)
             error_data = re.findall('Converting to \"(.*)\" failed for parameter \"(.*)\"\.', error)
