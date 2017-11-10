@@ -164,6 +164,11 @@ class Music:
                 await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
                 return 'Max length'
 
+            for song in ctx.bot.queue:
+                if song.user and song.user.id == ctx.author.id and song.origin_url == url:
+                    await channel.send('You already have that song queued!')
+                    return 'Already queued'
+
             player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
 
         player.channel = ctx.channel
@@ -603,7 +608,11 @@ class Music:
             if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
             message += '\n\n'
             for n, entry in enumerate(self.bot.queue[1:]):
-                to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
+                if entry.user:
+                    to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
+                else:
+                    to_add = f'`{n+1}.` **{entry.title}**\n'
+
                 if len(message) + len(to_add) > 1900:
                     message += f'*{len(self.bot.queue)-n-1} more*...'
                     break
