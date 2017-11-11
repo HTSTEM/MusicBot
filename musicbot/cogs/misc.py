@@ -452,7 +452,7 @@ class Misc:
             cats = {}
             for cmd in cmds:
                 if not hasattr(cmd, 'category'):
-                    cmd.category = 'Misc'
+                    cmd.category = 'misc'
                 if cmd.category not in cats:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
@@ -473,15 +473,13 @@ class Misc:
             for cmd in cmds:
                 if not hasattr(cmd, 'category'):
                     cmd.category = 'Misc'
-                if cmd.category not in cats:
-                    cats[cmd.category] = []
-                cats[cmd.category].append(cmd)
-            cats = list(cats.keys())
-            cats.sort()
+                if cmd.category.lower() not in cats:
+                    cats[cmd.category.lower()] = []
+                cats[cmd.category.lower()].append(cmd)
             if args[0].lower() in cats:
-                cog_name = cats[args[0].lower()]
+                cog_name = args[0].title()
                 d = 'Commands in category **`{}`**:\n'.format(cog_name)
-                cmds = self.bot.get_cog_commands(cog_name)
+                cmds = cats[args[0].lower()]
                 for cmd in sorted(list(cmds), key=lambda x:x.name):
                     d += '\n  `{}{}`'.format(ctx.prefix, cmd.name)
 
