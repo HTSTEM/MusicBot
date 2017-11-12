@@ -11,12 +11,14 @@ public_queue_max: 10
 # <guild id>: <voice channel id>
 default_channels:
   184755239952318464: 334325676469518337
+  297811083308171264: 297811083308171266
 
 # These are the channels where the bot will respond to user commands.
 # If not specified, the bot will respond in all channels.
 # <guild id>: [<text channel id>, <text channel id>, ...]
 bot_channels:
   184755239952318464: [334296431789604864]
+  297811083308171264: [297811083308171264]
 
 # This is the location of the bot's token. The token must be placed on
 # the first line of the file

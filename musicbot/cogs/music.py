@@ -20,7 +20,8 @@ should_continue = True
 URL_REGEX = re.compile(r'^\w+://(?:\w+\.)*?(\w+)\.(?:co\.)?\w+(?:$|/.*$)')
 WHITELIST = [
     'youtube',
-    'soundcloud'
+    'soundcloud',
+    'dropbox'
 ]
 
 #silent failure
@@ -183,6 +184,11 @@ class Music:
             if duration > perms['max_song_length']:
                 await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
                 return 'Max length'
+
+            for song in ctx.bot.queue:
+                if song.user and song.user.id == ctx.author.id and song.origin_url == url:
+                    await channel.send('You already have that song queued!')
+                    return 'Already queued'
 
             player = await YTDLSource.from_url(url, ctx.author, loop=self.bot.loop)
 
@@ -525,7 +531,7 @@ class Music:
         #  this better. :P
 
         if ctx.author.id not in self.bot.likes:
-            return await ctx.send(f'<@{ctx.author.id}>, you\'ve never liked any songs.')
+            return await ctx.send(f'{ctx.author.mention}, you\'ve never liked any songs.')
 
         for i in self.bot.likes[ctx.author.id]:
             i = base64.b64decode(i.encode('ascii')).decode('utf-8')
@@ -563,14 +569,14 @@ class Music:
                     await result_message.delete()
                     await confirm_message.delete()
 
-                    await ctx.send(f'<@{ctx.author.id}>, **{i}** has been removed from your likes.')
+                    await ctx.send(f'{ctx.author.mention}, **{i}** has been removed from your likes.')
                     self.bot.likes[ctx.author.id].remove(base64.b64encode(i.encode('utf-8')).decode('ascii'))
                     self.bot.save_likes()
                     return
                 else:
                     await result_message.delete()
                     await confirm_message.delete()
-        await ctx.send('<@{ctx.author.id}>, no song could be found. Sorry.')
+        await ctx.send(f'{ctx.author.mention}, no song could be found. Sorry.')
 
     @category('music')
     @commands.command()
@@ -621,7 +627,11 @@ class Music:
             if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
             message += '\n\n'
             for n, entry in enumerate(self.bot.queue[1:]):
-                to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
+                if entry.user:
+                    to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
+                else:
+                    to_add = f'`{n+1}.` **{entry.title}**\n'
+
                 if len(message) + len(to_add) > 1900:
                     message += f'*{len(self.bot.queue)-n-1} more*...'
                     break

@@ -24,10 +24,13 @@ class Misc:
     @commands.command()
     async def patreon(self, ctx):
         '''Posts info about patreon & the patrons'''
-        m = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
-        m += '\nSatomi ($1/mo, total $1)'
-        m += '\nsills ($1/mo, total $1)'
-        await ctx.send(m)
+        msg = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
+        msg += ' You can get added to this list to if you pledge any amount of money. You will also get extra songs in the music queue,'
+        msg += ' a colored flair, and other rewards depending on your pledge amount.'
+        msg += '\n**Space Witch ($3/mo)**'
+        msg += '\nSatomi ($1/mo)'
+        msg += '\nsills ($1/mo)'
+        await ctx.send(msg)
 
     @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
@@ -43,9 +46,9 @@ class Misc:
         likes = list(likes.items())
         likes.sort(key=lambda x:x[1], reverse=True)
         likes
-        m = '**The top 10 most liked songs of all time are:**\n'
-        m += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
-        await ctx.send(m)
+        msg = '**The top 10 most liked songs of all time are:**\n'
+        msg += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
+        await ctx.send(msg)
 
     @category('misc')
     @commands.command(aliases=['permissions'])
@@ -78,13 +81,13 @@ class Misc:
                             break
                     else:
                         whitelist.append(cmd.name)
-        m = '```yaml\n'
-        m += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
-        if len(vc_only)>0: m += 'VC_only: {}\n'.format(', '.join(vc_only))
-        m += 'Max_Song_Length: {}\n'.format(perms['max_song_length'])
-        m += 'Max_Songs: {}\n'.format(perms['max_songs_queued'])
-        m += '```'
-        await ctx.author.send(m)
+        msg = '```yaml\n'
+        msg += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
+        if len(vc_only)>0: msg += 'VC_only: {}\n'.format(', '.join(vc_only))
+        msg += 'Max_Song_Length: {}\n'.format(perms['max_song_length'])
+        msg += 'Max_Songs: {}\n'.format(perms['max_songs_queued'])
+        msg += '```'
+        await ctx.author.send(msg)
 
     @category('misc')
     @commands.command()
@@ -110,8 +113,8 @@ class Misc:
         data += '\nUser IDs:\n'
         if ctx.guild.large:
             await self.bot.request_offline_members(ctx.guild)
-        for m in ctx.guild.members:
-            data += '{}: {}\n'.format(m.name, m.id)
+        for msg in ctx.guild.members:
+            data += '{}: {}\n'.format(msg.name, msg.id)
 
         filename = '{}-ids-all.txt'.format("".join([x if x.isalnum() else "_" for x in ctx.guild.name]))
 
@@ -132,20 +135,17 @@ class Misc:
         cmds = {i for i in ctx.bot.all_commands.values()}
 
         if len(args) == 0:
-            d = ''#'**TWOWBot help:**'
-
             cats = {}
             for cmd in cmds:
                 if not hasattr(cmd, 'category'):
-                    cmd.category = 'Misc'
+                    cmd.category = 'misc'
                 if cmd.category not in cats:
                     cats[cmd.category] = []
                 cats[cmd.category].append(cmd)
             cats = list(cats.keys())
             cats.sort()
-
             width = max([len(cat) for cat in cats]) + 2
-            d += '**Categories:**\n'
+            d = '**Categories:**\n'
             for cat in zip(cats[0::2], cats[1::2]):
                 d += '**`{}`**{}**`{}`**\n'.format(cat[0],' ' * int(2.3 * (width-len(cat[0]))), cat[1])
             if len(cats)%2 == 1:
@@ -159,12 +159,14 @@ class Misc:
             for cmd in cmds:
                 if not hasattr(cmd, 'category'):
                     cmd.category = 'Misc'
-                if cmd.category not in cats:
-                    cats[cmd.category] = []
-                cats[cmd.category].append(cmd)
-            if args[0].title() in cats:
-                d = 'Commands in category **`{}`**:\n'.format(args[0])
-                for cmd in sorted(cats[args[0].title()], key=lambda x:x.name):
+                if cmd.category.lower() not in cats:
+                    cats[cmd.category.lower()] = []
+                cats[cmd.category.lower()].append(cmd)
+            if args[0].lower() in cats:
+                cog_name = args[0].title()
+                d = 'Commands in category **`{}`**:\n'.format(cog_name)
+                cmds = cats[args[0].lower()]
+                for cmd in sorted(list(cmds), key=lambda x:x.name):
                     d += '\n  `{}{}`'.format(ctx.prefix, cmd.name)
 
                     brief = cmd.brief
@@ -179,105 +181,30 @@ class Misc:
                     d = 'Command not found.'
                 else:
                     cmd = ctx.bot.all_commands[args[0]]
-                    d = 'Help for command `{}`:\n'.format(cmd.name)
-                    d += '\n**Usage:**\n'
-
-                    if type(cmd) != commands.core.Group or cmd.invoke_without_command:
-                        params = list(cmd.clean_params.items())
-                        p_str = ''
-                        for p in params:
-                            print(p[1], p[1].default, p[1].empty)
-                            if p[1].default == p[1].empty:
-                                p_str += ' <{}>'.format(p[0])
-                            else:
-                                p_str += ' [{}]'.format(p[0])
-                        d += '`{}{}{}`\n'.format(ctx.prefix, cmd.name, p_str)
-
-                    if type(cmd) == commands.core.Group:
-                        d += '`{}{} '.format(ctx.prefix, cmd.name)
-                        #if cmd.invoke_without_command:
-                        #    d += '['
-                        #else:
-                        #    d += '<'
-                        d += '|'.join(cmd.all_commands.keys())
-                        #if cmd.invoke_without_command:
-                        #    d += ']`\n'
-                        #else:
-                        #    d += '>`\n'
-                        d += '`\n'
-
-                    d += '\n**Description:**\n'
-                    d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
-
-                    if cmd.checks:
-                        d += '\n**Checks:**'
-                        for check in cmd.checks:
-                            d += '\n{}'.format(check.__qualname__.split('.')[0])
-                        d += '\n'
-
-                    if cmd.aliases:
-                        d += '\n**Aliases:**'
-                        for alias in cmd.aliases:
-                            d += '\n`{}{}`'.format(ctx.prefix, alias)
-
-                        d += '\n'
+                    d = self.get_help(ctx, cmd)
         else:
             d = ''
             cmd = ctx.bot
             cmd_name = ''
             for i in args:
                 i = i.replace('@', '@\u200b')
-                if hasattr(cmd, 'all_commands') and i in cmd.all_commands:
+                if cmd == ctx.bot and i in cmd.all_commands:
+                    cmd = cmd.all_commands[i]
+                    cmd_name += cmd.name + ' '
+                elif type(cmd) == commands.Group and i in cmd.all_commands:
                     cmd = cmd.all_commands[i]
                     cmd_name += cmd.name + ' '
                 else:
                     if cmd == ctx.bot:
                         d += 'Command not found.'
                     else:
-                        d += '`{}` has no sub-command `{}`.'.format(cmd.name, i)
+                        d += 'No sub-command found.'.format(cmd.name, i)
                     break
-            if cmd != ctx.bot:
-                d = 'Help for command `{}`:\n'.format(cmd_name)
-                d += '\n**Usage:**\n'
 
-                if type(cmd) != commands.core.Group:
-                    params = list(cmd.clean_params.items())
-                    p_str = ''
-                    for p in params:
-                        if p[1].default == p[1].empty:
-                            p_str += ' [{}]'.format(p[0])
-                        else:
-                            p_str += ' <{}>'.format(p[0])
-                    d += '`{}{}{}`\n'.format(ctx.prefix, cmd_name, p_str)
-                else:
-                    d += '`{}{} '.format(ctx.prefix, cmd.name)
-                    if cmd.invoke_without_command:
-                        d += '['
-                    else:
-                        d += '<'
-                    d += '|'.join(cmd.all_commands.keys())
-                    if cmd.invoke_without_command:
-                        d += ']`\n'
-                    else:
-                        d += '>`\n'
+            else:
+                d = self.get_help(ctx, cmd, name=cmd_name)
 
-                d += '\n**Description:**\n'
-                d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
-
-                if cmd.checks:
-                    d += '\n**Checks:**'
-                    for check in cmd.checks:
-                        d += '\n{}'.format(check.__qualname__.split('.')[0])
-                    d += '\n'
-
-                if cmd.aliases:
-                    d += '\n**Aliases:**'
-                    for alias in cmd.aliases:
-                        d += '\n`{}{}`'.format(ctx.prefix, alias)
-
-                    d += '\n'
-
-        d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
+        # d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
         return await ctx.send(d)
 
 
