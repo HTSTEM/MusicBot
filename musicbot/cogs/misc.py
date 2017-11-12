@@ -98,17 +98,17 @@ class Misc:
             return await ctx.send('There isn\'t a competition going on..')
         self.bot.like_comp_active = False
 
-        m = 'The like competition has ended.\n**Results:**\n'
+        msg = 'The like competition has ended.\n**Results:**\n'
         likes = []
         for user in self.bot.like_comp:
             for song in self.bot.like_comp[user]:
                 likes.append((user, song, len(self.bot.like_comp[user][song])))
         likes.sort(key=lambda x:x[2], reverse=True)
 
-        m += '\n'.join('`{}`: **{}** with the song **{}** and **{} like{}**'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '') for n, i in enumerate(likes[:10]))
+        msg += '\n'.join('`{}`: **{}** with the song **{}** and **{} like{}**'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '') for n, i in enumerate(likes[:10]))
 
         self.bot.like_comp = {}
-        await ctx.send(m)
+        await ctx.send(msg)
 
     # Moderation category
     @category('modding')
@@ -116,9 +116,9 @@ class Misc:
     async def bldump(self, ctx):
         '''Gets a list of every blacklisted user.'''
 
-        m = '**Blacklisted users:\n**'
-        m += '\n'.join(str(i) for i in self.bot.blacklist)
-        await ctx.author.send(m)
+        msg = '**Blacklisted users:\n**'
+        msg += '\n'.join(str(i) for i in self.bot.blacklist)
+        await ctx.author.send(msg)
         await ctx.send(':mailbox_with_mail:')
 
     @category('modding')
@@ -341,11 +341,13 @@ class Misc:
     @commands.command()
     async def patreon(self, ctx):
         '''Posts info about patreon & the patrons'''
-        m = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
-        m += '\n**Space Witch ($3/mo)**'
-        m += '\nSatomi ($1/mo)'
-        m += '\nsills ($1/mo)'
-        await ctx.send(m)
+        msg = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
+        msg += ' You can get added to this list to if you pledge any amount of money. You will also get extra songs in the music queue,'
+        msg += ' a colored flair, and other rewards depending on your pledge amount.'
+        msg += '\n**Space Witch ($3/mo)**'
+        msg += '\nSatomi ($1/mo)'
+        msg += '\nsills ($1/mo)'
+        await ctx.send(msg)
 
     @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
@@ -361,9 +363,9 @@ class Misc:
         likes = list(likes.items())
         likes.sort(key=lambda x:x[1], reverse=True)
         likes
-        m = '**The top 10 most liked songs of all time are:**\n'
-        m += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
-        await ctx.send(m)
+        msg = '**The top 10 most liked songs of all time are:**\n'
+        msg += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
+        await ctx.send(msg)
 
     @category('misc')
     @commands.command(aliases=['permissions'])
@@ -396,13 +398,13 @@ class Misc:
                             break
                     else:
                         whitelist.append(cmd.name)
-        m = '```yaml\n'
-        m += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
-        if len(vc_only)>0: m += 'VC_only: {}\n'.format(', '.join(vc_only))
-        m += 'Max_Song_Length: {}\n'.format(perms['max_song_length'])
-        m += 'Max_Songs: {}\n'.format(perms['max_songs_queued'])
-        m += '```'
-        await ctx.author.send(m)
+        msg = '```yaml\n'
+        msg += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
+        if len(vc_only)>0: msg += 'VC_only: {}\n'.format(', '.join(vc_only))
+        msg += 'Max_Song_Length: {}\n'.format(perms['max_song_length'])
+        msg += 'Max_Songs: {}\n'.format(perms['max_songs_queued'])
+        msg += '```'
+        await ctx.author.send(msg)
 
     @category('misc')
     @commands.command()
@@ -428,8 +430,8 @@ class Misc:
         data += '\nUser IDs:\n'
         if ctx.guild.large:
             await self.bot.request_offline_members(ctx.guild)
-        for m in ctx.guild.members:
-            data += '{}: {}\n'.format(m.name, m.id)
+        for msg in ctx.guild.members:
+            data += '{}: {}\n'.format(msg.name, msg.id)
 
         filename = '{}-ids-all.txt'.format("".join([x if x.isalnum() else "_" for x in ctx.guild.name]))
 
