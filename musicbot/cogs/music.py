@@ -749,28 +749,6 @@ class Music:
             self.remove_from_queue(player)
             await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
 
-    @category('bot')
-    @commands.command()
-    @commands.guild_only()
-    async def join(self, ctx, *, channel: discord.VoiceChannel):
-        '''Joins a voice channel'''
-
-        if ctx.voice_client is not None:
-            return await ctx.voice_client.move_to(channel)
-
-        self.bot.voice[ctx.guild.id] = await channel.connect()
-
-    @category('bot')
-    @commands.command()
-    @commands.guild_only()
-    async def summon(self, ctx):
-        '''Join the voice channel you're in.'''
-        voice = ctx.author.voice
-        if voice is None:
-            return await ctx.send('You are not in a voice channel!')
-
-        self.bot.voice[ctx.guild.id] = await voice.channel.connect()
-
     @category('player')
     @commands.command()
     @commands.guild_only()
@@ -805,42 +783,6 @@ class Music:
             await self.read_queue(ctx)
 
         should_continue = True
-
-    @category('player')
-    @commands.command()
-    @commands.guild_only()
-    async def resume(self, ctx):
-        '''Resumes player'''
-        if ctx.voice_client.is_paused():
-            ctx.voice_client.resume()
-            ctx.voice_client.source.start_time += time.time() - ctx.voice_client.source.pause_start
-
-    @category('player')
-    @commands.command()
-    @commands.guild_only()
-    async def pause(self, ctx):
-        '''Pause the player'''
-        if ctx.voice_client.is_playing():
-            ctx.voice_client.pause()
-            ctx.voice_client.source.pause_start = time.time()
-
-    @category('player')
-    @commands.command()
-    @commands.guild_only()
-    async def forceskip(self, ctx):
-        '''Forcefully skips a song'''
-        ctx.voice_client.stop()
-        await ctx.send('Song forceskipped.')
-
-    @category('player')
-    @commands.command()
-    @commands.guild_only()
-    async def clear(self, ctx):
-        '''Stops player and clears queue'''
-        while self.bot.queue:
-            self.bot.queue.pop()
-
-        ctx.voice_client.stop()
 
 
 def setup(bot):
