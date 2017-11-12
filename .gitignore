@@ -5,5 +5,5 @@ audio_cache/*
 error.txt
 musicbot/database.sqlite
 .idea/*
-
+.vscode
 *.log
