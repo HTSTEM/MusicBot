@@ -20,7 +20,8 @@ should_continue = True
 URL_REGEX = re.compile(r'^\w+://(?:\w+\.)*?(\w+)\.(?:co\.)?\w+(?:$|/.*$)')
 WHITELIST = [
     'youtube',
-    'soundcloud'
+    'soundcloud',
+    'dropbox'
 ]
 
 #silent failure
