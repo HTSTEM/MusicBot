@@ -342,7 +342,7 @@ class Misc:
     async def patreon(self, ctx):
         '''Posts info about patreon & the patrons'''
         m = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
-        m += '\nSpace Witch ($1/mo)'
+        m += '\nSpace Witch ($2/mo)'
         m += '\nSatomi ($1/mo)'
         m += '\nsills ($1/mo)'
         await ctx.send(m)
