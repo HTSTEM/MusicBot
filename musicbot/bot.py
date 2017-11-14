@@ -207,9 +207,8 @@ class MusicBot(commands.AutoShardedBot):
 
         if message.guild is not None and 'bot_channels' in self.config:
             bc = self.config['bot_channels']
-            if message.guild.id in bc:
-                if message.channel.id not in bc[message.guild.id]:
-                    return
+            if message.guild.id not in bc: return
+            if message.channel.id not in bc[message.guild.id]: return
 
         await self.process_commands(message)
 
