@@ -4,7 +4,6 @@ import discord
 
 from discord.ext import commands
 
-from .util import checks
 from .util.categories import category
 
 
@@ -50,7 +49,7 @@ class Core:
             ctx.bot.autoplaylist = conf_file.read().split('\n')
 
         with open('config/config.yml') as conf_file:
-            ctx.bot.config = self.yaml.load(conf_file)
+            ctx.bot.config = ctx.bot.yaml.load(conf_file)
 
         await ctx.send('Reloaded perms.')
 
