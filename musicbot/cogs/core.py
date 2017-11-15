@@ -40,11 +40,17 @@ class Core:
         await ctx.send('\N{OK HAND SIGN} Reloaded {} cogs successfully'.format(len(ctx.bot.extensions)))
 
     @category('bot')
-    @reload.command(name='perms')
-    async def reload_perms(self, ctx):
-        '''Reload the permissions'''
+    @reload.command(name='config')
+    async def reload_config(self, ctx):
+        '''Reload the config files'''
         with open('config/permissions.yml') as conf_file:
             ctx.bot.permissions = ctx.bot.yaml.load(conf_file)
+
+        with open('config/autoplaylist.txt') as conf_file:
+            ctx.bot.autoplaylist = conf_file.read().split('\n')
+
+        with open('config/config.yml') as conf_file:
+            ctx.bot.config = self.yaml.load(conf_file)
 
         await ctx.send('Reloaded perms.')
 
