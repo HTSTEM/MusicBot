@@ -48,10 +48,17 @@ class Comp:
                 likes.append((user, song, len(self.bot.like_comp[user][song])))
         likes.sort(key=lambda x:x[2], reverse=True)
 
-        m += '\n'.join('`{}`: **{}** with the song **{}** and **{} like{}**'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '') for n, i in enumerate(likes[:10]))
-
-        self.bot.like_comp = {}
+        for n, i in enumerate(likes):
+            ta = '`{}`: **{}** with the song **{}** and **{} like{}**\n'.format(n + 1, i[0], i[1], i[2], 's' if i[2] != 1 else '')
+            if len(m + ta) > 1500:
+                await ctx.send(m)
+                m = ''
+            m += ta
+        if m:
+            await ctx.send(m)
         await ctx.send(m)
+        
+        self.bot.like_comp = {}
 
 
 def setup(bot):
