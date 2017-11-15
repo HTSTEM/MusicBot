@@ -14,6 +14,55 @@ class Misc:
     def __init__(self, bot):
         self.bot = bot
 
+    def format_args(self, cmd):
+        params = list(cmd.clean_params.items())
+        p_str = ''
+        for p in params:
+            print(p[1], p[1].default, p[1].empty)
+            if p[1].default == p[1].empty:
+                p_str += f' <{p[0]}>'
+            else:
+                p_str += f' [{p[0]}]'
+
+        return p_str
+
+    def format_commands(self, prefix, cmd, name=None):
+        cmd_args = self.format_args(cmd)
+        if not name: name = cmd.name
+        name = name.replace('  ',' ')
+        d = f'`{prefix}{name}{cmd_args}`\n'
+
+        if type(cmd) == commands.core.Group:
+            cmds = sorted(list(cmd.commands), key=lambda x: x.name)
+            for subcmd in cmds:
+                d += self.format_commands(prefix, subcmd, name=f'{name} {subcmd.name}')
+
+        return d
+
+    def get_help(self, ctx, cmd, name=None):
+        d = f'Help for command `{cmd.name}`:\n'
+        d += '\n**Usage:**\n'
+
+        d += self.format_commands(ctx.prefix, cmd, name=name)
+
+        d += '\n**Description:**\n'
+        d += '{}\n'.format('None' if cmd.help is None else cmd.help.strip())
+
+        if cmd.checks:
+            d += '\n**Checks:**'
+            for check in cmd.checks:
+                d += '\n{}'.format(check.__qualname__.split('.')[0])
+            d += '\n'
+
+        if cmd.aliases:
+            d += '\n**Aliases:**'
+            for alias in cmd.aliases:
+                d += f'\n`{ctx.prefix}{alias}`'
+
+            d += '\n'
+
+        return d
+
     @category('misc')
     @commands.command()
     async def id(self, ctx):
