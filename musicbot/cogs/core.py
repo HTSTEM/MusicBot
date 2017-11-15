@@ -51,7 +51,7 @@ class Core:
         with open('config/config.yml') as conf_file:
             ctx.bot.config = ctx.bot.yaml.load(conf_file)
 
-        await ctx.send('Reloaded perms.')
+        await ctx.send('Reloaded config files.')
 
     @category('bot')
     @commands.command(aliases=['exception'])
