@@ -42,14 +42,20 @@ class Core:
     @reload.command(name='config')
     async def reload_config(self, ctx):
         '''Reload the config files'''
-        with open('config/permissions.yml') as conf_file:
-            ctx.bot.permissions = ctx.bot.yaml.load(conf_file)
+        with open('config/autoplaylist.txt') as ap_file:
+            ctx.bot.autoplaylist = ap_file.read().split('\n')
 
-        with open('config/autoplaylist.txt') as conf_file:
-            ctx.bot.autoplaylist = conf_file.read().split('\n')
+        with open('config/jingles.txt') as jingle_file:
+            ctx.bot.jingles = jingle_file.read().split('\n')
+
+        with open('config/blacklist.txt') as bl_file:
+            ctx.bot.blacklist = [int(i) for i in bl_file.read().split('\n') if i]
 
         with open('config/config.yml') as conf_file:
             ctx.bot.config = ctx.bot.yaml.load(conf_file)
+
+        with open('config/permissions.yml') as perm_file:
+            ctx.bot.permissions = ctx.bot.yaml.load(perm_file)
 
         await ctx.send('Reloaded config files.')
 
