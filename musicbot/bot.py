@@ -126,7 +126,10 @@ class MusicBot(commands.AutoShardedBot):
             return
 
         elif isinstance(exception, commands.CommandOnCooldown):
-            await ctx.send(f'You\'re going a bit fast, try again in {exception.retry_after:.2f} seconds.')
+            await ctx.send(
+                f'{ctx.author.mention} You\'re going a bit fast, try again in {exception.retry_after:.2f} seconds.',
+                delete_after = 5
+            )
 
         elif isinstance(exception, commands.CheckFailure):
             if 'bot_in_vc' in exception.args:
