@@ -139,6 +139,17 @@ class Music:
 
         queue.pop(i)
 
+    def get_queue_length(self):
+        if self.bot.queue:
+            ttp = int(self.bot.queue[0].start_time-time.time())
+        else:
+            ttp = 0
+
+        for entry in self.bot.queue:
+            ttp += entry.duration
+
+        return ttp
+
     async def queue_url(self, url, ctx, dm=False, data=None):
         if dm:
             channel = ctx.author.dm_channel
@@ -513,22 +524,6 @@ class Music:
     async def unlike(self, ctx, song):
         '''Remove your 'like' from a song.
         This does not affect like competitions.'''
-        # Notes for any other developers:
-        # I was originally using levenshtein, however there is one
-        # problem I have found with it in the past:
-        # If the search string is short, then levenshtein will weight
-        # other short strings higher, even if they have nothing to do
-        # with your target. For example, if I searched 'abcd' looking
-        # for 'abcdefghijklmnop', 'jlki' would have a higher priority
-        # than what you really want. For this reason, I'm just using
-        # `in`.
-        #
-        # TL;DR:
-        # Levenshtein sucks as a general search algorithm.
-        #
-        # P.S.
-        #  I might write my own algorithm one day to use that handles
-        #  this better. :P
 
         if ctx.author.id not in self.bot.likes:
             return await ctx.send(f'{ctx.author.mention}, you\'ve never liked any songs.')
@@ -617,8 +612,10 @@ class Music:
             playing_time = int(time.time()-playing.start_time)
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
+            ttp = time.gmtime(max(0, self.get_queue_length()))
 
-            message = f'Now playing: **{playing.title}**'
+            message = f'`{time.strftime("%H:%M:%S", ttp)}` in queue.\n'
+            message += f'Now playing: **{playing.title}**'
             if playing.user: message += ' added by {}'.format(playing.user.name)
             message += ' `[{}/{}]`'.format(
                 time.strftime('%M:%S', time.gmtime(max(0,playing_time))),
