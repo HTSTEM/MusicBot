@@ -528,7 +528,7 @@ class Music:
 
     @category('music')
     @commands.command(aliases=['remlike', 'dislike'])
-    @commands.cooldown(10, 5, type=commands.BucketType.user)
+    @commands.cooldown(1, 1, type=commands.BucketType.user)
     async def unlike(self, ctx, song):
         '''Remove your 'like' from a song.
         This does not affect like competitions.'''
@@ -656,7 +656,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
-    @commands.cooldown(1, 30, type=commands.BucketType.guild)
+    @commands.cooldown(2, 30, type=commands.BucketType.guild)
     async def np(self, ctx):
         '''Gets the currently playing song'''
         if self.bot.queue:
