@@ -1,4 +1,3 @@
-import asyncio
 import base64
 import os
 
@@ -65,12 +64,14 @@ class Misc:
 
     @category('misc')
     @commands.command()
+    @commands.cooldown(1, 15, type=commands.BucketType.user)
     async def id(self, ctx):
         '''Get your user id'''
         await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
 
     @category('misc')
     @commands.command()
+    @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def patreon(self, ctx):
         '''Posts info about patreon & the patrons'''
         msg = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
@@ -83,6 +84,7 @@ class Misc:
 
     @category('misc')
     @commands.command(aliases=['mostliked', 'most_likes', 'mostlikes'])
+    @commands.cooldown(4, 60, type=commands.BucketType.guild)
     async def most_liked(self, ctx):
         '''Get the top 10 most liked songs of all time'''
         likes = {}
@@ -94,7 +96,6 @@ class Misc:
                 likes[j] += 1
         likes = list(likes.items())
         likes.sort(key=lambda x:x[1], reverse=True)
-        likes
         msg = '**The top 10 most liked songs of all time are:**\n'
         msg += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
         await ctx.send(msg)
@@ -102,6 +103,7 @@ class Misc:
     @category('misc')
     @commands.command(aliases=['permissions'])
     @commands.guild_only()
+    @commands.cooldown(1, 120, type=commands.BucketType.user)
     async def perms(self, ctx):
         '''View your permissions'''
         perms = await checks.permissions_for(ctx)
@@ -141,6 +143,7 @@ class Misc:
     @category('misc')
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 120, type=commands.BucketType.user)
     async def listids(self, ctx):
         '''Get all of the IDs for the current server'''
         data = 'Your ID: {}\n\n'.format(ctx.author.id)
@@ -179,6 +182,7 @@ class Misc:
     @category('misc')
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(10, 15, type=commands.BucketType.user)
     async def help(self, ctx, *args):
         '''This help message'''
         cmds = {i for i in ctx.bot.all_commands.values()}
@@ -253,7 +257,7 @@ class Misc:
             else:
                 d = self.get_help(ctx, cmd, name=cmd_name)
 
-        # d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
+        d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
         return await ctx.send(d)
 
 

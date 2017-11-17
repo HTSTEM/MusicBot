@@ -249,6 +249,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @commands.cooldown(2, 15, type=commands.BucketType.user)
     @checks.command_processed()
     async def play(self, ctx, *, url):
         '''Streams from a url (almost anything youtube_dl supports)'''
@@ -294,6 +295,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @commands.cooldown(2, 15, type=commands.BucketType.user)
     @checks.command_processed()
     async def search(self, ctx, *, query):
         '''Search for a song'''
@@ -380,6 +382,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @commands.cooldown(2, 15, type=commands.BucketType.user)
     @checks.command_processed()
     async def jingle(self, ctx, number:int = None):
         '''Enqueues a jingle'''
@@ -418,6 +421,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @commands.cooldown(2, 30, type=commands.BucketType.user)
     async def skip(self, ctx):
         '''Registers that you want to skip the current song.'''
         skip_grace = self.bot.config['skip_grace']
@@ -453,6 +457,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @commands.cooldown(2, 30, type=commands.BucketType.user)
     async def unskip(self, ctx):
         '''Removes your vote to skip the current song.'''
 
@@ -466,6 +471,7 @@ class Music:
 
     @category('music')
     @commands.command()
+    @commands.cooldown(1, 120, type=commands.BucketType.user)
     async def mylikes(self, ctx):
         '''Get a list of every song you've ever liked.'''
         if ctx.author.id in self.bot.likes and self.bot.likes[ctx.author.id]:
@@ -488,6 +494,7 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
+    @commands.cooldown(2, 30, type=commands.BucketType.user)
     async def like(self, ctx):
         ''''Like' the currently playing song'''
         if not self.bot.queue:
@@ -521,6 +528,7 @@ class Music:
 
     @category('music')
     @commands.command(aliases=['remlike', 'dislike'])
+    @commands.cooldown(10, 5, type=commands.BucketType.user)
     async def unlike(self, ctx, song):
         '''Remove your 'like' from a song.
         This does not affect like competitions.'''
@@ -576,6 +584,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 30, type=commands.BucketType.user)
     async def minewhen(self, ctx):
         '''Tells you when your song will play'''
         if self.bot.queue:
@@ -602,6 +611,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 30, type=commands.BucketType.guild)
     async def queue(self, ctx):
         '''Shows the current queue.'''
         if self.bot.queue:
@@ -646,6 +656,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 30, type=commands.BucketType.guild)
     async def np(self, ctx):
         '''Gets the currently playing song'''
         if self.bot.queue:

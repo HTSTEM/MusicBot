@@ -1,8 +1,5 @@
-import discord
-
 from discord.ext import commands
 
-from .util import checks
 from .util.categories import category
 
 

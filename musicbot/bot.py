@@ -125,6 +125,9 @@ class MusicBot(commands.AutoShardedBot):
         elif isinstance(exception, commands.NoPrivateMessage):
             return
 
+        elif isinstance(exception, commands.CommandOnCooldown):
+            await ctx.send(f'You\'re going a bit fast, try again in {exception.retry_after:.2f} seconds.')
+
         elif isinstance(exception, commands.CheckFailure):
             if 'bot_in_vc' in exception.args:
                 await ctx.send('I\'m not in a voice channel on this server.')
