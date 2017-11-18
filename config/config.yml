@@ -7,6 +7,9 @@ skip_grace: 5
 # How many items need to be in the queue before it becomes moderator-only
 public_queue_max: 10
 
+# How long the vc should be empty in minutes until the queue gets cleared. -1 to disable
+clear_time: 10
+
 # The bot will auto-join and start playing in these.
 # <guild id>: <voice channel id>
 default_channels:
