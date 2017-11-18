@@ -163,47 +163,6 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.error('Unhandled exception - {}'.format(''.join(info)))
         await self.notify_devs(''.join(info))
 
-    async def on_voice_state_update(self, member, before, after):
-        if (after.channel is None) and (before.channel is None):
-            return
-
-        if after.channel is None:
-            channel = before.channel
-            left = True
-        else:
-            channel = after.channel
-            left = False
-
-        if channel.guild.id in self.voice:
-            vc = self.voice[channel.guild.id]
-
-            if vc.channel != channel: return
-
-            if len(channel.members) <= 1:
-                await self.wait_for_source(vc)
-                if vc.is_playing():
-                    self.logger.info(f'{channel.name} empty. Pausing.')
-                    vc.pause()
-                    vc.source.pause_start = time.time()
-            else:
-                empty = True
-
-                for m in channel.members:
-                    if (not (m.voice.deaf or m.voice.self_deaf)) and (not m.bot):
-                        empty = False
-
-                if not empty:
-                    if vc.is_paused():
-                        self.logger.info(f'Someone appeared in {channel.name}! Resuming.')
-                        vc.resume()
-                        vc.source.start_time += time.time() - vc.source.pause_start
-                else:
-                    await self.wait_for_source(vc)
-                    if vc.is_playing():
-                        self.logger.info(f'{channel.name} empty. Pausing.')
-                        vc.pause()
-                        vc.source.pause_start = time.time()
-
     async def on_message(self, message):
         #if message.guild is None:  # DMs
         #    return
