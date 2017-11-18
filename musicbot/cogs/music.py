@@ -611,7 +611,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
-    @commands.cooldown(1, 30, type=commands.BucketType.guild)
+    @commands.cooldown(1, 120, type=commands.BucketType.guild)
     async def queue(self, ctx):
         '''Shows the current queue.'''
         if self.bot.queue:
