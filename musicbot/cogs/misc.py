@@ -162,6 +162,7 @@ class Misc:
         if len(vc_only)>0: msg += 'VC_only: {}\n'.format(', '.join(vc_only))
         msg += 'Max_Song_Length: {}\n'.format(perms['max_song_length'])
         msg += 'Max_Songs: {}\n'.format(perms['max_songs_queued'])
+        msg += 'Max_Playlist_Length: {}\n'.format(perms['max_playlist_length'])
         msg += '```'
         await ctx.author.send(msg)
 
