@@ -611,7 +611,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
-    @commands.cooldown(1, 30, type=commands.BucketType.guild)
+    @commands.cooldown(1, 120, type=commands.BucketType.guild)
     async def queue(self, ctx):
         '''Shows the current queue.'''
         if self.bot.queue:
@@ -688,6 +688,7 @@ class Music:
 
         if len(songs) == 0:
             await ctx.send(f'<@{ctx.author.id}>, you don\'t appear to have any songs in the queue.')
+            return
         elif len(songs) == 1:
             player = songs[0]
         else:
@@ -701,7 +702,7 @@ class Music:
                 title = resp.content
 
             for song in songs:
-                if title in song.title:
+                if title.lower() in song.title.lower():
                     player = song
                     break
             else:
@@ -766,18 +767,6 @@ class Music:
                 return
             self.remove_from_queue(player)
             await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
-
-    @category('player')
-    @commands.command()
-    @commands.guild_only()
-    async def volume(self, ctx, volume: int):
-        '''Changes the player's volume'''
-
-        if ctx.voice_client is None:
-            return await ctx.send('Not connected to a voice channel.')
-
-        ctx.voice_client.source.volume = volume / 100
-        await ctx.send('Changed volume to {volume}%')
 
     @category('bot')
     @commands.command()
