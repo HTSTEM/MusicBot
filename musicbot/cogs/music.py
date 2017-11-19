@@ -688,6 +688,7 @@ class Music:
 
         if len(songs) == 0:
             await ctx.send(f'<@{ctx.author.id}>, you don\'t appear to have any songs in the queue.')
+            return
         elif len(songs) == 1:
             player = songs[0]
         else:
