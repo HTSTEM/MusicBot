@@ -702,7 +702,7 @@ class Music:
                 title = resp.content
 
             for song in songs:
-                if title in song.title:
+                if title.lower() in song.title.lower():
                     player = song
                     break
             else:
