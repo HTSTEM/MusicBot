@@ -86,9 +86,9 @@ class Misc:
             amnt = s.get(uid).get('pledge')
             name = self.bot.get_user(uid).name
             if amnt >= 3:
-                msg += '**{0} (${1}/mo)**'.format(name, amnt)
+                msg += '**{0} (${1}/mo)**\n'.format(name, amnt)
             else:
-                msg += '{0} (${1}/mo)'.format(name, amnt)
+                msg += '{0} (${1}/mo)\n'.format(name, amnt)
         await ctx.send(msg)
 
     @category('misc')
