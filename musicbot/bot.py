@@ -40,6 +40,10 @@ class MusicBot(commands.AutoShardedBot):
         with open('config/permissions.yml') as conf_file:
             self.permissions = self.yaml.load(conf_file)
 
+        if os.path.exists('config/patrons.yml'):
+            with open('config/patrons.yml') as patron_file:
+                self.patrons = self.yaml.load(patron_file)
+
         if 'command_prefix' in self.config:
             command_prefix = self.config['command_prefix']
 

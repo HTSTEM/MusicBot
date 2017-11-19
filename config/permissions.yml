@@ -81,13 +81,4 @@ roles:
       - player
       - misc
 
-# pledge amounts are separated from permissions because it's easier to deal with programatically
-patrons:
-  319350638024720384: # Space Witch
-    pledge: 3
-  154825973278310400: # Satomi
-    pledge: 1
-  198191547970355200: # sills
-    pledge: 1
-
   # I just set everything up for htc, set things up for your servers if you want

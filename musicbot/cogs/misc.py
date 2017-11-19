@@ -74,12 +74,21 @@ class Misc:
     @commands.cooldown(1, 10, type=commands.BucketType.guild)
     async def patreon(self, ctx):
         '''Posts info about patreon & the patrons'''
-        msg = 'The following is a list of users who are contributing to <https://patreon.com/HTSTEM>, which helps fund the bot hosting.'
-        msg += ' You can get added to this list to if you pledge any amount of money. You will also get extra songs in the music queue,'
-        msg += ' a colored flair, and other rewards depending on your pledge amount.'
-        msg += '\n**Space Witch ($3/mo)**'
-        msg += '\nSatomi ($1/mo)'
-        msg += '\nsills ($1/mo)'
+        s = self.bot.patrons
+        msg = 'All of the bots on this server (such as the Musicbot, Flairbot, and Joinbot) were all made by our wonderful developers over countless hours. '
+        msg += 'As much as we would love to provide these bots for free, they need a place to be hosted, which costs money. '
+        msg += 'That\'s where you come in. If you donate at <https://patreon.com/HTSTEM>, you can support our developers by allowing them to host the bots, pay for websites, domains, '
+        msg += 'and possibly other fun things along the way. '
+        msg += 'Supporting us gives you access to some really cool rewards, like being added to this list (comes with any donation amount); being able to queue a bunch more songs in the music channel; '
+        msg += 'recieving a special, patreon-only flair; and other special things depending on your pledge amount.\n'
+        msg += '--Our wonderful Patrons:--\n'
+        for uid in s:
+            amnt = s.get(uid).get('pledge')
+            name = self.bot.get_user(uid).name
+            if amnt >= 3:
+                msg += '**{0} (${1}/mo)**'.format(name, amnt)
+            else:
+                msg += '{0} (${1}/mo)'.format(name, amnt)
         await ctx.send(msg)
 
     @category('misc')
