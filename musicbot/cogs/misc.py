@@ -101,6 +101,31 @@ class Misc:
         await ctx.send(msg)
 
     @category('misc')
+    @commands.command()
+    @commands.cooldown(1, 60, type=commands.BucketType.guild)
+    async def dump_likes(self, ctx):
+        '''Get a dump of every like (all time)'''
+        likes = {}
+        for i in self.bot.likes:
+            for j in self.bot.likes[i]:
+                j = base64.b64decode(j.encode('ascii')).decode('utf-8')
+                if j not in likes:
+                    likes[j] = 0
+                likes[j] += 1
+        likes = list(likes.items())
+        likes.sort(key=lambda x:x[1], reverse=True)
+        msg = '\n'.join(f'{i[1]},{i[0]}' for i in likes)
+
+        with open('likesdump.txt', 'w') as f:
+            f.write(msg)
+
+        await ctx.send(':mailbox_with_mail:')
+        with open('likesdump.txt', 'rb') as ids_file:
+            await ctx.author.send(file=discord.File(ids_file))
+
+        os.remove('likesdump.txt')
+
+    @category('misc')
     @commands.command(aliases=['permissions'])
     @commands.guild_only()
     @commands.cooldown(1, 120, type=commands.BucketType.user)
