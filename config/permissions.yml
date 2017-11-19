@@ -3,7 +3,7 @@
 # this is the default fallback for things/people without perms specified
 # the commands allowed will be default-blacklist+whitelist
 default:
-  #this specifies which categories default users can use
+  # this specifies which categories default users can use
   whitelist:
     - misc
     - music
@@ -30,19 +30,22 @@ users:
       - comp
       - owner
       - git
-      #owner isn't used yet, but might be in the future
+      # owner isn't used yet, but might be in the future
     max_playlist_length: 100
 
-  #use user ids
+  # use user ids
   000000000000000: {}
 
-  #patrons!
-  319350638024720384: #Space Witch, $3/mo
+  # patrons!
+  319350638024720384: # Space Witch
     max_songs_queued: 45
-  154825973278310400: #Satomi, $1/mo
+    pledge: 3
+  154825973278310400: # Satomi
     max_songs_queued: 25
-  198191547970355200: #sills, $1/mo
+    pledge: 1
+  198191547970355200: # sills
     max_songs_queued: 25
+    pledge: 1
 
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
@@ -58,24 +61,33 @@ roles:
       - git
     # idk, do we want to give mods perms to use all songs?
 
-  #event team
+  # event team
   344352523466833930:
     # adds default stuff
     # this equals default stuff + comp stuff
     whitelist:
       - comp
 
-  #developer
+  # developer
   334341418334027776:
     whitelist:
       - git
       - bot
 
-  #memelord
+  # memelord
   334301546710040576:
     # blacklist memelords
     blacklist:
       - player
       - misc
+
+# pledge amounts are separated from permissions because it's easier to deal with programatically
+patrons:
+  319350638024720384: # Space Witch
+    pledge: 3
+  154825973278310400: # Satomi
+    pledge: 1
+  198191547970355200: # sills
+    pledge: 1
 
   # I just set everything up for htc, set things up for your servers if you want
