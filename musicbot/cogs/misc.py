@@ -82,9 +82,12 @@ class Misc:
         msg += 'Supporting us gives you access to some really cool rewards, like being added to this list (comes with any donation amount); being able to queue a bunch more songs in the music channel; '
         msg += 'recieving a special, patreon-only flair; and other special things depending on your pledge amount.\n'
         msg += '--Our wonderful Patrons:--\n'
-        for uid in s:
-            amnt = s.get(uid).get('pledge')
-            name = self.bot.get_user(uid).name
+        for uid in s["patrons"]:
+            amnt = s["patrons"].get(uid).get('pledge')
+            try:
+                name = self.bot.get_user(uid).name
+            except Exception as e:
+                name = uid + " (name not available)"
             if amnt >= 3:
                 msg += '**{0} (${1}/mo)**\n'.format(name, amnt)
             else:
