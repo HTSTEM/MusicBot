@@ -39,12 +39,15 @@ users:
   # patrons!
   319350638024720384: # Space Witch
     max_songs_queued: 45
+    max_playlist_length: 45
     pledge: 3
   154825973278310400: # Satomi
     max_songs_queued: 25
+    max_playlist_length: 25
     pledge: 1
   198191547970355200: # sills
     max_songs_queued: 25
+    max_playlist_length: 25
     pledge: 1
 
 # add specific perms for roles
