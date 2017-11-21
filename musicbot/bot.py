@@ -19,7 +19,7 @@ from cogs.util.cache import QueueTable
 class MusicBot(commands.AutoShardedBot):
     def __init__(self, command_prefix='!', *args, **kwargs):
         self.database = sqlite3.connect('musicbot/database.sqlite', check_same_thread=False)
-        self.queue = None
+        self.queues = {}
 
         self.pending = set()
         logging.basicConfig(
@@ -57,7 +57,7 @@ class MusicBot(commands.AutoShardedBot):
 
         if os.path.exists('config/blacklist.txt'):
             with open('config/blacklist.txt') as bl_file:
-                self.blacklist = [int(i) for i in bl_file.read().split('\n') if i]
+                self.blacklist = [(int(i.split(',')[0]), int(i.split(',')[1])) for i in bl_file.read().split('\n') if i]
         else:
             self.blacklist = []
 
@@ -70,7 +70,7 @@ class MusicBot(commands.AutoShardedBot):
 
     def save_bl(self):
         with open('config/blacklist.txt', 'w') as bl_file:
-            bl_file.write('\n'.join(str(i) for i in self.blacklist))
+            bl_file.write('\n'.join(f'i[0],i[1]' for i in self.blacklist))
     def save_likes(self):
         with open('config/likes.yml', 'w') as conf_file:
             self.yaml.dump(self.likes, conf_file)
@@ -100,16 +100,18 @@ class MusicBot(commands.AutoShardedBot):
 
         os.remove('error.txt')
 
-    async def wait_for_source(self, voice_client, timeout = 10):
+    async def wait_for_source(self, voice_client, timeout=10):
         if timeout is None or timeout <= 0:
             while voice_client.source is None: await asyncio.sleep(0.5)
         else:
-            for i in range(2*timeout):
+            for i in range(2 * timeout):
                 if voice_client.source is not None: break
                 else: await asyncio.sleep(0.5)
 
-        if voice_client.source is None: raise asyncio.TimeoutError
-        else: return voice_client.source
+        if voice_client.source is None:
+            self.logging.warning('wait_for_source timed out!')
+
+        return voice_client.source
 
     # Client events
     async def on_command_error(self, ctx: commands.Context, exception: Exception):
@@ -171,7 +173,7 @@ class MusicBot(commands.AutoShardedBot):
         #if message.guild is None:  # DMs
         #    return
 
-        if message.author.id in self.blacklist:
+        if (message.guild.id, message.author.id) in self.blacklist:
             return
 
         if message.guild is not None and 'bot_channels' in self.config:
@@ -187,9 +189,11 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.info(f'Users   : {len(set(self.get_all_members()))}')
         self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
 
-        self.queue = QueueTable(self, 'queue')
+        for i in self.guilds:
+            q = QueueTable(self, f'queue-{i.id}')
+            await q._populate()
 
-        await self.queue._populate()
+            self.queues[i.id] = q
 
         if 'default_channels' in self.config:
             class Holder:
@@ -230,6 +234,7 @@ class MusicBot(commands.AutoShardedBot):
                         c = guild.get_channel(self.config['bot_channels'][guild_id][0])
                         cctx.send = c.send
                         cctx.channel = c
+                        cctx.guild = guild
                         await self.cogs['Music'].auto_playlist(cctx)
 
                         if len(vc.channel.members) <= 1:

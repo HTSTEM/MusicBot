@@ -13,7 +13,7 @@ class Moderation:
         '''Gets a list of every blacklisted user.'''
 
         m = '**Blacklisted users:\n**'
-        m += '\n'.join(str(i) for i in self.bot.blacklist)
+        m += '\n'.join(str(i[1]) for i in self.bot.blacklist if i[0] == ctx.guild.id)
         await ctx.author.send(m)
         await ctx.send(':mailbox_with_mail:')
 
@@ -36,7 +36,7 @@ class Moderation:
             user = ctx.guild.get_member(id)
             if user is None or not user.permissions_in(ctx.channel).manage_channels:
                 if id not in self.bot.blacklist:
-                    self.bot.blacklist.append(id)
+                    self.bot.blacklist.append((ctx.guild.id, id))
                     self.bot.save_bl()
                     await ctx.send('The user with the id `{}` has been blacklisted.'.format(id))
                 else:
@@ -44,11 +44,11 @@ class Moderation:
             else:
                 await ctx.send('You can\'t blacklist someone with `Manage Channels`. Please ask a developer if you *must* blacklist them.')
         else:
-            if id not in self.bot.blacklist:
+            if (ctx.guild.id, id) not in self.bot.blacklist:
                 await ctx.send('`{}` isn\'t in the blacklist.'.format(id))
             else:
-                while id in self.bot.blacklist:
-                    self.bot.blacklist.remove(id)
+                while (ctx.guild.id, id) in self.bot.blacklist:
+                    self.bot.blacklist.remove((ctx.guild.id, id))
                 self.bot.save_bl()
                 await ctx.send('The user with the id `{}` has been removed from the blacklist.'.format(id))
 
