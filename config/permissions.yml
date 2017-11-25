@@ -20,7 +20,7 @@ default:
 # add specific perms for users here
 # perms stated under users have precedence of perms under roles
 users:
-  161508165672763392:
+  240995021208289280:
     whitelist:
       - bot
       - player
@@ -29,17 +29,7 @@ users:
       - owner
       - git
   # special bot owner field
-  owner:
-    # access to all commands
-    whitelist:
-      - bot
-      - player
-      - moderation
-      - comp
-      - owner
-      - git
-      # owner isn't used yet, but might be in the future
-    max_playlist_length: 100
+  owner: {}
 
   # use user ids
   000000000000000: {}
