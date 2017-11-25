@@ -68,7 +68,7 @@ class Player:
 
         async def clear_queue():
             await asyncio.sleep(period*60)
-            self.logger.info(f'{vc.channel.name} empty for {period} minutes. Clearing queue.')
+            self.bot.logger.info(f'{vc.channel.name} empty for {period} minutes. Clearing queue.')
             while len(self.bot.queues[vc.channel.guild.id]) > 1:
                 self.bot.queues[vc.channel.guild.id].pop(1)
 

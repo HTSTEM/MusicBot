@@ -18,6 +18,31 @@ class Moderation:
         await ctx.send(':mailbox_with_mail:')
 
     @category('moderation')
+    @commands.guild_only()
+    @commands.command()
+    async def default_channel(self, ctx):
+        """Instruct the bot to auto-join the current channel."""
+        voice = ctx.author.voice
+        if voice is None:
+            return await ctx.send('You are not in a voice channel!')
+
+        for i in list(self.bot.default_channels):
+            if i[0] == ctx.guild.id:
+                self.bot.default_channels.remove(i)
+        self.bot.default_channels.append((ctx.guild.id,
+                                          voice.channel.id,
+                                          ' ' + ctx.guild.name))
+        self.bot.save_default_channels()
+        if self.bot.voice.get(ctx.guild.id) is not None:
+            await self.bot.voice[ctx.guild.id].disconnect()
+            del self.bot.voice[ctx.guild.id]
+
+        self.bot.voice[ctx.guild.id] = await voice.channel.connect()
+        await self.bot.cogs['Music'].auto_playlist(ctx)
+
+        return await ctx.send(f'{voice.channel.name} has been set as the default channel.')
+
+    @category('moderation')
     @commands.command()
     async def blacklist(self, ctx, mode, id):
         """Blacklist a user from using commands"""
