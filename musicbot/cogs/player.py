@@ -57,7 +57,7 @@ class Player:
             return await ctx.send('Not connected to a voice channel.')
 
         ctx.voice_client.source.volume = volume / 100
-        await ctx.send('Changed volume to {volume}%')
+        await ctx.send(f'Changed volume to {volume}%')
 
     def pause_player(self, vc):
         self.bot.logger.info(f'{vc.channel.name} empty. Pausing.')
