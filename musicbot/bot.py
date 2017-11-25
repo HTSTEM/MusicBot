@@ -218,9 +218,12 @@ class MusicBot(commands.AutoShardedBot):
     async def on_message(self, message):
         #if message.guild is None:  # DMs
         #    return
-
-        if (message.guild.id, message.author.id) in self.blacklist:
+        if message.author.bot:
             return
+
+        if message.guild is not None:
+            if (message.guild.id, message.author.id) in self.blacklist:
+                return
 
         await self.process_commands(message)
 
