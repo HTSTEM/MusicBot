@@ -49,7 +49,7 @@ class Core:
             ctx.bot.jingles = jingle_file.read().split('\n')
 
         with open('config/blacklist.txt') as bl_file:
-            ctx.bot.blacklist = [int(i) for i in bl_file.read().split('\n') if i]
+            ctx.bot.blacklist = [(int(i.split(',')[0]), int(i.split(',')[1])) for i in bl_file.read().split('\n') if i]
 
         with open('config/config.yml') as conf_file:
             ctx.bot.config = ctx.bot.yaml.load(conf_file)
