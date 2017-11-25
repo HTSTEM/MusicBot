@@ -45,8 +45,8 @@ class Music:
 
     # Utilities:
     async def read_queue(self, ctx):
-        if self.bot.queue:
-            just_played = self.bot.queue.pop(0)
+        if self.bot.queues[ctx.guild.id]:
+            just_played = self.bot.queues[ctx.guild.id].pop(0)
             if just_played.likes and just_played.channel is not None:
                 if just_played.user is not None:
                     await just_played.channel.send('<@{}>, your song **{}** recieved **{}** like{}.'.format(
@@ -55,23 +55,23 @@ class Music:
                     await just_played.channel.send('The song **{}** recieved **{}** like{}.'.format(
                         just_played.title, len(just_played.likes), '' if len(just_played.likes) == 1 else 's'))
 
-        if self.bot.queue:
+        if self.bot.queues[ctx.guild.id]:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
-            await self.start_playing(ctx, self.bot.queue[0])
+            await self.start_playing(ctx, self.bot.queues[ctx.guild.id][0])
         else:
             self.bot.logger.info('Queue empty. Using auto-playlist.')
             await self.auto_playlist(ctx)
 
     async def auto_playlist(self, ctx):
-        if self.bot.queue:
+        if self.bot.queues[ctx.guild.id]:
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
-            await self.start_playing(ctx, self.bot.queue[0])
+            await self.start_playing(ctx, self.bot.queues[ctx.guild.id][0])
             return
 
         found = False
-        while not found and not self.bot.queue:
+        while not found and not self.bot.queues[ctx.guild.id]:
             if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
                 url = random.choice(self.bot.jingles)
                 self.jingle_last = True
@@ -89,33 +89,33 @@ class Music:
             if player is None:
                 found = False
 
-        if not self.bot.queue:
-            self.bot.queue.append(player)
+        if not self.bot.queues[ctx.guild.id]:
+            self.bot.queues[ctx.guild.id].append(player)
 
             if ctx.voice_client.is_playing():
                 return
 
             await self.start_playing(ctx, player, announce=False)
 
-    def get_queued(self, user, after=0, before=None) -> int:
+    def get_queued(self, user, guild_id, after=0, before=None) -> int:
         queued = 0
-        for i in self.bot.queue[after:before]:
+        for i in self.bot.queues[guild_id][after:before]:
             if i.user is not None:
                 if i.user.id == user.id:
                     queued += 1
 
         return queued
 
-    def insert_song(self, song):
-        queue = self.bot.queue
+    def insert_song(self, song, guild_id):
+        queue = self.bot.queues[guild_id]
         user = song.user
         if not user: return queue.append(song)
-        queued = self.get_queued(user) + 1
+        queued = self.get_queued(user, guild_id) + 1
         users = {}
 
         for n, entry in reversed(list(enumerate(queue))):
             if entry.user and entry.user.id != user.id and entry.user.id not in users:
-                users[entry.user.id] = self.get_queued(entry.user, before=n+1)
+                users[entry.user.id] = self.get_queued(entry.user, guild_id, before=n+1)
 
             if all(queued >= x for x in users.values()):
                 queue.insert(n+1, song)
@@ -126,8 +126,8 @@ class Music:
         queue.append(song)
         return len(queue) - 1
 
-    def remove_from_queue(self, player):
-        queue = self.bot.queue
+    def remove_from_queue(self, player, guild_id):
+        queue = self.bot.queues[guild_id]
         if not player.user: return queue.remove(player)
 
         i = queue.index(player)
@@ -139,13 +139,13 @@ class Music:
 
         queue.pop(i)
 
-    def get_queue_length(self):
-        if self.bot.queue:
-            ttp = int(self.bot.queue[0].start_time-time.time())
+    def get_queue_length(self, guild_id):
+        if self.bot.queues[guild_id]:
+            ttp = int(self.bot.queues[guild_id][0].start_time-time.time())
         else:
             ttp = 0
 
-        for entry in self.bot.queue:
+        for entry in self.bot.queues[guild_id]:
             ttp += entry.duration
 
         return ttp
@@ -170,7 +170,7 @@ class Music:
         perms = await checks.permissions_for(ctx)
 
         # Check the queue limit before bothering to download the song
-        queued = self.get_queued(ctx.author)
+        queued = self.get_queued(ctx.author, ctx.guild.id)
         if queued >= perms['max_songs_queued']:
             await channel.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
             raise QueueLimitError
@@ -196,7 +196,7 @@ class Music:
                 await channel.send(f'You don\'t have permission to queue songs longer than {perms["max_song_length"]}s. ({duration}s)')
                 return 'Max length'
 
-            for song in ctx.bot.queue:
+            for song in ctx.bot.queues[ctx.guild.id]:
                 if song.user and song.user.id == ctx.author.id and song.origin_url == url:
                     await channel.send('You already have that song queued!')
                     return 'Already queued'
@@ -205,19 +205,19 @@ class Music:
 
         player.channel = ctx.channel
 
-        if not self.bot.queue:
-            self.bot.queue.append(player)
+        if not self.bot.queues[ctx.guild.id]:
+            self.bot.queues[ctx.guild.id].append(player)
 
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
 
             await self.start_playing(ctx, player)
         else:
-            position = self.insert_song(player)
+            position = self.insert_song(player, ctx.guild.id)
             ttp = 0
-            for i in self.bot.queue[:position]:
+            for i in self.bot.queues[ctx.guild.id][:position]:
                 ttp += i.duration
-            playing = self.bot.queue[0]
+            playing = self.bot.queues[ctx.guild.id][0]
             playing_time = int(time.time()-playing.start_time)
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
@@ -302,7 +302,7 @@ class Music:
 
         perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
-        queued = self.get_queued(ctx.author)
+        queued = self.get_queued(ctx.author, ctx.guild.id)
 
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
@@ -388,7 +388,7 @@ class Music:
         '''Enqueues a jingle'''
         perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
-        queued = self.get_queued(ctx.author)
+        queued = self.get_queued(ctx.author, ctx.guild.id)
 
         if queued >= perms['max_songs_queued']:
             await ctx.send('You can only have {} song{} in the queue at once.'.format(perms['max_songs_queued'], '' if perms['max_songs_queued'] == 1 else 's'))
@@ -426,32 +426,32 @@ class Music:
         '''Registers that you want to skip the current song.'''
         skip_grace = self.bot.config['skip_grace']
         # Register skips
-        if not self.bot.queue:
+        if not self.bot.queues[ctx.guild.id]:
             return await ctx.send('There\'s nothing playing.')
-        elif ctx.author.id in self.bot.queue[0].skips:
+        elif ctx.author.id in self.bot.queues[ctx.guild.id][0].skips:
             pass
-        elif time.time()-self.bot.queue[0].start_time < skip_grace:
+        elif time.time()-self.bot.queues[ctx.guild.id][0].start_time < skip_grace:
             return await ctx.send(
                 f'{ctx.author.mention} At least listen to {skip_grace} seconds of the song!'
             )
         else:
-            self.bot.queue[0].skips.append(ctx.author.id)
+            self.bot.queues[ctx.guild.id][0].skips.append(ctx.author.id)
 
         # Skip the song
         num_needed = min(8, len(ctx.voice_client.channel.members) // 2)
-        if self.bot.queue[0].user is not None and ctx.author.id == self.bot.queue[0].user.id:
+        if self.bot.queues[ctx.guild.id][0].user is not None and ctx.author.id == self.bot.queues[ctx.guild.id][0].user.id:
             await ctx.send('The current song was force-skipped by the queuer.')
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
             return
-        if len(self.bot.queue[0].skips) >= num_needed:
+        if len(self.bot.queues[ctx.guild.id][0].skips) >= num_needed:
             await ctx.send('The skip ratio has been reached, skipping song...')
             if ctx.voice_client.is_playing():
                 ctx.voice_client.stop()
             return
 
-        left = num_needed - len(self.bot.queue[0].skips)
-        await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} required to vote to skip this song.'.format(ctx.author.id, self.bot.queue[0].title, left, 'person is' if left == 1 else 'people are'))
+        left = num_needed - len(self.bot.queues[ctx.guild.id][0].skips)
+        await ctx.send('<@{}>, your skip for **{}** was acknowledged.\n**{}** more {} required to vote to skip this song.'.format(ctx.author.id, self.bot.queues[ctx.guild.id][0].title, left, 'person is' if left == 1 else 'people are'))
 
     @category('music')
     @commands.command()
@@ -461,12 +461,12 @@ class Music:
     async def unskip(self, ctx):
         '''Removes your vote to skip the current song.'''
 
-        if not self.bot.queue:
+        if not self.bot.queues[ctx.guild.id]:
             return await ctx.send('There\'s nothing playing.')
-        elif ctx.author.id not in self.bot.queue[0].skips:
+        elif ctx.author.id not in self.bot.queues[ctx.guild.id][0].skips:
             pass
         else:
-            self.bot.queue[0].skips.remove(ctx.author.id)
+            self.bot.queues[ctx.guild.id][0].skips.remove(ctx.author.id)
             return await ctx.send(f'{ctx.author.mention} You have removed your vote to skip this song.')
 
     @category('music')
@@ -497,34 +497,34 @@ class Music:
     @commands.cooldown(2, 30, type=commands.BucketType.user)
     async def like(self, ctx):
         ''''Like' the currently playing song'''
-        if not self.bot.queue:
+        if not self.bot.queues[ctx.guild.id]:
             await ctx.send('There\'s nothing playing.')
             return
-        elif ctx.author.id in self.bot.queue[0].likes:
+        elif ctx.author.id in self.bot.queues[ctx.guild.id][0].likes:
             pass
         else:
-            self.bot.queue[0].likes.append(ctx.author.id)
+            self.bot.queues[ctx.guild.id][0].likes.append(ctx.author.id)
 
-        if self.bot.queue[0].channel is None:
-            self.bot.queue[0].channel = ctx.channel
+        if self.bot.queues[ctx.guild.id][0].channel is None:
+            self.bot.queues[ctx.guild.id][0].channel = ctx.channel
 
         if ctx.author.id not in self.bot.likes:
             self.bot.likes[ctx.author.id] = []
-        if base64.b64encode(self.bot.queue[0].title.encode('utf-8')).decode('ascii') not in self.bot.likes[ctx.author.id]:
-            self.bot.likes[ctx.author.id].append(base64.b64encode(self.bot.queue[0].title.encode('utf-8')).decode('ascii'))
+        if base64.b64encode(self.bot.queues[ctx.guild.id][0].title.encode('utf-8')).decode('ascii') not in self.bot.likes[ctx.author.id]:
+            self.bot.likes[ctx.author.id].append(base64.b64encode(self.bot.queues[ctx.guild.id][0].title.encode('utf-8')).decode('ascii'))
             self.bot.save_likes()
 
         if self.bot.like_comp_active:
-            if self.bot.queue[0].user is not None:
-                if self.bot.queue[0].user not in self.bot.like_comp:
-                    self.bot.like_comp[self.bot.queue[0].user] = {}
-                if self.bot.queue[0].title not in self.bot.like_comp[self.bot.queue[0].user]:
-                    self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title] = []
-                if ctx.author.id != self.bot.queue[0].user.id:
-                    if ctx.author.id not in self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title]:
-                        self.bot.like_comp[self.bot.queue[0].user][self.bot.queue[0].title].append(ctx.author.id)
+            if self.bot.queues[ctx.guild.id][0].user is not None:
+                if self.bot.queues[ctx.guild.id][0].user not in self.bot.like_comp:
+                    self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user] = {}
+                if self.bot.queues[ctx.guild.id][0].title not in self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user]:
+                    self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user][self.bot.queues[ctx.guild.id][0].title] = []
+                if ctx.author.id != self.bot.queues[ctx.guild.id][0].user.id:
+                    if ctx.author.id not in self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user][self.bot.queues[ctx.guild.id][0].title]:
+                        self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user][self.bot.queues[ctx.guild.id][0].title].append(ctx.author.id)
 
-        await ctx.send(f'<@{ctx.author.id}>, your \'like\' for **{self.bot.queue[0].title}** was acknowledged.')
+        await ctx.send(f'<@{ctx.author.id}>, your \'like\' for **{self.bot.queues[ctx.guild.id][0].title}** was acknowledged.')
 
     @category('music')
     @commands.command(aliases=['remlike', 'dislike'])
@@ -587,12 +587,12 @@ class Music:
     @commands.cooldown(1, 30, type=commands.BucketType.user)
     async def minewhen(self, ctx):
         '''Tells you when your song will play'''
-        if self.bot.queue:
-            ttp = int(self.bot.queue[0].start_time-time.time())
+        if self.bot.queues[ctx.guild.id]:
+            ttp = int(self.bot.queues[ctx.guild.id][0].start_time-time.time())
         else:
             ttp = 0
 
-        for i, entry in enumerate(self.bot.queue):
+        for i, entry in enumerate(self.bot.queues[ctx.guild.id]):
             if ctx.author == entry.user:
                 if i == 0:
                     await ctx.send(f'Your song **{entry.title}** is playing right now!')
@@ -614,15 +614,14 @@ class Music:
     @commands.cooldown(1, 120, type=commands.BucketType.guild)
     async def queue(self, ctx):
         '''Shows the current queue.'''
-        if self.bot.queue:
-
+        if self.bot.queues[ctx.guild.id]:
             manage_channels = ctx.channel.permissions_for(ctx.author).manage_channels
 
-            playing = self.bot.queue[0]
+            playing = self.bot.queues[ctx.guild.id][0]
             playing_time = int(time.time()-playing.start_time)
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
-            ttp = time.gmtime(max(0, self.get_queue_length()))
+            ttp = time.gmtime(max(0, self.get_queue_length(ctx.guild.id)))
 
             message = f'`{time.strftime("%H:%M:%S", ttp)}` in queue.\n'
             message += f'Now playing: **{playing.title}**'
@@ -633,17 +632,17 @@ class Music:
                 )
             if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
             message += '\n\n'
-            for n, entry in enumerate(self.bot.queue[1:]):
+            for n, entry in enumerate(self.bot.queues[ctx.guild.id][1:]):
                 if entry.user:
                     to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
                 else:
                     to_add = f'`{n+1}.` **{entry.title}**\n'
 
                 if len(message) + len(to_add) > 1900:
-                    message += f'*{len(self.bot.queue)-n-1} more*...'
+                    message += f'*{len(self.bot.queues[ctx.guild.id])-n-1} more*...'
                     break
                 elif n > self.bot.config['public_queue_max'] and not manage_channels:
-                    message += f'*{len(self.bot.queue)-n-1} more, ask a mod to see the entire queue*...'
+                    message += f'*{len(self.bot.queues[ctx.guild.id])-n-1} more, ask a mod to see the entire queue*...'
                     break
                 else:
                     message += to_add
@@ -659,8 +658,8 @@ class Music:
     @commands.cooldown(2, 30, type=commands.BucketType.guild)
     async def np(self, ctx):
         '''Gets the currently playing song'''
-        if self.bot.queue:
-            playing = self.bot.queue[0]
+        if self.bot.queues[ctx.guild.id]:
+            playing = self.bot.queues[ctx.guild.id][0]
             playing_time = int(time.time()-playing.start_time)
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
@@ -682,7 +681,7 @@ class Music:
     async def dequeue(self, ctx, *, title= None):
         '''Remove your song(s) from the queue'''
         songs = []
-        for player in self.bot.queue[1:]:
+        for player in self.bot.queues[ctx.guild.id][1:]:
             if player.user and player.user.id == ctx.author.id:
                 songs.append(player)
 
@@ -709,7 +708,7 @@ class Music:
                 return await ctx.send('Song not found.')
 
 
-        self.remove_from_queue(player)
+        self.remove_from_queue(player, ctx.guild.id)
 
         await ctx.send(f'<@{ctx.author.id}>, your song **{player.title}** has been removed from the queue.')
 
@@ -722,20 +721,20 @@ class Music:
 
         if user:
             perms = await checks.permissions_for(ctx)
-            if 'modding' not in perms['categories']:
+            if 'moderation' not in perms['categories']:
                 user = ctx.author
 
         else: user = ctx.author
 
-        songs = [song for song in ctx.bot.queue[1:] if song.user.id == user.id]
+        songs = [song for song in ctx.bot.queues[ctx.guild.id][1:] if song.user.id == user.id]
         for song in songs:
-            ctx.bot.queue.remove(song)
+            ctx.bot.queues[ctx.guild.id].remove(song)
 
         await ctx.send(f'{user.mention} all of your songs have been removed from the queue!')
 
 
     # Mod commands:
-    @category('modding')
+    @category('moderation')
     @commands.command()
     @commands.guild_only()
     async def remsong(self, ctx, *, song):
@@ -750,22 +749,22 @@ class Music:
             is_int = False
 
         if is_int:
-            if song < 1 or song >= len(self.bot.queue):
-                await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queue)-1} or the title.')
+            if song < 1 or song >= len(self.bot.queues[ctx.guild.id]):
+                await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queues[ctx.guild.id])-1} or the title.')
                 return
             else:
-                player = self.bot.queue[song]
-                self.remove_from_queue(player)
+                player = self.bot.queues[ctx.guild.id][song]
+                self.remove_from_queue(player, ctx.guild.id)
                 await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
         else:
-            for i in self.bot.queue[1:]:
+            for i in self.bot.queues[ctx.guild.id][1:]:
                 if song.lower() in i.title.lower():
                     player = i
                     break
             else:
                 await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
                 return
-            self.remove_from_queue(player)
+            self.remove_from_queue(player, ctx.guild.id)
             await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
 
     @category('bot')

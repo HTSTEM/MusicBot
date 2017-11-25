@@ -19,7 +19,7 @@ from cogs.util.cache import QueueTable
 class MusicBot(commands.AutoShardedBot):
     def __init__(self, command_prefix='!', *args, **kwargs):
         self.database = sqlite3.connect('musicbot/database.sqlite', check_same_thread=False)
-        self.queue = None
+        self.queues = {}
 
         self.pending = set()
         logging.basicConfig(
@@ -36,6 +36,34 @@ class MusicBot(commands.AutoShardedBot):
         self.yaml = YAML(typ='safe')
         with open('config/config.yml') as conf_file:
             self.config = self.yaml.load(conf_file)
+
+        with open('config/default_channels.yml') as conf_file:
+            default_channels = conf_file.readlines()  # self.yaml.load(conf_file)
+            self.default_channels = []
+            for i in default_channels:
+                i = i.strip()
+                if i.startswith('#'):
+                    self.default_channels.append(i[1:])
+                    continue
+                if not i: continue
+
+                key, rest = i.split(':')
+                rest = rest.split('#')
+                value = rest[0]
+                comment = '#'.join(rest[1:])
+                key = int(key.strip())
+                value = int(value.strip())
+
+                self.default_channels.append((key, value, comment))
+
+            print(self.default_channels)
+            #default_channels = [i.split('#')[0] for i in default_channels]
+            #default_channels = [i for i in default_channels if i]
+
+            #self.default_channels = self.yaml.load(conf_file)
+
+        with open('config/bot_channels.yml') as conf_file:
+            self.bot_channels = self.yaml.load(conf_file)
 
         with open('config/permissions.yml') as conf_file:
             self.permissions = self.yaml.load(conf_file)
@@ -57,7 +85,7 @@ class MusicBot(commands.AutoShardedBot):
 
         if os.path.exists('config/blacklist.txt'):
             with open('config/blacklist.txt') as bl_file:
-                self.blacklist = [int(i) for i in bl_file.read().split('\n') if i]
+                self.blacklist = [(int(i.split(',')[0]), int(i.split(',')[1])) for i in bl_file.read().split('\n') if i]
         else:
             self.blacklist = []
 
@@ -70,10 +98,26 @@ class MusicBot(commands.AutoShardedBot):
 
     def save_bl(self):
         with open('config/blacklist.txt', 'w') as bl_file:
-            bl_file.write('\n'.join(str(i) for i in self.blacklist))
+            bl_file.write('\n'.join(f'i[0],i[1]' for i in self.blacklist))
     def save_likes(self):
         with open('config/likes.yml', 'w') as conf_file:
             self.yaml.dump(self.likes, conf_file)
+    def save_bot_channels(self):
+        with open('config/bot_channels.yml', 'w') as conf_file:
+            self.yaml.dump(self.bot_channels, conf_file)
+    def save_default_channels(self):
+        text = ''
+        for i in self.default_channels:
+            if isinstance(i, str):
+                text += f'#{i}\n'
+            else:
+                if len(i) == 2:
+                    text += f'{i[0]}: {i[1]}\n'
+                else:
+                    text += f'{i[0]}: {i[1]}  #{i[2]}\n'
+
+        with open('config/default_channels.yml', 'w') as conf_file:
+            conf_file.write(text)
 
     # Async methods
     async def close(self):
@@ -100,16 +144,18 @@ class MusicBot(commands.AutoShardedBot):
 
         os.remove('error.txt')
 
-    async def wait_for_source(self, voice_client, timeout = 10):
+    async def wait_for_source(self, voice_client, timeout=10):
         if timeout is None or timeout <= 0:
             while voice_client.source is None: await asyncio.sleep(0.5)
         else:
-            for i in range(2*timeout):
+            for i in range(2 * timeout):
                 if voice_client.source is not None: break
                 else: await asyncio.sleep(0.5)
 
-        if voice_client.source is None: raise asyncio.TimeoutError
-        else: return voice_client.source
+        if voice_client.source is None:
+            self.logging.warning('wait_for_source timed out!')
+
+        return voice_client.source
 
     # Client events
     async def on_command_error(self, ctx: commands.Context, exception: Exception):
@@ -142,6 +188,8 @@ class MusicBot(commands.AutoShardedBot):
                 await ctx.send(f'You must be in `{ctx.bot.voice[ctx.guild.id].channel.name}` to use that command.')
             elif 'request_pending' in exception.args:
                 await ctx.send('Wait until I\'m done processing your first request!')
+            elif 'silent' in exception.args:
+                pass
             else:
                 await ctx.send('You can\'t do that.')
         elif isinstance(exception, commands.CommandNotFound):
@@ -170,14 +218,12 @@ class MusicBot(commands.AutoShardedBot):
     async def on_message(self, message):
         #if message.guild is None:  # DMs
         #    return
-
-        if message.author.id in self.blacklist:
+        if message.author.bot:
             return
 
-        if message.guild is not None and 'bot_channels' in self.config:
-            bc = self.config['bot_channels']
-            if message.guild.id not in bc: return
-            if message.channel.id not in bc[message.guild.id]: return
+        if message.guild is not None:
+            if (message.guild.id, message.author.id) in self.blacklist:
+                return
 
         await self.process_commands(message)
 
@@ -187,64 +233,73 @@ class MusicBot(commands.AutoShardedBot):
         self.logger.info(f'Users   : {len(set(self.get_all_members()))}')
         self.logger.info(f'Channels: {len(list(self.get_all_channels()))}')
 
-        self.queue = QueueTable(self, 'queue')
+        for i in self.guilds:
+            q = QueueTable(self, f'queue-{i.id}')
+            await q._populate()
 
-        await self.queue._populate()
+            self.queues[i.id] = q
 
-        if 'default_channels' in self.config:
-            class Holder:
-                pass
+        class Holder:
+            pass
 
-            self.logger.info('Joining voice channels..')
+        self.logger.info('Joining voice channels..')
 
-            dc = self.config['default_channels']
-            for guild_id in dc:
-                guild = self.get_guild(guild_id)
-                if guild is not None:
-                    self.logger.info(f' - Found guild \'{guild.name}\'.')
-                    channel = guild.get_channel(dc[guild_id])
-                    if channel is None:
-                        self.logger.info(f'   - Channel {dc[guild_id]} not found.')
-                    elif not isinstance(channel, discord.VoiceChannel):
-                        self.logger.info(f'   - Channel \'{channel.name}\' found, but is not voice channel.')
-                    else:
-                        self.logger.info(f'   - Channel \'{channel.name}\' found. Joining.')
+        dc = self.default_channels
+        for default in dc:
+            if not isinstance(default, tuple): continue
 
-                        success = False
-                        while not success:
-                            try:
-                                vc = await channel.connect()
-                                self.voice[guild_id] = vc
-                                success = True
-                            except discord.ClientException:
-                                if guild_id in self.voice:
-                                    vc = self.voice[guild_id]
-                                else:
-                                    self.logger.info('   - Error! Trying again in 1 second.')
-                                    await asyncio.sleep(1)
+            if default[0] in self.voice: continue
 
-                        self.logger.info('   - Joined. Starting auto-playlist.')
-                        cctx = Holder()
-                        cctx.voice_client = vc
-                        cctx.bot = self
-                        c = guild.get_channel(self.config['bot_channels'][guild_id][0])
-                        cctx.send = c.send
-                        cctx.channel = c
-                        await self.cogs['Music'].auto_playlist(cctx)
-
-                        if len(vc.channel.members) <= 1:
-                            self.logger.info(f'   - {vc.channel.name} empty. Pausing.')
-                            if vc.is_playing():
-                                vc.pause()
-                                vc.source.pause_start = time.time()
+            guild = self.get_guild(default[0])
+            if guild is not None:
+                self.logger.info(f' - Found guild \'{guild.name}\'.')
+                channel = guild.get_channel(default[1])
+                if channel is None:
+                    self.logger.info(f'   - Channel {default[1]} not found.')
+                elif not isinstance(channel, discord.VoiceChannel):
+                    self.logger.info(f'   - Channel \'{channel.name}\' found, but is not voice channel.')
                 else:
-                    self.logger.info(f' - Guild {guild_id} not found.')
-            self.logger.info('Done.')
+                    self.logger.info(f'   - Channel \'{channel.name}\' found. Joining.')
+
+                    success = False
+                    while not success:
+                        try:
+                            vc = await channel.connect()
+                            self.voice[default[0]] = vc
+                            success = True
+                        except discord.ClientException:
+                            if default[0] in self.voice:
+                                vc = self.voice[default[0]]
+                            else:
+                                self.logger.info('   - Error! Trying again in 1 second.')
+                                await asyncio.sleep(1)
+
+                    self.logger.info('   - Joined. Starting auto-playlist.')
+                    cctx = Holder()
+                    cctx.voice_client = vc
+                    cctx.bot = self
+                    if default[0] in self.bot_channels and self.bot_channels[default[0]]:
+                        c = guild.get_channel(self.bot_channels[default[0]][0])
+                    else:
+                        c = guild.channels[0]
+                    cctx.send = c.send
+                    cctx.channel = c
+                    cctx.guild = guild
+                    await self.cogs['Music'].auto_playlist(cctx)
+
+                    if len(vc.channel.members) <= 1:
+                        self.logger.info(f'   - {vc.channel.name} empty. Pausing.')
+                        if vc.is_playing():
+                            vc.pause()
+                            vc.source.pause_start = time.time()
+            else:
+                self.logger.info(f' - Guild {default[0]} not found.')
+        self.logger.info('Done.')
 
 
     def run(self, token):
         cogs = ['cogs.music', 'cogs.misc', 'cogs.comp', 'cogs.core',
-                'cogs.git', 'cogs.modding', 'cogs.player']
+                'cogs.git', 'cogs.moderation', 'cogs.player']
         self.remove_command("help")
         self.add_check(can_use)
         for cog in cogs:

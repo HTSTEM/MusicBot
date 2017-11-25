@@ -42,8 +42,8 @@ class Player:
     @commands.guild_only()
     async def clear(self, ctx):
         '''Stops player and clears queue'''
-        while self.bot.queue:
-            self.bot.queue.pop()
+        while self.bot.queues[ctx.guild.id]:
+            self.bot.queues[ctx.guild.id].pop()
 
         ctx.voice_client.stop()
 
@@ -57,7 +57,7 @@ class Player:
             return await ctx.send('Not connected to a voice channel.')
 
         ctx.voice_client.source.volume = volume / 100
-        await ctx.send('Changed volume to {volume}%')
+        await ctx.send(f'Changed volume to {volume}%')
 
     def pause_player(self, vc):
         self.bot.logger.info(f'{vc.channel.name} empty. Pausing.')
@@ -68,9 +68,9 @@ class Player:
 
         async def clear_queue():
             await asyncio.sleep(period*60)
-            self.logger.info(f'{vc.channel.name} empty for {period} minutes. Clearing queue.')
-            while len(self.bot.queue) > 1:
-                self.bot.queue.pop(1)
+            self.bot.logger.info(f'{vc.channel.name} empty for {period} minutes. Clearing queue.')
+            while len(self.bot.queues[vc.channel.guild.id]) > 1:
+                self.bot.queues[vc.channel.guild.id].pop(1)
 
             self.clearer = None
 
