@@ -43,6 +43,53 @@ class Moderation:
         return await ctx.send(f'{voice.channel.name} has been set as the default channel.')
 
     @category('moderation')
+    @commands.guild_only()
+    @commands.command()
+    async def allow_commands(self, ctx):
+        """Add the current channel to the whitelist of bot channels."""
+        if ctx.guild.id not in self.bot.bot_channels:
+            self.bot.bot_channels[ctx.guild.id] = []
+
+        if ctx.channel.id in self.bot.bot_channels[ctx.guild.id]:
+            return await ctx.send(f'{ctx.channel.name} is already in the whilelist.')
+
+        self.bot.bot_channels[ctx.guild.id].append(ctx.channel.id)
+        self.bot.save_bot_channels()
+        return await ctx.send(f'{ctx.channel.name} has been whitelisted.')
+
+    @category('moderation')
+    @commands.guild_only()
+    @commands.command()
+    async def disallow_commands(self, ctx):
+        """Add the current channel to the whitelist of bot channels."""
+        if ctx.guild.id not in self.bot.bot_channels:
+            return await ctx.send(f'{ctx.channel.name} is not in the whilelist.')
+
+        if ctx.channel.id not in self.bot.bot_channels[ctx.guild.id]:
+            return await ctx.send(f'{ctx.channel.name} is not in the whilelist.')
+
+        self.bot.bot_channels[ctx.guild.id].remove(ctx.channel.id)
+        if not self.bot.bot_channels[ctx.guild.id]:
+            del self.bot.bot_channels[ctx.guild.id]
+        self.bot.save_bot_channels()
+        return await ctx.send(f'{ctx.channel.name} has been removed from the whitelist.')
+
+    @category('moderation')
+    @commands.guild_only()
+    @commands.command()
+    async def command_channels(self, ctx):
+        """Gets the whitelist of bot channels."""
+        if ctx.guild.id not in self.bot.bot_channels:
+            return await ctx.send(f'{ctx.guild.name} has no channels setup.')
+
+        names = []
+        for i in self.bot.bot_channels[ctx.guild.id]:
+            c = ctx.guild.get_channel(i)
+            if c is not None:
+                names.append(c.name)
+        return await ctx.send(f'The channels are: {", ".join(names)}.')
+
+    @category('moderation')
     @commands.command()
     async def blacklist(self, ctx, mode, id):
         """Blacklist a user from using commands"""

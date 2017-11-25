@@ -10,16 +10,6 @@ public_queue_max: 10
 # How long the vc should be empty in minutes until the queue gets cleared. -1 to disable
 clear_time: 10
 
-# These are the channels where the bot will respond to user commands.
-# If not specified, the bot will respond in all channels.
-# <guild id>: [<text channel id>, <text channel id>, ...]
-bot_channels:
-  184755239952318464: [334296431789604864]  # HTC
-  297811083308171264: [297811083308171264]  # Hanss' testing server
-  290573725366091787: [290757101914030080]  # Botter's testing server
-  81384788765712384:  [381896832399310868]  # DAPI
-  381941901462470658: [381950042770243584, 383041784495734785]  # Chilled P.
-
 # This is the location of the bot's token. The token must be placed on
 # the first line of the file
 token_file: config/token.txt

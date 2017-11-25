@@ -16,7 +16,7 @@ async def permissions_for(ctx):
         }
 
     if not isinstance(ctx.author, discord.Member):
-        for serv_id in ctx.bot.config['bot_channels'].keys():
+        for serv_id in ctx.bot.bot_channels.keys():
             guild = ctx.bot.get_guild(serv_id)
             if guild is not None and guild.get_member(ctx.author.id) is not None:
                 member = guild.get_member(ctx.author.id)
@@ -57,7 +57,15 @@ async def can_use(ctx: commands.Context) -> bool:
     cat = 'misc'
     if hasattr(ctx.command,'category'): cat = ctx.command.category.lower()
 
-    if cat in perms['categories']: return True
+    if cat in perms['categories']:
+        if cat == 'moderation': return True
+
+        if ctx.guild is not None:
+            bc = ctx.bot.bot_channels
+            if ctx.guild.id not in bc: return True
+            if ctx.channel.id not in bc[ctx.guild.id]: return False
+
+        return True
     else: return False
 
 

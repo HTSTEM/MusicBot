@@ -62,6 +62,9 @@ class MusicBot(commands.AutoShardedBot):
 
             #self.default_channels = self.yaml.load(conf_file)
 
+        with open('config/bot_channels.yml') as conf_file:
+            self.bot_channels = self.yaml.load(conf_file)
+
         with open('config/permissions.yml') as conf_file:
             self.permissions = self.yaml.load(conf_file)
 
@@ -99,6 +102,9 @@ class MusicBot(commands.AutoShardedBot):
     def save_likes(self):
         with open('config/likes.yml', 'w') as conf_file:
             self.yaml.dump(self.likes, conf_file)
+    def save_bot_channels(self):
+        with open('config/bot_channels.yml', 'w') as conf_file:
+            self.yaml.dump(self.bot_channels, conf_file)
     def save_default_channels(self):
         text = ''
         for i in self.default_channels:
@@ -214,11 +220,6 @@ class MusicBot(commands.AutoShardedBot):
         if (message.guild.id, message.author.id) in self.blacklist:
             return
 
-        if message.guild is not None and 'bot_channels' in self.config:
-            bc = self.config['bot_channels']
-            if message.guild.id not in bc: return
-            if message.channel.id not in bc[message.guild.id]: return
-
         await self.process_commands(message)
 
     async def on_ready(self):
@@ -272,7 +273,10 @@ class MusicBot(commands.AutoShardedBot):
                     cctx = Holder()
                     cctx.voice_client = vc
                     cctx.bot = self
-                    c = guild.get_channel(self.config['bot_channels'][default[0]][0])
+                    if default[0] in self.bot_channels and self.bot_channels[default[0]]:
+                        c = guild.get_channel(self.bot_channels[default[0]][0])
+                    else:
+                        c = guild.channels[0]
                     cctx.send = c.send
                     cctx.channel = c
                     cctx.guild = guild
