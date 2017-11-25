@@ -66,10 +66,10 @@ class Core:
         raise Exception(text or 'Woo! Errors!')
 
     @category('bot')
-    @commands.command()
+    @commands.command(aliases=['invite'])
     async def joinserver(self, ctx):
         '''Invite the bot to your server'''
-        await ctx.send('Sorry. This bot has been designed to only work on HTC.')
+        await ctx.send('If you want to invite me to your server, DM one of the developers and we might be able to add it for you.')
 
     @category('bot')
     @commands.command()
