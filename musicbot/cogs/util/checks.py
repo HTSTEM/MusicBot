@@ -63,7 +63,7 @@ async def can_use(ctx: commands.Context) -> bool:
         if ctx.guild is not None:
             bc = ctx.bot.bot_channels
             if ctx.guild.id not in bc: return True
-            if ctx.channel.id not in bc[ctx.guild.id]: return False
+            if ctx.channel.id not in bc[ctx.guild.id]: raise commands.CheckFailure('silent')
 
         return True
     else: return False

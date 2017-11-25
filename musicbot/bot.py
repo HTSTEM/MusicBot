@@ -188,6 +188,8 @@ class MusicBot(commands.AutoShardedBot):
                 await ctx.send(f'You must be in `{ctx.bot.voice[ctx.guild.id].channel.name}` to use that command.')
             elif 'request_pending' in exception.args:
                 await ctx.send('Wait until I\'m done processing your first request!')
+            elif 'silent' in exception.args:
+                pass
             else:
                 await ctx.send('You can\'t do that.')
         elif isinstance(exception, commands.CommandNotFound):
