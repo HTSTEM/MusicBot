@@ -84,9 +84,7 @@ class Moderation:
 
         names = []
         for i in self.bot.bot_channels[ctx.guild.id]:
-            c = ctx.guild.get_channel(i)
-            if c is not None:
-                names.append(c.name)
+            names.append(f'<#{i}>')
         return await ctx.send(f'The channels are: {", ".join(names)}.')
 
     @category('moderation')
