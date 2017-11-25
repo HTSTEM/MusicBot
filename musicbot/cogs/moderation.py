@@ -7,7 +7,7 @@ class Moderation:
     def __init__(self, bot):
         self.bot = bot
 
-    @category('modding')
+    @category('moderation')
     @commands.command()
     async def bldump(self, ctx):
         '''Gets a list of every blacklisted user.'''
@@ -17,7 +17,7 @@ class Moderation:
         await ctx.author.send(m)
         await ctx.send(':mailbox_with_mail:')
 
-    @category('modding')
+    @category('moderation')
     @commands.command()
     async def blacklist(self, ctx, mode, id):
         """Blacklist a user from using commands"""

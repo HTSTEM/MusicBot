@@ -721,7 +721,7 @@ class Music:
 
         if user:
             perms = await checks.permissions_for(ctx)
-            if 'modding' not in perms['categories']:
+            if 'moderation' not in perms['categories']:
                 user = ctx.author
 
         else: user = ctx.author
@@ -734,7 +734,7 @@ class Music:
 
 
     # Mod commands:
-    @category('modding')
+    @category('moderation')
     @commands.command()
     @commands.guild_only()
     async def remsong(self, ctx, *, song):

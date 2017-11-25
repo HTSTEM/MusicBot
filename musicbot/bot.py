@@ -249,7 +249,7 @@ class MusicBot(commands.AutoShardedBot):
 
     def run(self, token):
         cogs = ['cogs.music', 'cogs.misc', 'cogs.comp', 'cogs.core',
-                'cogs.git', 'cogs.modding', 'cogs.player']
+                'cogs.git', 'cogs.moderation', 'cogs.player']
         self.remove_command("help")
         self.add_check(can_use)
         for cog in cogs:

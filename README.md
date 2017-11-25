@@ -7,7 +7,7 @@
 * Comp
 * Git
 * Misc
-* Modding
+* Moderation
 * Music
 * Player
 
@@ -83,7 +83,7 @@
 | `!patreon`    | Posts info about patreon & the patrons.      | 1/10  | Guild  |
 | `!perms`      | View your permissions.                       | 1/120 | User   |
 
-#### Modding:
+#### Modderation:
 
 | Commmand     | Description                            | Rate | Bucket |
 |--------------|----------------------------------------|-----:|-------:|

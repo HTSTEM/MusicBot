@@ -26,7 +26,7 @@ users:
     whitelist:
       - bot
       - player
-      - modding
+      - moderation
       - comp
       - owner
       - git
@@ -59,7 +59,7 @@ roles:
     whitelist:
       - bot
       - player
-      - modding
+      - moderation
       - comp
       - git
     # idk, do we want to give mods perms to use all songs?
