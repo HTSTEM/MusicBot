@@ -11,7 +11,7 @@ class Core:
     def __init__(self, bot):
         self.bot = bot
 
-    @category('bot')
+    @category('developer')
     @commands.group(invoke_without_command=True)
     async def reload(self, ctx, *, cog=''):
         '''Reloads an extension'''
@@ -23,7 +23,7 @@ class Core:
         else:
             await ctx.send('\N{OK HAND SIGN} Reloaded cog {} successfully'.format(cog))
 
-    @category('bot')
+    @category('developer')
     @reload.command(name='all')
     async def reload_all(self, ctx):
         '''Reloads all extensions'''
@@ -38,7 +38,7 @@ class Core:
 
         await ctx.send('\N{OK HAND SIGN} Reloaded {} cogs successfully'.format(len(ctx.bot.extensions)))
 
-    @category('bot')
+    @category('developer')
     @reload.command(name='config')
     async def reload_config(self, ctx):
         '''Reload the config files'''
@@ -59,19 +59,19 @@ class Core:
 
         await ctx.send('Reloaded config files.')
 
-    @category('bot')
+    @category('developer')
     @commands.command(aliases=['exception'])
     async def error(self, ctx, *, text: str = None):
         '''Raises an error. Testing purposes only, please don't use.'''
         raise Exception(text or 'Woo! Errors!')
 
-    @category('bot')
+    @category('misc')
     @commands.command(aliases=['invite'])
     async def joinserver(self, ctx):
         '''Invite the bot to your server'''
         await ctx.send('If you want to invite me to your server, DM one of the developers and we might be able to add it for you.')
 
-    @category('bot')
+    @category('developer')
     @commands.command()
     async def setname(self, ctx, *, name):
         '''Change the bot's username'''
@@ -80,7 +80,7 @@ class Core:
         except discord.HTTPException:
             await ctx.send('Changing the name failed.')
 
-    @category('bot')
+    @category('developer')
     @commands.command()
     async def setnick(self, ctx, *, name):
         '''Change the bot's nickname'''
@@ -89,7 +89,7 @@ class Core:
         except discord.HTTPException:
             await ctx.send('Changing the name failed.')
 
-    @category('bot')
+    @category('developer')
     @commands.command()
     async def setavatar(self, ctx):
         '''Change the bot's profile picture'''
@@ -103,7 +103,7 @@ class Core:
         except discord.InvalidArgument:
             await ctx.send('You did not upload an image.')
 
-    @category('bot')
+    @category('developer')
     @commands.command(aliases=['shutdown'])
     async def die(self, ctx):
         """Shuts down the bot"""
@@ -111,7 +111,7 @@ class Core:
         await ctx.send(':wave:')
         await ctx.bot.logout()
 
-    @category('bot')
+    @category('developer')
     @commands.command()
     async def restart(self, ctx):
         '''Restart the bot'''

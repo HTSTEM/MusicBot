@@ -4,7 +4,7 @@ from discord.ext import commands
 
 class NotInVCError(BaseException): pass
 
-async def permissions_for(ctx):
+async def permissions_for(ctx):    
     bot_perms = ctx.bot.permissions
     member = ctx.author
 
@@ -16,7 +16,7 @@ async def permissions_for(ctx):
         }
 
     if not isinstance(ctx.author, discord.Member):
-        for serv_id in ctx.bot.bot_channels.keys():
+        for serv_id in (ctx.bot.bot_channels or {}).keys():
             guild = ctx.bot.get_guild(serv_id)
             if guild is not None and guild.get_member(ctx.author.id) is not None:
                 member = guild.get_member(ctx.author.id)
@@ -38,6 +38,10 @@ async def permissions_for(ctx):
     if member.id in bot_perms['users']: add_perms(bot_perms['users'][member.id])
     if 'owner' in bot_perms['users'] and await owner_pred(ctx): add_perms(bot_perms['users']['owner'])
 
+    if ctx.channel.permissions_for(ctx.author).manage_channels:
+        user_perms['categories'].add('moderation')
+        user_perms['categories'].add('bot')
+
     return user_perms
 
 #general predicates
@@ -55,18 +59,20 @@ async def mod_pred(ctx: commands.Context) -> bool:
 async def can_use(ctx: commands.Context) -> bool:
     perms = await permissions_for(ctx)
     cat = 'misc'
-    if hasattr(ctx.command,'category'): cat = ctx.command.category.lower()
+    if hasattr(ctx.command, 'category'): cat = ctx.command.category.lower()
 
     if cat in perms['categories']:
         if cat == 'moderation': return True
 
         if ctx.guild is not None:
-            bc = ctx.bot.bot_channels
-            if ctx.guild.id not in bc: return True
+            bc = ctx.bot.bot_channels or {}
+            if ctx.guild is not None:
+                if ctx.guild.id not in bc: return True
             if ctx.channel.id not in bc[ctx.guild.id]: raise commands.CheckFailure('silent')
 
         return True
-    else: return False
+    else:
+        return False
 
 
 # DEPRECATED use permissions.yml

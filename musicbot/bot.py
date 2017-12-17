@@ -63,7 +63,7 @@ class MusicBot(commands.AutoShardedBot):
             #self.default_channels = self.yaml.load(conf_file)
 
         with open('config/bot_channels.yml') as conf_file:
-            self.bot_channels = self.yaml.load(conf_file)
+            self.bot_channels = self.yaml.load(conf_file) or {}
 
         with open('config/permissions.yml') as conf_file:
             self.permissions = self.yaml.load(conf_file)

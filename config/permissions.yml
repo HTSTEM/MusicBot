@@ -74,6 +74,8 @@ roles:
     whitelist:
       - git
       - bot
+      - owner
+      - developer
 
   # memelord
   334301546710040576:
