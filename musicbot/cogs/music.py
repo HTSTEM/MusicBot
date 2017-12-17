@@ -34,6 +34,23 @@ class Music:
 
     # Callbacks:
     def music_finished(self, e, ctx):
+        if ctx.bot.die_soon:
+            coro = ctx.bot.die_soon.send(':wave:')
+            fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
+            try:
+                fut.result()
+            except:
+                import traceback
+                traceback.print_exc()
+                
+            coro = ctx.bot.logout()
+            fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
+            try:
+                fut.result()
+            except:
+                import traceback
+                traceback.print_exc()
+        
         if should_continue and not ctx.bot.dying:
             coro = self.read_queue(ctx)
             fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)

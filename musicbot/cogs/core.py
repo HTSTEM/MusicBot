@@ -110,6 +110,17 @@ class Core:
         ctx.bot.dying = True
         await ctx.send(':wave:')
         await ctx.bot.logout()
+    
+    @category('developer')
+    @commands.command(aliases=['diesoon'])
+    async def die_soon(self, ctx):
+        """Shuts down the bot at the end of the current song"""
+        if ctx.bot.dying:
+            return await ctx.send('Already doing that..')
+            
+        ctx.bot.dying = True
+        ctx.bot.die_soon = ctx
+        await ctx.send('Shutting down after this song.')
 
     @category('developer')
     @commands.command()

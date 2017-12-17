@@ -155,7 +155,6 @@ class Misc:
                 cats[cmd.category.lower()] = []
             cats[cmd.category.lower()].append(cmd)
 
-        print(cats)
         for cat in perms['categories']:
             if cat in cats:
                 for cmd in cats[cat]:
