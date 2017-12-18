@@ -3,7 +3,7 @@ __pycache__/
 config/bot_channels.yml
 config/creds.yml
 config/default_channels.yml
+config/token.txt
 musicbot.log
 test.py
 musicbot/database.sqlite
-audio_cache/
