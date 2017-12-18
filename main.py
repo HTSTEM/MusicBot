@@ -26,10 +26,11 @@ class SSLWSGIRefServer(ServerAdapter):
 
 
 with open('./config/config.yml', 'r') as config_file:
-    config = yaml.safe_load(config_file)
+    with open(yaml.safe_load(config_file)['creds_file'], 'r') as creds_file:
+        config = yaml.safe_load(creds_file)
 
-OAUTH2_CLIENT_ID = config['id']
-OAUTH2_CLIENT_SECRET = config['secret']
+OAUTH2_CLIENT_ID = config['client_id']
+OAUTH2_CLIENT_SECRET = config['client_secret']
 
 
 REDIRECT = 'http://localhost:8080/queue/oauth2'
