@@ -3,3 +3,6 @@ id: 1234567890
 
 # client secret
 secret: idksomething
+
+# bot token
+token: whatever

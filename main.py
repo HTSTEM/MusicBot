@@ -1,9 +1,10 @@
+import requests
 import os
 import json
 
 from ruamel import yaml
 
-from bottle import Bottle, run, template, static_file, request, redirect, abort
+from bottle import Bottle, run, template, static_file, request, redirect, abort, ServerAdapter
 from requests_oauthlib import OAuth2Session
 
 with open('./config/config.yml', 'r') as config_file:
@@ -18,7 +19,10 @@ REDIRECT = 'http://localhost:8080/queue/oauth2'
 BASE_API_URL = 'https://discordapp.com/api'
 
 if 'http://' in REDIRECT:
+    secure = False
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
+else:
+    secure = True
 
 keys = {
 
@@ -30,12 +34,28 @@ sessions = {
 }
 
 
-app = Bottle()
+class SSLWSGIRefServer(ServerAdapter):
+    def run(self, handler):
+        from wsgiref.simple_server import make_server, WSGIRequestHandler
+        import ssl
+        if self.quiet:
+            class QuietHandler(WSGIRequestHandler):
+                def log_request(*args, **kw): pass
+            self.options['handler_class'] = QuietHandler
+        srv = make_server(self.host, self.port, handler, **self.options)
+        srv.socket = ssl.wrap_socket(
+            srv.socket,
+            certfile='fullchain.pem',
+            keyfile='privkey.pem',
+            server_side=True)
+        srv.serve_forever()
 
+
+app = Bottle()
 
 def is_mod_on_htc(user_id):
     # This will tap into the aIO loop and query d.py
-    return False
+    return requests.get(f'http://localhost:8088/authorize/{user_id}').json()
     # return True
 
 
@@ -93,10 +113,6 @@ def queue_requested():
 
     discord = make_session(token=sessions[request.remote_addr].get('oauth2_token'))
     user = discord.get(BASE_API_URL+'/users/@me').json()
-    guilds = discord.get(BASE_API_URL+'/users/@me/guilds').json()
-    print(user)
-    for g in guilds:
-        print(g)
 
     user_id = user['id']
 
@@ -149,4 +165,11 @@ def stylesheets(filename):
 
 
 if __name__ == '__main__':
-    run(app, host='127.0.0.1', port=8080, debug=True, reloader=True)
+    host = '127.0.0.1'
+    port = 8080
+    if secure:
+        server = SSLWSGIRefServer(host="0.0.0.0", port=8080)
+        run(app, host=host, port=port, server=server,
+            debug=True, reloader=True)
+    else:
+        run(app, host=host, port=port, debug=True, reloader=True)
