@@ -244,7 +244,7 @@ class MusicBot(commands.AutoShardedBot):
 
     def run(self, token):
         cogs = ['cogs.music', 'cogs.misc', 'cogs.comp', 'cogs.core',
-                'cogs.git', 'cogs.modding', 'cogs.player']
+                'cogs.git', 'cogs.modding', 'cogs.player', 'cogs.website']
         self.remove_command("help")
         self.add_check(can_use)
         for cog in cogs:
@@ -261,5 +261,6 @@ class MusicBot(commands.AutoShardedBot):
 
 if __name__ == '__main__':
     bot = MusicBot()
-    token = open(bot.config['token_file'], 'r').read().split('\n')[0]
-    bot.run(token)
+    with open(bot.config['creds_file']) as cred_file:
+        creds = bot.yaml.load(cred_file)
+    bot.run(creds['token'])

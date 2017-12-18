@@ -23,9 +23,8 @@ bot_channels:
   184755239952318464: [334296431789604864]
   297811083308171264: [297811083308171264]
 
-# This is the location of the bot's token. The token must be placed on
-# the first line of the file
-token_file: config/token.txt
+# This is the location of the bot's credentials. See creds.yml.template
+creds_file: config/creds.yml
 
 # This is the change that a jingle will play instead of an auto-playlist
 # song.
