@@ -7,6 +7,24 @@ from ruamel import yaml
 from bottle import Bottle, run, template, static_file, request, redirect, abort, ServerAdapter
 from requests_oauthlib import OAuth2Session
 
+
+class SSLWSGIRefServer(ServerAdapter):
+    def run(self, handler):
+        from wsgiref.simple_server import make_server, WSGIRequestHandler
+        import ssl
+        if self.quiet:
+            class QuietHandler(WSGIRequestHandler):
+                def log_request(*args, **kw): pass
+            self.options['handler_class'] = QuietHandler
+        srv = make_server(self.host, self.port, handler, **self.options)
+        srv.socket = ssl.wrap_socket(
+            srv.socket,
+            certfile='fullchain.pem',
+            keyfile='privkey.pem',
+            server_side=True)
+        srv.serve_forever()
+
+
 with open('./config/config.yml', 'r') as config_file:
     config = yaml.safe_load(config_file)
 
@@ -33,25 +51,8 @@ sessions = {
 
 }
 
-
-class SSLWSGIRefServer(ServerAdapter):
-    def run(self, handler):
-        from wsgiref.simple_server import make_server, WSGIRequestHandler
-        import ssl
-        if self.quiet:
-            class QuietHandler(WSGIRequestHandler):
-                def log_request(*args, **kw): pass
-            self.options['handler_class'] = QuietHandler
-        srv = make_server(self.host, self.port, handler, **self.options)
-        srv.socket = ssl.wrap_socket(
-            srv.socket,
-            certfile='fullchain.pem',
-            keyfile='privkey.pem',
-            server_side=True)
-        srv.serve_forever()
-
-
 app = Bottle()
+
 
 def is_mod_on_htc(user_id):
     # This will tap into the aIO loop and query d.py
@@ -103,7 +104,7 @@ def oauth2_complete():
 @app.get('/queue')
 def queue_requested():
     if request.remote_addr not in keys:
-        discord = make_session(scope='identify guilds')
+        discord = make_session(scope='identify')
         authorization_url, state = discord.authorization_url(
             BASE_API_URL+'/oauth2/authorize')
         sessions[request.remote_addr] = {}
@@ -168,8 +169,7 @@ if __name__ == '__main__':
     host = '127.0.0.1'
     port = 8080
     if secure:
-        server = SSLWSGIRefServer(host="0.0.0.0", port=8080)
-        run(app, host=host, port=port, server=server,
-            debug=True, reloader=True)
+        server = SSLWSGIRefServer(host=host, port=port)
+        run(app, server=server, debug=True, reloader=True)
     else:
         run(app, host=host, port=port, debug=True, reloader=True)
