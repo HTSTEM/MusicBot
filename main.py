@@ -33,7 +33,7 @@ OAUTH2_CLIENT_ID = config['client_id']
 OAUTH2_CLIENT_SECRET = config['client_secret']
 
 
-REDIRECT = 'http://localhost:8080/queue/oauth2'
+REDIRECT = 'http://localhost:8080/{}/queue/oauth2'
 
 BASE_API_URL = 'https://discordapp.com/api'
 
@@ -55,9 +55,9 @@ sessions = {
 app = Bottle()
 
 
-def is_mod_on_htc(user_id):
+def is_mod_on_htc(guild_id, user_id):
     # This will tap into the aIO loop and query d.py
-    return requests.get(f'http://localhost:8088/authorize/{user_id}').json()
+    return requests.get(f'http://localhost:8088/authorize/{guild_id}/{user_id}').json()
     # return True
 
 
@@ -102,8 +102,8 @@ def oauth2_complete():
     redirect('../queue')
 
 
-@app.get('/queue')
-def queue_requested():
+@app.get('/<guild>/queue')
+def queue_requested(guild):
     if request.remote_addr not in keys:
         discord = make_session(scope='identify')
         authorization_url, state = discord.authorization_url(
@@ -118,16 +118,16 @@ def queue_requested():
 
     user_id = user['id']
 
-    if not is_mod_on_htc(user_id):
-        abort(403, 'You\'re not a moderator on HTC.')
+    if not is_mod_on_htc(guild, user_id):
+        abort(403, 'You do not have sufficient permissions.')
         return
 
     key = keys[request.remote_addr]
     return template('queue', {'key': key})
 
 
-@app.post('/queue')
-def api_request():
+@app.post('/<guild>/queue')
+def api_request(guild):
     key = request.forms.get("key")
     resource = request.forms.get("resource")
 

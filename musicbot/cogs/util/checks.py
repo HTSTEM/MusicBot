@@ -7,6 +7,7 @@ class NotInVCError(BaseException): pass
 async def permissions_for(ctx):
     bot_perms = ctx.bot.permissions
     member = ctx.author
+    bot = ctx.bot
 
     user_perms = {
         'categories': {cat.lower() for cat in bot_perms['default']['whitelist']},
@@ -15,11 +16,11 @@ async def permissions_for(ctx):
         'max_playlist_length': bot_perms['default']['max_playlist_length'],
         }
 
-    if not isinstance(ctx.author, discord.Member):
-        for serv_id in ctx.bot.bot_channels.keys():
-            guild = ctx.bot.get_guild(serv_id)
-            if guild is not None and guild.get_member(ctx.author.id) is not None:
-                member = guild.get_member(ctx.author.id)
+    if not isinstance(member, discord.Member):
+        for serv_id in bot.bot_channels.keys():
+            guild = bot.get_guild(serv_id)
+            if guild is not None and guild.get_member(member.id) is not None:
+                member = guild.get_member(member.id)
                 break
         else:
             return user_perms
