@@ -140,6 +140,8 @@ def api_request():
         return json.dumps(data)
 
     if resource == 'FULL_QUEUE':
+        queue = requests.get(f'http://localhost:8088/playlist').json()
+        queue = [(player['title'], player['user']) for player in queue]
         data = {
             'code': 1000,
             'msg': 'Queue read successful',
@@ -154,8 +156,7 @@ def api_request():
         data = {
             'code': 4000,
             'msg': 'Unknown resource',
-            'd': {
-            }
+            'd': {resource}
         }
 
         return json.dumps(data)

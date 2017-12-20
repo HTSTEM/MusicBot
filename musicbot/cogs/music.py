@@ -71,7 +71,10 @@ class Music:
             return
 
         found = False
+        player = None
+
         while not found and not self.bot.queues[ctx.guild.id]:
+
             if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
                 url = random.choice(self.bot.jingles)
                 self.jingle_last = True
