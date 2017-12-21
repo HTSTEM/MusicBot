@@ -4,25 +4,8 @@ import json
 
 from ruamel import yaml
 
-from bottle import Bottle, run, template, static_file, request, redirect, abort, ServerAdapter
+from flask import Flask, session, request, redirect, abort, send_from_directory, render_template
 from requests_oauthlib import OAuth2Session
-
-
-class SSLWSGIRefServer(ServerAdapter):
-    def run(self, handler):
-        from wsgiref.simple_server import make_server, WSGIRequestHandler
-        import ssl
-        if self.quiet:
-            class QuietHandler(WSGIRequestHandler):
-                def log_request(*args, **kw): pass
-            self.options['handler_class'] = QuietHandler
-        srv = make_server(self.host, self.port, handler, **self.options)
-        srv.socket = ssl.wrap_socket(
-            srv.socket,
-            certfile='fullchain.pem',
-            keyfile='privkey.pem',
-            server_side=True)
-        srv.serve_forever()
 
 
 with open('./config/config.yml', 'r') as config_file:
@@ -33,7 +16,7 @@ OAUTH2_CLIENT_ID = config['client_id']
 OAUTH2_CLIENT_SECRET = config['client_secret']
 
 
-REDIRECT = 'http://localhost:8080/{}/queue/oauth2'
+REDIRECT = 'http://localhost:8080/queue/oauth2'
 
 BASE_API_URL = 'https://discordapp.com/api'
 
@@ -43,16 +26,7 @@ if 'http://' in REDIRECT:
 else:
     secure = True
 
-keys = {
-
-}
-
-# I'm using this for now, does bottle have sessions? I couldn't find it in the docs
-sessions = {
-
-}
-
-app = Bottle()
+app = Flask(__name__)
 
 
 def is_mod_on_htc(guild_id, user_id):
@@ -76,62 +50,47 @@ def make_session(token=None, state=None, scope=None):
         )
 
 
-queue = [
-    ('Song name'*10, 'jim'),
-    ('Song nme', 'fred'),
-    ('Sng name', 'jim2'*10),
-    ('Son name', 'jim3'),
-    ('Song nname', 'jim4'),
-]*10
-
-
-@app.get('/queue/oauth2')
+@app.route('/queue/oauth2', methods=['GET'])
 def oauth2_complete():
-    discord = make_session(state=sessions[request.remote_addr].get('oauth2_state'))
-    token = discord.fetch_token(
+    discord = make_session(state=session.get('oauth2_state'))
+    session['oauth2_token'] = discord.fetch_token(
         BASE_API_URL+'/oauth2/token',
         client_secret=OAUTH2_CLIENT_SECRET,
         authorization_response=request.url
     )
-    sessions[request.remote_addr]['oauth2_token'] = token
-
-    key = request.query['code']
-
-    keys[request.remote_addr] = key
-
-    redirect('../queue')
+    session['key'] = request.args.get('code')
+    return redirect('../queue?g={}'.format(session.get('guild')))
 
 
-@app.get('/<guild>/queue')
-def queue_requested(guild):
-    if request.remote_addr not in keys:
+@app.route('/queue', methods=['GET'])
+def queue_requested():
+    guild = request.args.get('g')
+    session['guild'] = guild
+    if 'key' not in session:
         discord = make_session(scope='identify')
         authorization_url, state = discord.authorization_url(
             BASE_API_URL+'/oauth2/authorize')
-        sessions[request.remote_addr] = {}
-        sessions[request.remote_addr]['oauth2_state'] = state
-        redirect(authorization_url)
-        return
+        session['oauth2_state'] = state
+        return redirect(authorization_url)
 
-    discord = make_session(token=sessions[request.remote_addr].get('oauth2_token'))
+    discord = make_session(token=session.get('oauth2_token'))
     user = discord.get(BASE_API_URL+'/users/@me').json()
 
     user_id = user['id']
 
     if not is_mod_on_htc(guild, user_id):
-        abort(403, 'You do not have sufficient permissions.')
-        return
+        return abort(403, 'You do not have sufficient permissions.')
 
-    key = keys[request.remote_addr]
-    return template('queue', {'key': key})
+    key = session.get('key')
+    return render_template('queue.tpl', key=key)
 
 
-@app.post('/<guild>/queue')
-def api_request(guild):
-    key = request.forms.get("key")
-    resource = request.forms.get("resource")
-
-    if key != keys.get(request.remote_addr):
+@app.route('/queue', methods=['POST'])
+def api_request():
+    guild = request.form.get('guild')
+    key = request.form.get('key')
+    resource = request.form.get('resource')
+    if key != session.get('key'):
         data = {
             'code': 4001,
             'msg': 'Not authenticated',
@@ -140,7 +99,7 @@ def api_request(guild):
         return json.dumps(data)
 
     if resource == 'FULL_QUEUE':
-        queue = requests.get(f'http://localhost:8088/playlist').json()
+        queue = requests.get(f'http://localhost:8088/{guild}/playlist').json()
         queue = [(player['title'], player['user']) for player in queue]
         data = {
             'code': 1000,
@@ -162,16 +121,15 @@ def api_request(guild):
         return json.dumps(data)
 
 
-@app.get('/<filename:re:.*\.css>')
+@app.route('/<filename>', methods=['GET'])
 def stylesheets(filename):
-    return static_file(filename, root='static/')
+    return send_from_directory('static', filename)
 
 
 if __name__ == '__main__':
     host = '127.0.0.1'
     port = 8080
-    if secure:
-        server = SSLWSGIRefServer(host=host, port=port)
-        run(app, server=server, debug=True, reloader=True)
-    else:
-        run(app, host=host, port=port, debug=True, reloader=True)
+    app.secret_key = 'lol idk, something'
+    app.config['SESSION_TYPE'] = 'filesystem'
+    app.debug = True
+    app.run(host=host, port=port)

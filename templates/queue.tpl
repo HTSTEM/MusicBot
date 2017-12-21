@@ -13,7 +13,7 @@
 
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
     <script type="text/javascript">
-    var key = '{{key}}';
+    var key = '{{ key }}';
     var interval = 5000;
 
     var entityMap = {
@@ -35,9 +35,11 @@
 
     function loop() {
         console.log('loop');
+        let guild = new URLSearchParams(window.location.search).get('g');
         $.post("queue", {
                 'key': key,
-                'resource': 'FULL_QUEUE'
+                'resource': 'FULL_QUEUE',
+                'guild': guild
             },
             function (data, textStatus) {
                 console.log(data);

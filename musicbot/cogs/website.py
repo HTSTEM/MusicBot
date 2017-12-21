@@ -15,9 +15,10 @@ class Website:
             'title': player.title,
             'duration': player.duration,
             'user': player.user.name if player.user else None,
-        } for player in self.bot.queue[id]]
-        queue[0]['time'] = int(time.time()-self.bot.queue[0].start_time)
-        web.Response(text=json.dumps(queue))
+        } for player in self.bot.queues[id]]
+        if queue:
+            queue[0]['time'] = int(time.time()-self.bot.queues[id][0].start_time)
+        return web.Response(text=json.dumps(queue))
 
     async def authorize(self, request):
         guild = self.bot.get_guild(int(request.match_info.get('guild_id', '0')))
