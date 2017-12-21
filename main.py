@@ -36,6 +36,9 @@ def is_mod_on_htc(guild_id, user_id):
 
 
 def make_session(token=None, state=None, scope=None):
+    def token_updater(t):
+        session['oauth2_token'] = t
+
     return OAuth2Session(
         client_id=OAUTH2_CLIENT_ID,
         token=token,
@@ -46,8 +49,9 @@ def make_session(token=None, state=None, scope=None):
             'client_id': OAUTH2_CLIENT_ID,
             'client_secret': OAUTH2_CLIENT_SECRET,
         },
-        auto_refresh_url=BASE_API_URL+'/oauth2/token'
-        )
+        auto_refresh_url=BASE_API_URL+'/oauth2/token',
+        token_updater=token_updater
+    )
 
 
 @app.route('/queue/oauth2', methods=['GET'])
@@ -90,6 +94,11 @@ def api_request():
     guild = request.form.get('guild')
     key = request.form.get('key')
     resource = request.form.get('resource')
+    discord = make_session(token=session.get('oauth2_token'))
+    user = discord.get(BASE_API_URL + '/users/@me').json()
+    user_id = user['id']
+    if not is_mod_on_htc(guild, user_id):
+        return abort(403, 'You do not have sufficient permissions.')
     if key != session.get('key'):
         data = {
             'code': 4001,
@@ -109,8 +118,8 @@ def api_request():
                 'queue': queue
             }
         }
-
         return json.dumps(data)
+
     else:
         data = {
             'code': 4000,

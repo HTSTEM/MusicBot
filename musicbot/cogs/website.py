@@ -4,28 +4,31 @@ import json
 from aiohttp import web
 from .util.checks import permissions_for
 
+
 class Website:
 
     def __init__(self, bot):
         self.bot = bot
 
     async def get_queue(self, request):
-        id = int(request.match_info.get('id', '0'))
+        gid = int(request.match_info.get('id', '0'))
         queue = [{
             'title': player.title,
             'duration': player.duration,
             'user': player.user.name if player.user else None,
-        } for player in self.bot.queues[id]]
+        } for player in self.bot.queues[gid]]
         if queue:
-            queue[0]['time'] = int(time.time()-self.bot.queues[id][0].start_time)
+            queue[0]['time'] = int(time.time()-self.bot.queues[gid][0].start_time)
         return web.Response(text=json.dumps(queue))
 
     async def authorize(self, request):
         guild = self.bot.get_guild(int(request.match_info.get('guild_id', '0')))
-        if guild is None: return web.Response(text='false')
+        if guild is None:
+            return web.Response(text='false')
         user = guild.get_member(int(request.match_info.get('user_id', '0')))
-        if user is None: return False
-        ctx = lambda: None # lol ikr
+        if user is None:
+            return web.Response(text='false')
+        ctx = lambda: None  # lol ikr
         ctx.author = user
         ctx.bot = self.bot
         perms = await permissions_for(ctx)
@@ -33,7 +36,6 @@ class Website:
             return web.Response(text='true')
         else:
             return web.Response(text='false')
-
 
     async def on_ready(self):
         app = web.Application()
