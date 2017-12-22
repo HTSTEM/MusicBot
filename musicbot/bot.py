@@ -56,14 +56,8 @@ class MusicBot(commands.AutoShardedBot):
 
                 self.default_channels.append((key, value, comment))
 
-            print(self.default_channels)
-            #default_channels = [i.split('#')[0] for i in default_channels]
-            #default_channels = [i for i in default_channels if i]
-
-            #self.default_channels = self.yaml.load(conf_file)
-
         with open('config/bot_channels.yml') as conf_file:
-            self.bot_channels = self.yaml.load(conf_file)
+            self.bot_channels = self.yaml.load(conf_file) or {}
 
         with open('config/permissions.yml') as conf_file:
             self.permissions = self.yaml.load(conf_file)
@@ -91,6 +85,7 @@ class MusicBot(commands.AutoShardedBot):
 
         self.voice = {}
         self.dying = False
+        self.die_soon = False
         self.like_comp_active = False
         self.like_comp = {}
 

@@ -29,17 +29,7 @@ users:
       - owner
       - git
   # special bot owner field
-  owner:
-    # access to all commands
-    whitelist:
-      - bot
-      - player
-      - moderation
-      - comp
-      - owner
-      - git
-      # owner isn't used yet, but might be in the future
-    max_playlist_length: 100
+  owner: {}
 
   # use user ids
   000000000000000: {}
@@ -84,6 +74,7 @@ roles:
     whitelist:
       - git
       - bot
+      - developer
 
   # memelord
   334301546710040576:
