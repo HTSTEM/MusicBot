@@ -28,6 +28,9 @@ else:
 
 app = Flask(__name__)
 
+app.secret_key = 'lol idk, something'
+app.config['SESSION_TYPE'] = 'filesystem'
+
 
 def is_mod_on_htc(guild_id, user_id):
     # This will tap into the aIO loop and query d.py
@@ -130,7 +133,7 @@ def api_request():
         return json.dumps(data)
 
 
-@app.route('/<filename>', methods=['GET'])
+@app.route('/queue/<filename>', methods=['GET'])
 def stylesheets(filename):
     return send_from_directory('static', filename)
 
@@ -138,7 +141,5 @@ def stylesheets(filename):
 if __name__ == '__main__':
     host = '127.0.0.1'
     port = 8080
-    app.secret_key = 'lol idk, something'
-    app.config['SESSION_TYPE'] = 'filesystem'
     app.debug = True
     app.run(host=host, port=port)
