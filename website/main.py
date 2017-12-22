@@ -8,7 +8,7 @@ from flask import Flask, session, request, redirect, abort, send_from_directory,
 from requests_oauthlib import OAuth2Session
 
 
-with open('./config/config.yml', 'r') as config_file:
+with open('../config/config.yml', 'r') as config_file:
     with open(yaml.safe_load(config_file)['creds_file'], 'r') as creds_file:
         config = yaml.safe_load(creds_file)
 
