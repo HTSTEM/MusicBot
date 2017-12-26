@@ -288,13 +288,13 @@ class Misc:
                     if cmd == ctx.bot:
                         d += 'Command not found.'
                     else:
-                        d += 'No sub-command found.'.format(cmd.name, i)
+                        d += 'No sub-command found.'
                     break
 
             else:
                 d = self.get_help(ctx, cmd, name=cmd_name)
 
-        d += '\n*Made by Bottersnike#3605 and hanss314#0128*'
+        d += '\n*Made by Bottersnike#3605 and hanss314#0128*\n*Made possible thanks to our patrons.*\n*$5 patrons: Satomi*'
         return await ctx.send(d)
 
 
