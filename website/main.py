@@ -8,7 +8,7 @@ from flask import Flask, session, request, redirect, abort, send_from_directory,
 from requests_oauthlib import OAuth2Session
 
 
-with open('../config/config.yml', 'r') as config_file:
+with open('config/config.yml', 'r') as config_file:
     with open(yaml.safe_load(config_file)['creds_file'], 'r') as creds_file:
         config = yaml.safe_load(creds_file)
 
@@ -35,7 +35,6 @@ app.config['SESSION_TYPE'] = 'filesystem'
 def is_mod_on_htc(guild_id, user_id):
     # This will tap into the aIO loop and query d.py
     return requests.get(f'http://localhost:8088/authorize/{guild_id}/{user_id}').json()
-    # return True
 
 
 def make_session(token=None, state=None, scope=None):
@@ -79,29 +78,53 @@ def queue_requested():
             BASE_API_URL+'/oauth2/authorize')
         session['oauth2_state'] = state
         return redirect(authorization_url)
-
+    '''
     discord = make_session(token=session.get('oauth2_token'))
     user = discord.get(BASE_API_URL+'/users/@me').json()
-
     user_id = user['id']
-
     if not is_mod_on_htc(guild, user_id):
         return abort(403, 'You do not have sufficient permissions.')
-
+    '''
     key = session.get('key')
     return render_template('queue.tpl', key=key)
 
+
+@app.route('/queue/delete', methods=['POST'])
+def delete():
+    guild_id = request.form.get('guild')
+    # we should probably use ids rather than position in case of a desync
+    position = request.form.get('position')
+    discord = make_session(token=session.get('oauth2_token'))
+    user = discord.get(BASE_API_URL + '/users/@me').json()
+    user_id = user['id']
+    if not is_mod_on_htc(guild_id, user_id):
+        return abort(403, 'You do not have sufficient permissions.')
+
+    requests.post(f'http://localhost:8088/delete/{guild_id}', data={'position': position})
+    queue = requests.get(f'http://localhost:8088/{guild_id}/playlist').json()
+    queue = [(player['title'], player['user']) for player in queue]
+    data = {
+        'code': 1000,
+        'msg': 'Queue read successful',
+        'd': {
+            'queue_length': len(queue),
+            'queue': queue
+        }
+    }
+    return json.dumps(data)
 
 @app.route('/queue', methods=['POST'])
 def api_request():
     guild = request.form.get('guild')
     key = request.form.get('key')
     resource = request.form.get('resource')
+
     discord = make_session(token=session.get('oauth2_token'))
     user = discord.get(BASE_API_URL + '/users/@me').json()
     user_id = user['id']
     if not is_mod_on_htc(guild, user_id):
         return abort(403, 'You do not have sufficient permissions.')
+
     if key != session.get('key'):
         data = {
             'code': 4001,

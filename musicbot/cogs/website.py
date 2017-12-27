@@ -21,6 +21,33 @@ class Website:
             queue[0]['time'] = int(time.time()-self.bot.queues[gid][0].start_time)
         return web.Response(text=json.dumps(queue))
 
+    async def skip(self, request):
+        data = await request.post()
+        pos = int(data['position'])
+        guild = int(request.match_info.get('guild_id', '0'))
+
+        if pos == 0:
+            try:
+                vc = self.bot.voice[guild]
+            except KeyError:
+                return web.Response(404)
+
+            vc.stop()
+            return web.Response(200)
+
+        else:
+            try:
+                player = self.bot.queues[guild][pos]
+            except (KeyError, IndexError):
+                return web.Response(404)
+
+            try:
+                music_cog = self.bot.cogs['Music']
+                music_cog.remove_from_queue(player, guild)
+                return web.Response(200)
+            except (AttributeError, KeyError):
+                return web.Response(500)
+
     async def authorize(self, request):
         guild = self.bot.get_guild(int(request.match_info.get('guild_id', '0')))
         if guild is None:
@@ -41,6 +68,7 @@ class Website:
         app = web.Application()
         app.router.add_get('/authorize/{guild_id}/{user_id}', self.authorize)
         app.router.add_get('/{id}/playlist', self.get_queue)
+        app.router.add_post('/delete/{guild_id}', self.skip)
         handler = app.make_handler()
         f = self.bot.loop.create_server(handler, '127.0.0.1', '8088')
         await f
