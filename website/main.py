@@ -89,7 +89,7 @@ def queue_requested():
     return render_template('queue.tpl', key=key)
 
 
-@app.route('/queue/delete', methods=['POST'])
+@app.route('/queue', methods=['DELETE'])
 def delete():
     guild_id = request.form.get('guild')
     # we should probably use ids rather than position in case of a desync
@@ -100,7 +100,7 @@ def delete():
     if not is_mod_on_htc(guild_id, user_id):
         return abort(403, 'You do not have sufficient permissions.')
 
-    requests.post(f'http://localhost:8088/delete/{guild_id}', data={'position': position})
+    requests.delete(f'http://localhost:8088/{guild_id}', data={'position': position})
     queue = requests.get(f'http://localhost:8088/{guild_id}/playlist').json()
     queue = [(player['title'], player['user']) for player in queue]
     data = {

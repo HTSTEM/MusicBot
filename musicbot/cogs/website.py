@@ -68,7 +68,7 @@ class Website:
         app = web.Application()
         app.router.add_get('/authorize/{guild_id}/{user_id}', self.authorize)
         app.router.add_get('/{id}/playlist', self.get_queue)
-        app.router.add_post('/delete/{guild_id}', self.skip)
+        app.router.add_delete('/{guild_id}', self.skip)
         handler = app.make_handler()
         f = self.bot.loop.create_server(handler, '127.0.0.1', '8088')
         await f
