@@ -152,6 +152,37 @@ class Core:
 
         self.bot.voice[ctx.guild.id] = await voice.channel.connect()
 
+    @commands.command(aliases=['eval'])
+    async def debug(self, ctx, *, code: str):
+        '''Evaluates code'''
+
+        result = None
+
+        env = {
+            'ctx': ctx,
+            'bot': ctx.bot,
+            'guild': ctx.guild,
+            'author': ctx.author,
+            'message': ctx.message,
+            'channel': ctx.channel
+        }
+        env.update(globals())
+
+        try:
+            result = eval(code, env)
+
+            if inspect.isawaitable(result):
+                result = await result
+
+            colour = 0x00FF00
+        except Exception as e:
+            result = type(e).__name__ + ': ' + str(e)
+            colour = 0xFF0000
+
+        embed = discord.Embed(colour=colour, title=code, description='```py\n{}```'.format(result))
+        embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        await ctx.send(embed=embed)
+
 
 def setup(bot):
     bot.add_cog(Core(bot))
