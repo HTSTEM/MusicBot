@@ -1,5 +1,6 @@
 import time
 import json
+import hashlib
 
 from aiohttp import web
 from .util.checks import permissions_for
@@ -16,6 +17,7 @@ class Website:
             'title': player.title,
             'duration': player.duration,
             'user': player.user.name if player.user else None,
+            'id': hashlib.sha1((player.title+(player.user or '')).encode('utf-8')).hexdigest(),
         } for player in self.bot.queues[gid]]
         if queue:
             queue[0]['time'] = int(time.time()-self.bot.queues[gid][0].start_time)
@@ -23,30 +25,29 @@ class Website:
 
     async def skip(self, request):
         data = await request.post()
-        pos = int(data['position'])
+        pid = data['position']
         guild = int(request.match_info.get('guild_id', '0'))
+        try:
+            vc = self.bot.voice[guild]
+            queue = self.bot.queues[guild]
+        except KeyError:
+            return web.Response(status=404)
 
-        if pos == 0:
-            try:
-                vc = self.bot.voice[guild]
-            except KeyError:
-                return web.Response(404)
+        for n, player in enumerate(queue):
+            if hashlib.sha1((player.title+(player.user or '')).encode('utf-8')).hexdigest() == pid:
+                if n == 0:
+                    vc.stop()
+                    return web.Response(status=200)
 
-            vc.stop()
-            return web.Response(200)
+                else:
+                    try:
+                        music_cog = self.bot.cogs['Music']
+                        music_cog.remove_from_queue(player, guild)
+                        return web.Response(status=200)
+                    except (AttributeError, KeyError):
+                        return web.Response(status=500)
 
-        else:
-            try:
-                player = self.bot.queues[guild][pos]
-            except (KeyError, IndexError):
-                return web.Response(404)
-
-            try:
-                music_cog = self.bot.cogs['Music']
-                music_cog.remove_from_queue(player, guild)
-                return web.Response(200)
-            except (AttributeError, KeyError):
-                return web.Response(500)
+        return web.Response(status=404)
 
     async def authorize(self, request):
         guild = self.bot.get_guild(int(request.match_info.get('guild_id', '0')))

@@ -15,7 +15,7 @@
     <script type="text/javascript">
     var key = '{{ key }}';
     var interval = 5000;
-
+    var queue = [];
     var entityMap = {
       '&': '&amp;',
       '<': '&lt;',
@@ -35,7 +35,7 @@
 
     function loop() {
         console.log('loop');
-        let guild = new URLSearchParams(window.location.search).get('g');
+        const guild = new URLSearchParams(window.location.search).get('g');
         $.post("queue", {
                 'key': key,
                 'resource': 'FULL_QUEUE',
@@ -48,22 +48,55 @@
                 var response = jQuery.parseJSON(data);
 
                 if (response['code'] === 1000) {
-                    $('#container').html('')
-                    for (var i=0; i<response['d']['queue_length']; i++) {
-                        $('#container').append(
-                            '<div id="card"><b>' +
-                            escapeHtml(response['d']['queue'][i][0]) +
-                            '</b> Queued by <b>' +
-                            escapeHtml(response['d']['queue'][i][1]) +
-                            '</b></div>'
-                        )
-                    }
+                    show_queue(response['d']['queue'], response['d']['queue_length']);
                 }
 
                 setTimeout(loop, interval);
             }
         ).fail(function(response) {
             setTimeout(loop, interval);
+        });
+    }
+
+    function skip(player_id){
+        const guild = new URLSearchParams(window.location.search).get('g');
+        $.ajax({
+            url: "queue",
+            type: 'DELETE',
+            data: {
+                'key': key,
+                'position': player_id,
+                'guild': guild
+            },
+            success: function (data, textStatus) {
+                console.log(data);
+                console.log(textStatus);
+
+                var response = jQuery.parseJSON(data);
+
+                if (response['code'] === 1000) {
+                    show_queue(response['d']['queue'], response['d']['queue_length']);
+                }
+            }
+        })
+    }
+
+    function show_queue(q, length) {
+        queue = q;
+        $('#container').html('');
+        for (var i = 0; i < length; i++) {
+            $('#container').append(
+                '<div id="card" title="' +
+                q[i]['id'] + '"><b>' +
+                escapeHtml(q[i]['title']) +
+                '</b> Queued by <b>' +
+                escapeHtml(q[i]['user']) +
+                '</b></div>'
+            )
+        }
+        $('#card').click(function(){
+            console.log('Skipping');
+            skip($(this).attr('title'));
         });
     }
 

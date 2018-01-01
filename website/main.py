@@ -70,8 +70,8 @@ def oauth2_complete():
 
 @app.route('/queue', methods=['GET'])
 def queue_requested():
-    guild = request.args.get('g')
-    session['guild'] = guild
+    print(request.args.get('g'))
+    session['guild'] = request.args.get('g')
     if 'key' not in session:
         discord = make_session(scope='identify')
         authorization_url, state = discord.authorization_url(
@@ -86,21 +86,29 @@ def queue_requested():
         return abort(403, 'You do not have sufficient permissions.')
     '''
     key = session.get('key')
-    return render_template('queue.tpl', key=key)
+    return render_template('queue.html', key=key)
 
 
 @app.route('/queue', methods=['DELETE'])
 def delete():
+    key = request.form.get('key')
+    if key != session.get('key'):
+        data = {
+            'code': 4001,
+            'msg': 'Not authenticated',
+        }
+
+        return json.dumps(data)
     guild_id = request.form.get('guild')
     # we should probably use ids rather than position in case of a desync
-    position = request.form.get('position')
+    player_id = request.form.get('position')
     discord = make_session(token=session.get('oauth2_token'))
     user = discord.get(BASE_API_URL + '/users/@me').json()
     user_id = user['id']
     if not is_mod_on_htc(guild_id, user_id):
         return abort(403, 'You do not have sufficient permissions.')
 
-    requests.delete(f'http://localhost:8088/{guild_id}', data={'position': position})
+    requests.delete(f'http://localhost:8088/{guild_id}', data={'position': player_id})
     queue = requests.get(f'http://localhost:8088/{guild_id}/playlist').json()
     queue = [(player['title'], player['user']) for player in queue]
     data = {
@@ -135,7 +143,6 @@ def api_request():
 
     if resource == 'FULL_QUEUE':
         queue = requests.get(f'http://localhost:8088/{guild}/playlist').json()
-        queue = [(player['title'], player['user']) for player in queue]
         data = {
             'code': 1000,
             'msg': 'Queue read successful',
