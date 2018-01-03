@@ -28,6 +28,15 @@ users:
       - comp
       - owner
       - git
+  140564059417346049:
+    whitelist:
+      - bot
+      - player
+      - moderation
+      - comp
+      - owner
+      - git
+
   # special bot owner field
   owner: {}
 
@@ -40,9 +49,9 @@ users:
     max_playlist_length: 45
     pledge: 3
   154825973278310400: # Satomi
-    max_songs_queued: 25
-    max_playlist_length: 25
-    pledge: 1
+    max_songs_queued: 65
+    max_playlist_length: 65
+    pledge: 5
   198191547970355200: # sills
     max_songs_queued: 25
     max_playlist_length: 25
