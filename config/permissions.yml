@@ -52,6 +52,10 @@ users:
     max_songs_queued: 65
     max_playlist_length: 65
     pledge: 5
+  127373929600778240: # Tantusar
+    max_songs_queued: 65
+    max_playlist_length: 65
+    pledge: 5
   198191547970355200: # sills
     max_songs_queued: 25
     max_playlist_length: 25
