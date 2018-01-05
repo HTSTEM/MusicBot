@@ -57,6 +57,9 @@ class Core:
         with open('config/permissions.yml') as perm_file:
             ctx.bot.permissions = ctx.bot.yaml.load(perm_file)
 
+        with open('config/patrons.yml') as patron_file:
+            ctx.bot.patrons = ctx.bot.yaml.load(patron_file)
+
         await ctx.send('Reloaded config files.')
 
     @category('developer')
