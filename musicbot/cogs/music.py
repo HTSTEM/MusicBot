@@ -25,6 +25,10 @@ WHITELIST = [
     'bandcamp'
 ]
 
+
+def escape(string):
+    return string.replace('*', '\\*').replace('_', '\\_').replace('`', '\\`')
+
 #silent failure
 class QueueLimitError(commands.CommandNotFound): pass
 
@@ -642,8 +646,8 @@ class Music:
             ttp = time.gmtime(max(0, self.get_queue_length(ctx.guild.id)))
 
             message = f'`{time.strftime("%H:%M:%S", ttp)}` in queue.\n'
-            message += f'Now playing: **{playing.title}**'
-            if playing.user: message += ' added by {}'.format(playing.user.name)
+            message += f'Now playing: **{escape(playing.title)}**'
+            if playing.user: message += f' added by {escape(playing.user.name)}'
             message += ' `[{}/{}]`'.format(
                 time.strftime('%M:%S', time.gmtime(max(0,playing_time))),
                 time.strftime('%M:%S', time.gmtime(max(0,playing.duration)))
@@ -652,7 +656,7 @@ class Music:
             message += '\n\n'
             for n, entry in enumerate(self.bot.queues[ctx.guild.id][1:]):
                 if entry.user:
-                    to_add = f'`{n+1}.` **{entry.title}** added by **{entry.user.name}**\n'
+                    to_add = f'`{n+1}.` **{entry.title}** added by **{escape(entry.user.name)}**\n'
                 else:
                     to_add = f'`{n+1}.` **{entry.title}**\n'
 
@@ -682,8 +686,8 @@ class Music:
             if ctx.voice_client.is_paused():
                 playing_time -= time.time() - ctx.voice_client.source.pause_start
 
-            message = f'Now playing: **{playing.title}**'
-            if playing.user: message += f' added by {playing.user.name}'
+            message = f'Now playing: **{escape(playing.title)}**'
+            if playing.user: message += f' added by {escape(playing.user.name)}'
             message += ' `[{}/{}]`'.format(
                     time.strftime('%M:%S', time.gmtime(max(0,playing_time))),
                     time.strftime('%M:%S', time.gmtime(max(0,playing.duration)))
