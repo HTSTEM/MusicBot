@@ -632,7 +632,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
-    @commands.cooldown(1, 120, type=commands.BucketType.guild)
+    @commands.cooldown(1, 60, type=commands.BucketType.guild)
     async def queue(self, ctx):
         '''Shows the current queue.'''
         if self.bot.queues[ctx.guild.id]:
@@ -645,6 +645,7 @@ class Music:
             ttp = time.gmtime(max(0, self.get_queue_length(ctx.guild.id)))
 
             message = f'`{time.strftime("%H:%M:%S", ttp)}` in queue.\n'
+            message += f'Queue can also be viewed at https://htcraft.ml/queue?g={ctx.guild.id}\n'
             message += f'Now playing: **{playing.title}**'
             if playing.user: message += ' added by {}'.format(playing.user.name)
             message += ' `[{}/{}]`'.format(

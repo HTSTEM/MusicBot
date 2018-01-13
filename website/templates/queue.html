@@ -14,6 +14,7 @@
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
     <script type="text/javascript">
     var key = '{{ key }}';
+    var mod = {{ mod }};
     var interval = 5000;
     var queue = [];
     var entityMap = {
@@ -84,16 +85,16 @@
     function show_queue(q, length) {
         queue = q;
         $('#container').html('');
+        console.log(length);
         for (var i = 0; i < length; i++) {
-            $('#container').append(
-                '<div id="card" title="' + q[i]['id'] + '">' +
-                '<div id="skip-button">x</div>' +
+            card = '<div id="card" title="' + q[i]['id'] + '">';
+            if (mod) {card += '<div id="skip-button">x</div>';}
+            card +=
                 '<div id="song-info"><b>' + escapeHtml(q[i]['title']) + '</b>' +
                 ' Queued by ' +
                 '<b>' + escapeHtml(q[i]['user']) + '</b></div>' +
-                '</div>'
-
-            )
+                '</div>';
+            $('#container').append(card);
         }
         $('#skip-button').click(function(){
             console.log('Skipping');

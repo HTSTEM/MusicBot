@@ -78,15 +78,13 @@ def queue_requested():
             BASE_API_URL+'/oauth2/authorize')
         session['oauth2_state'] = state
         return redirect(authorization_url)
-    '''
+
     discord = make_session(token=session.get('oauth2_token'))
     user = discord.get(BASE_API_URL+'/users/@me').json()
     user_id = user['id']
-    if not is_mod_on_htc(guild, user_id):
-        return abort(403, 'You do not have sufficient permissions.')
-    '''
+    guild = request.args.get('g')
     key = session.get('key')
-    return render_template('queue.html', key=key)
+    return render_template('queue.html', key=key, mod=str(is_mod_on_htc(guild, user_id)).lower())
 
 
 @app.route('/queue', methods=['DELETE'])
@@ -126,13 +124,13 @@ def api_request():
     guild = request.form.get('guild')
     key = request.form.get('key')
     resource = request.form.get('resource')
-
+    '''
     discord = make_session(token=session.get('oauth2_token'))
     user = discord.get(BASE_API_URL + '/users/@me').json()
     user_id = user['id']
     if not is_mod_on_htc(guild, user_id):
         return abort(403, 'You do not have sufficient permissions.')
-
+    '''
     if key != session.get('key'):
         data = {
             'code': 4001,
@@ -169,7 +167,7 @@ def stylesheets(filename):
 
 
 if __name__ == '__main__':
-    host = '127.0.0.1'
+    host = '0.0.0.0'
     port = 8080
     app.debug = True
     app.run(host=host, port=port)

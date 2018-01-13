@@ -5,6 +5,8 @@ import hashlib
 from aiohttp import web
 from .util.checks import permissions_for
 
+from discord.ext import commands
+
 
 class Website:
 
@@ -16,7 +18,7 @@ class Website:
         queue = [{
             'title': player.title,
             'duration': player.duration,
-            'user': player.user.name if player.user else None,
+            'user': player.user.name if player.user else 'Autoplaylist',
             'id': hashlib.sha1((player.title+(player.user or '')).encode('utf-8')).hexdigest(),
         } for player in self.bot.queues[gid]]
         if queue:
@@ -73,6 +75,11 @@ class Website:
         handler = app.make_handler()
         f = self.bot.loop.create_server(handler, '127.0.0.1', '8088')
         await f
+
+    @commands.command()
+    async def website(self, ctx):
+        """Get a link to the queue website for this guild."""
+        await ctx.send(f'https://htcraft.ml/queue?g={ctx.guild.id}')
 
 
 def setup(bot):
