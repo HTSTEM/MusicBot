@@ -1,0 +1,109 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>HTC MusicBot Queue</title>
+        <link type="text/css" href="queue/main.css" rel="stylesheet">
+        <meta name=viewport content="width=device-width, initial-scale=1">
+    </head>
+    <body>
+        <div id="header">HTC MusicBot Queue</div>
+
+        <div id="container">
+        </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    var key = '{{ key }}';
+    var mod = {{ mod }};
+    var interval = 5000;
+    var queue = [];
+    var entityMap = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '/': '&#x2F;',
+      '`': '&#x60;',
+      '=': '&#x3D;'
+    };
+
+    function escapeHtml(string) {
+      return String(string).replace(/[&<>"'`=\/]/g, function (s) {
+        return entityMap[s];
+      });
+    }
+
+    function loop() {
+        console.log('loop');
+        const guild = new URLSearchParams(window.location.search).get('g');
+        $.post("queue", {
+                'key': key,
+                'resource': 'FULL_QUEUE',
+                'guild': guild
+            },
+            function (data, textStatus) {
+                console.log(data);
+                console.log(textStatus);
+
+                var response = jQuery.parseJSON(data);
+
+                if (response['code'] === 1000) {
+                    show_queue(response['d']['queue'], response['d']['queue_length']);
+                }
+
+                setTimeout(loop, interval);
+            }
+        ).fail(function(response) {
+            setTimeout(loop, interval);
+        });
+    }
+
+    function skip(player_id){
+        const guild = new URLSearchParams(window.location.search).get('g');
+        $.ajax({
+            url: "queue",
+            type: 'DELETE',
+            data: {
+                'key': key,
+                'position': player_id,
+                'guild': guild
+            },
+            success: function (data, textStatus) {
+                console.log(data);
+                console.log(textStatus);
+
+                var response = jQuery.parseJSON(data);
+
+                if (response['code'] === 1000) {
+                    show_queue(response['d']['queue'], response['d']['queue_length']);
+                }
+            }
+        })
+    }
+
+    function show_queue(q, length) {
+        queue = q;
+        $('#container').html('');
+        console.log(length);
+        for (var i = 0; i < length; i++) {
+            card = '<div id="card" title="' + q[i]['id'] + '">';
+            if (mod) {card += '<div id="skip-button">x</div>';}
+            card +=
+                '<div id="song-info"><b>' + escapeHtml(q[i]['title']) + '</b>' +
+                ' Queued by ' +
+                '<b>' + escapeHtml(q[i]['user']) + '</b></div>' +
+                '</div>';
+            $('#container').append(card);
+        }
+        $('#skip-button').click(function(){
+            console.log('Skipping');
+            skip($(this).parent().attr('title'));
+        });
+    }
+
+    $(loop);
+    </script>
+
+    </body>
+</html>
