@@ -86,17 +86,18 @@
         $('#container').html('');
         for (var i = 0; i < length; i++) {
             $('#container').append(
-                '<div id="card" title="' +
-                q[i]['id'] + '"><b>' +
-                escapeHtml(q[i]['title']) +
-                '</b> Queued by <b>' +
-                escapeHtml(q[i]['user']) +
-                '</b></div>'
+                '<div id="card" title="' + q[i]['id'] + '">' +
+                '<div id="skip-button">x</div>' +
+                '<div id="song-info"><b>' + escapeHtml(q[i]['title']) + '</b>' +
+                ' Queued by ' +
+                '<b>' + escapeHtml(q[i]['user']) + '</b></div>' +
+                '</div>'
+
             )
         }
-        $('#card').click(function(){
+        $('#skip-button').click(function(){
             console.log('Skipping');
-            skip($(this).attr('title'));
+            skip($(this).parent().attr('title'));
         });
     }
 

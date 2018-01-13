@@ -39,6 +39,25 @@ body, html {
     box-shadow: 0px 6px 2px 1px rgba(0,0,0,0.2);
 }
 
+#song-info {
+    margin: 0 auto;
+    width: calc(100% - 50px);
+}
+
+#skip-button {
+    position: relative;
+    top: 50%;
+    transform: translateY(-15%); /*Idk, the centering works like this*/
+    float: right;
+    font-size: 20px;
+    color: red;
+}
+
+#skip-button:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 @media (max-width: 768px) {
     @media (orientation: portrait) {
         #header {
