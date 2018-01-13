@@ -47,7 +47,7 @@ class Music:
             except:
                 import traceback
                 traceback.print_exc()
-                
+
             coro = ctx.bot.logout()
             fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
             try:
@@ -55,7 +55,7 @@ class Music:
             except:
                 import traceback
                 traceback.print_exc()
-        
+
         if should_continue and not ctx.bot.dying:
             coro = self.read_queue(ctx)
             fut = asyncio.run_coroutine_threadsafe(coro, ctx.bot.loop)
@@ -537,14 +537,19 @@ class Music:
             self.bot.save_likes()
 
         if self.bot.like_comp_active:
-            if self.bot.queues[ctx.guild.id][0].user is not None:
-                if self.bot.queues[ctx.guild.id][0].user not in self.bot.like_comp:
-                    self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user] = {}
-                if self.bot.queues[ctx.guild.id][0].title not in self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user]:
-                    self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user][self.bot.queues[ctx.guild.id][0].title] = []
-                if ctx.author.id != self.bot.queues[ctx.guild.id][0].user.id:
-                    if ctx.author.id not in self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user][self.bot.queues[ctx.guild.id][0].title]:
-                        self.bot.like_comp[self.bot.queues[ctx.guild.id][0].user][self.bot.queues[ctx.guild.id][0].title].append(ctx.author.id)
+            just_played = self.bot.queues[ctx.guild.id][0].title
+            song_queuer = self.bot.queues[ctx.guild.id][0].user
+
+            if song_queuer is not None:
+                if song_queuer not in self.bot.like_comp:
+                    self.bot.like_comp[song_queuer] = {}
+
+                if just_played not in self.bot.like_comp[song_queuer]:
+                    self.bot.like_comp[song_queuer][just_played] = []
+
+                if ctx.author.id != song_queuer.id:
+                    if ctx.author.id not in self.bot.like_comp[song_queuer][just_played]:
+                        self.bot.like_comp[song_queuer][just_played].append(ctx.author.id)
 
         await ctx.send(f'<@{ctx.author.id}>, your \'like\' for **{self.bot.queues[ctx.guild.id][0].title}** was acknowledged.')
 
