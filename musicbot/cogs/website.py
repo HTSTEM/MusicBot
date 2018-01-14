@@ -4,16 +4,26 @@ import hashlib
 
 from aiohttp import web
 from .util.checks import permissions_for
+from .util.categories import category
 
 from discord.ext import commands
+
+cog = None
 
 
 class Website:
 
     def __init__(self, bot):
         self.bot = bot
+        self.app = web.Application()
+        self.app.router.add_get('/authorize/{guild_id}/{user_id}', self.authorize)
+        self.app.router.add_get('/{guild_id}/playlist', self.get_queue)
+        self.app.router.add_delete('/{guild_id}', self.skip)
+        self.handler = self.app.make_handler()
+        self.server = self.bot.loop.create_server(self.handler, '127.0.0.1', '8088')
 
     async def get_queue(self, request):
+        print('this')
         gid = int(request.match_info.get('guild_id', '0'))
         queue = [{
             'title': player.title,
@@ -68,13 +78,18 @@ class Website:
             return web.Response(text='false')
 
     async def on_ready(self):
-        app = web.Application()
-        app.router.add_get('/authorize/{guild_id}/{user_id}', self.authorize)
-        app.router.add_get('/{guild_id}/playlist', self.get_queue)
-        app.router.add_delete('/{guild_id}', self.skip)
-        handler = app.make_handler()
-        f = self.bot.loop.create_server(handler, '127.0.0.1', '8088')
-        await f
+        print(self.server)
+        self.server = await self.server
+
+    @commands.command()
+    @category('developer')
+    async def start(self, ctx):
+        """Manually start the server after reload"""
+        if hasattr(self.server, 'sockets'):
+            return await ctx.send('Server already started.')
+        else:
+            self.server = await self.server
+            return await ctx.send('Server started.')
 
     @commands.command()
     async def website(self, ctx):
@@ -83,4 +98,11 @@ class Website:
 
 
 def setup(bot):
+    global cog
     bot.add_cog(Website(bot))
+    cog = bot.cogs['Website']
+
+
+def teardown(_):
+    global cog
+    cog.server.close()

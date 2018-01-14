@@ -27,6 +27,7 @@ users:
       - moderation
       - comp
       - owner
+      - developer
       - git
   140564059417346049:
     whitelist:
