@@ -73,17 +73,18 @@
 
 #### Misc:
 
-| Commmand      | Description                                  | Rate  | Bucket |
-|---------------|----------------------------------------------|------:|-------:|
-| `!dump_likes` | Get a dump of every like (all time).         | 1/60  | Guild  |
-| `!help`       | This help message.                           | 10/15 | User   |
-| `!id`         | Get your user id.                            | 1/15  | User   |
-| `!listids`    | Get all of the IDs for the current server.   | 1/120 | User   |
-| `!most_liked` | Get the top 10 most liked songs of all time. | 4/60  | Guild  |
-| `!patreon`    | Posts info about patreon & the patrons.      | 1/10  | Guild  |
-| `!perms`      | View your permissions.                       | 1/120 | User   |
+| Commmand      | Description                                     | Rate  | Bucket |
+|---------------|-------------------------------------------------|------:|-------:|
+| `!dump_likes` | Get a dump of every like (all time).            | 1/60  | Guild  |
+| `!help`       | This help message.                              | 10/15 | User   |
+| `!id`         | Get your user id.                               | 1/15  | User   |
+| `!listids`    | Get all of the IDs for the current server.      | 1/120 | User   |
+| `!most_liked` | Get the top 10 most liked songs of all time.    | 4/60  | Guild  |
+| `!patreon`    | Posts info about patreon & the patrons.         | 1/10  | Guild  |
+| `!perms`      | View your permissions.                          | 1/120 | User   |
+| `!website`    | Get a link to the queue website for this guild. | N/A   | N/A    |
 
-#### Modderation:
+#### Moderation:
 
 | Commmand     | Description                            | Rate | Bucket |
 |--------------|----------------------------------------|-----:|-------:|
