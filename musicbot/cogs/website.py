@@ -14,12 +14,12 @@ class Website:
         self.bot = bot
 
     async def get_queue(self, request):
-        gid = int(request.match_info.get('id', '0'))
+        gid = int(request.match_info.get('guild_id', '0'))
         queue = [{
             'title': player.title,
             'duration': player.duration,
             'user': player.user.name if player.user else 'Autoplaylist',
-            'id': hashlib.sha1((player.title+(player.user or '')).encode('utf-8')).hexdigest(),
+            'id': hashlib.sha1((player.title+str(player.user or '')).encode('utf-8')).hexdigest(),
         } for player in self.bot.queues[gid]]
         if queue:
             queue[0]['time'] = int(time.time()-self.bot.queues[gid][0].start_time)
@@ -70,7 +70,7 @@ class Website:
     async def on_ready(self):
         app = web.Application()
         app.router.add_get('/authorize/{guild_id}/{user_id}', self.authorize)
-        app.router.add_get('/{id}/playlist', self.get_queue)
+        app.router.add_get('/{guild_id}/playlist', self.get_queue)
         app.router.add_delete('/{guild_id}', self.skip)
         handler = app.make_handler()
         f = self.bot.loop.create_server(handler, '127.0.0.1', '8088')
