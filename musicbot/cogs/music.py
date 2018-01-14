@@ -651,7 +651,7 @@ class Music:
             ttp = time.gmtime(max(0, self.get_queue_length(ctx.guild.id)))
 
             message = f'`{time.strftime("%H:%M:%S", ttp)}` in queue.\n'
-            message += f'Queue can also be viewed at https://htcraft.ml/queue?g={ctx.guild.id}\n'
+            message += f'Queue can also be viewed at <https://htcraft.ml/queue?g={ctx.guild.id}>\n'
             message += f'Now playing: **{playing.title}**'
             if playing.user: message += ' added by {}'.format(playing.user.name)
             message += ' `[{}/{}]`'.format(

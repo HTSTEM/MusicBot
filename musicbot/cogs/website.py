@@ -79,7 +79,7 @@ class Website:
     @commands.command()
     async def website(self, ctx):
         """Get a link to the queue website for this guild."""
-        await ctx.send(f'https://htcraft.ml/queue?g={ctx.guild.id}')
+        await ctx.send(f'<https://htcraft.ml/queue?g={ctx.guild.id}>')
 
 
 def setup(bot):
