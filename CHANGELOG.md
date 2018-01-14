@@ -1,3 +1,27 @@
+# Hildegard
+---
+### 2018-1-13
+#### Added
+- Website
+  - Full queue available on website
+  - Mods can remove songs from website
+
+
+# Leonin
+---
+### 2017-11-6
+#### Added
+- Patreon commands and permissions
+- Ratelimiting
+
+#### Changed
+- Playlists can be queued
+- People can queue multiple songs
+- Smart dequeueing
+
+#### Removed
+---
+
 # Gregory
 ---
 ### 2017-10-08
@@ -6,7 +30,7 @@
 
 #### Changed
 - The YTDL config is now `config/ytdl.yml` instead of being hardcoded.
-- The audio quality has been droped from `bestaudio/best` to `249/250/140/best`.
+- The audio quality has been dropped from `bestaudio/best` to `249/250/140/best`.
 
 #### Removed
 ---
