@@ -683,6 +683,45 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
+    @commands.cooldown(1, 30, type=commands.BucketType.user)
+    async def pldump(self, ctx):
+        if self.bot.queues[ctx.guild.id]:
+            playing = self.bot.queues[ctx.guild.id][0]
+            playing_time = int(time.time()-playing.start_time)
+            if ctx.voice_client.is_paused():
+                playing_time -= time.time() - ctx.voice_client.source.pause_start
+            ttp = time.gmtime(max(0, self.get_queue_length(ctx.guild.id)))
+
+            message = f'`{time.strftime("%H:%M:%S", ttp)}` in queue.\n'
+            message += f'Queue can also be viewed at <https://htcraft.ml/queue?g={ctx.guild.id}>\n'
+            message += f'Now playing: **{playing.title}**'
+            if playing.user: message += ' added by {}'.format(playing.user.name)
+            message += ' `[{}/{}]`'.format(
+                time.strftime('%M:%S', time.gmtime(max(0,playing_time))),
+                time.strftime('%M:%S', time.gmtime(max(0,playing.duration)))
+                )
+            if ctx.voice_client.is_paused(): message += '(**PAUSED**)'
+            message += '\n\n'
+            for n, entry in enumerate(self.bot.queues[ctx.guild.id][1:]):
+                if entry.user:
+                    to_add = f'`{n+1}.` **{entry.title}** added by **{escape(entry.user.name)}**\n'
+                else:
+                    to_add = f'`{n+1}.` **{entry.title}**\n'
+
+                message += to_add
+        else:
+            message = 'Not playing anything.'
+
+        with open('tmp.txt', 'w') as dump:
+            dump.write(message)
+
+        with open('tmp.txt', 'r') as dump:
+            await ctx.author.send('Playlist Dump:', file=discord.File(dump, filename='playlist.txt'))
+
+
+    @category('music')
+    @commands.command()
+    @commands.guild_only()
     @commands.cooldown(2, 30, type=commands.BucketType.guild)
     async def np(self, ctx):
         '''Gets the currently playing song'''
