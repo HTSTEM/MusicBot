@@ -70,11 +70,7 @@
                 'guild': guild
             },
             success: function (data, textStatus) {
-                console.log(data);
-                console.log(textStatus);
-
                 var response = jQuery.parseJSON(data);
-
                 if (response['code'] === 1000) {
                     show_queue(response['d']['queue'], response['d']['queue_length']);
                 }
@@ -85,7 +81,7 @@
     function show_queue(q, length) {
         queue = q;
         $('#container').html('');
-        console.log(length);
+        console.log(q);
         for (var i = 0; i < length; i++) {
             card = '<div class="card" title="' + q[i]['id'] + '">';
             if (mod) {card += '<div class="skip-button" title="Remove song">x</div>';}

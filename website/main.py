@@ -108,7 +108,6 @@ def delete():
 
     requests.delete(f'http://localhost:8088/{guild_id}', data={'position': player_id})
     queue = requests.get(f'http://localhost:8088/{guild_id}/playlist').json()
-    queue = [(player['title'], player['user']) for player in queue]
     data = {
         'code': 1000,
         'msg': 'Queue read successful',
@@ -117,6 +116,7 @@ def delete():
             'queue': queue
         }
     }
+    print(data)
     return json.dumps(data)
 
 @app.route('/queue', methods=['POST'])
