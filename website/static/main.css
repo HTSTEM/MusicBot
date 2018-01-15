@@ -24,7 +24,7 @@ body, html {
     width: 50%;
     margin-left: 25%;
 }
-#card {
+.card {
     width: 100%;
     background-color: #fafafa;
     margin-top: 10px;
@@ -35,11 +35,11 @@ body, html {
     box-shadow: 0px 2px 2px 1px rgba(0,0,0,0.2);
     word-wrap: break-word;
 }
-#card:hover {
+.card:hover {
     box-shadow: 0px 6px 2px 1px rgba(0,0,0,0.2);
 }
 
-#song-info {
+.song-info {
     margin: 0 auto;
     width: calc(100% - 50px);
 }
@@ -53,7 +53,7 @@ body, html {
     color: red;
 }
 
-#skip-button:hover {
+.skip-button:hover {
     text-decoration: underline;
     cursor: pointer;
 }
@@ -70,11 +70,11 @@ body, html {
             width: 80%;
             margin-left: 10%;
         }
-        #card {
+        .card {
             margin-top: 5px;
             margin-bottom: 5px;
         }
-        #card:hover {
+        .card:hover {
             box-shadow: none;
         }
     }
@@ -86,7 +86,7 @@ body, html {
             font-size: 18px;
             line-height: 48px;
         }
-        #card {
+        .card {
             margin-top: 5px;
             margin-bottom: 5px;
         }

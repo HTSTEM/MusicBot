@@ -87,16 +87,16 @@
         $('#container').html('');
         console.log(length);
         for (var i = 0; i < length; i++) {
-            card = '<div id="card" title="' + q[i]['id'] + '">';
-            if (mod) {card += '<div id="skip-button" title="Remove song">x</div>';}
+            card = '<div class="card" title="' + q[i]['id'] + '">';
+            if (mod) {card += '<div class="skip-button" title="Remove song">x</div>';}
             card +=
-                '<div id="song-info"><b>' + escapeHtml(q[i]['title']) + '</b>' +
+                '<div class="song-info"><b>' + escapeHtml(q[i]['title']) + '</b>' +
                 ' Queued by ' +
                 '<b>' + escapeHtml(q[i]['user']) + '</b></div>' +
                 '</div>';
             $('#container').append(card);
         }
-        $('#skip-button').click(function(){
+        $('.skip-button').click(function(){
             console.log('Skipping');
             skip($(this).parent().attr('title'));
         });
