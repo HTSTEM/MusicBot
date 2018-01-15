@@ -45,7 +45,7 @@ class Website:
             return web.Response(status=404)
 
         for n, player in enumerate(queue):
-            if hashlib.sha1((player.title+(player.user or '')).encode('utf-8')).hexdigest() == pid:
+            if hashlib.sha1((player.title+str(player.user or '')).encode('utf-8')).hexdigest() == pid:
                 if n == 0:
                     vc.stop()
                     return web.Response(status=200)
