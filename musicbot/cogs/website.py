@@ -23,7 +23,6 @@ class Website:
         self.server = self.bot.loop.create_server(self.handler, '127.0.0.1', '8088')
 
     async def get_queue(self, request):
-        print('this')
         gid = int(request.match_info.get('guild_id', '0'))
         queue = [{
             'title': player.title,
@@ -78,7 +77,6 @@ class Website:
             return web.Response(text='false')
 
     async def on_ready(self):
-        print(self.server)
         self.server = await self.server
 
     @commands.command()

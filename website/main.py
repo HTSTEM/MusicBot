@@ -16,7 +16,7 @@ OAUTH2_CLIENT_ID = config['client_id']
 OAUTH2_CLIENT_SECRET = config['client_secret']
 
 
-REDIRECT = 'https://htcraft.ml/queue/oauth2'
+REDIRECT = 'http://localhost:8080/queue/oauth2'
 
 BASE_API_URL = 'https://discordapp.com/api'
 

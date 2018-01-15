@@ -44,7 +44,7 @@ body, html {
     width: calc(100% - 50px);
 }
 
-#skip-button {
+.skip-button {
     position: relative;
     top: 50%;
     transform: translateY(-15%); /*Idk, the centering works like this*/
