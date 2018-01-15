@@ -96,7 +96,7 @@
                 '</div>';
             $('#container').append(card);
         }
-        $('.skip-button').on('vclick', function(){
+        $('.skip-button').on('click tap', function(){
             console.log('Skipping');
             skip($(this).parent().attr('title'));
         });
