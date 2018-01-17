@@ -33,17 +33,17 @@
 |-------------|----------------------------------------------------------|------:|-------:|
 | `!dequeue`  | Remove your song(s) from the queue.                      | N/A   | N/A    |
 | `!jingle`   | Enqueues a jingle.                                       | 2/15  | User   |
-| `!like`     | 'Like' the currently playing song.                       | 2/30  | User   |
+| `!like`     | 'Like' the currently playing song.                       | N/A   | N/A    |
 | `!minewhen` | Tells you when your song will play.                      | 1/30  | User   |
 | `!mylikes`  | Get a list of every song you've ever liked.              | 1/120 | User   |
 | `!np`       | Gets the currently playing song.                         | 2/30  | Guild  |
 | `!play`     | Streams from a url (almost anything youtube_dl supports. | 2/15  | User   |
-| `!queue`    | Shows the current queue.                                 | 1/120 | Guild  |
+| `!queue`    | Shows the current queue.                                 | 1/60  | Guild  |
 | `!remall`   | Remove all of your songs from the queue.                 | N/A   | N/A    |
 | `!search`   | Search for a song.                                       | 2/15  | User   |
-| `!skip`     | Registers that you want to skip the current song.        | 2/30  | User   |
+| `!skip`     | Registers that you want to skip the current song.        | N/A   | N/A    |
 | `!unlike`   | Remove your 'like' from a song.                          | 1/1   | User   |
-| `!unskip`   | Removes your vote to skip the current song.              | 2/30  | User   |
+| `!unskip`   | Removes your vote to skip the current song.              | N/A   | N/A    |
 
 #### Player:
 
