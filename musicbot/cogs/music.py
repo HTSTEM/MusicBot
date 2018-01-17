@@ -443,7 +443,6 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
-    @commands.cooldown(2, 30, type=commands.BucketType.user)
     async def skip(self, ctx):
         '''Registers that you want to skip the current song.'''
         skip_grace = self.bot.config['skip_grace']
@@ -479,7 +478,6 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
-    @commands.cooldown(2, 30, type=commands.BucketType.user)
     async def unskip(self, ctx):
         '''Removes your vote to skip the current song.'''
 
@@ -516,7 +514,6 @@ class Music:
     @commands.command()
     @commands.guild_only()
     @checks.in_vc()
-    @commands.cooldown(2, 30, type=commands.BucketType.user)
     async def like(self, ctx):
         ''''Like' the currently playing song'''
         if not self.bot.queues[ctx.guild.id]:
@@ -638,7 +635,7 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
-    @commands.cooldown(1, 120, type=commands.BucketType.guild)
+    @commands.cooldown(1, 60, type=commands.BucketType.guild)
     async def queue(self, ctx):
         '''Shows the current queue.'''
         if self.bot.queues[ctx.guild.id]:
