@@ -838,7 +838,15 @@ class Music:
         '''Reconnects the voice client'''
         global should_continue
         should_continue = False  # prevent music_finished from running
-        if ctx.voice_client is not None:
+
+        for i in self.bot.voice_clients:
+            if i.channel.guild == ctx.guild:
+                vc = i
+                break
+        else:
+            vc = ctx.voice_client
+
+        if vc is not None:
             channel = ctx.voice_client.channel
             source = ctx.voice_client.source
             await ctx.voice_client.disconnect()
