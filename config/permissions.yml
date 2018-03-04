@@ -20,6 +20,15 @@ default:
 # add specific perms for users here
 # perms stated under users have precedence of perms under roles
 users:
+  161508165672763392:
+    whitelist:
+      - bot
+      - player
+      - moderation
+      - comp
+      - owner
+      - developer
+      - git
   240995021208289280:
     whitelist:
       - bot

@@ -148,7 +148,7 @@ class MusicBot(commands.AutoShardedBot):
                 else: await asyncio.sleep(0.5)
 
         if voice_client.source is None:
-            self.logging.warning('wait_for_source timed out!')
+            self.logger.warning('wait_for_source timed out!')
 
         return voice_client.source
 
@@ -273,6 +273,7 @@ class MusicBot(commands.AutoShardedBot):
                     cctx = Holder()
                     cctx.voice_client = vc
                     cctx.bot = self
+                    cctx.typing = None
                     if default[0] in self.bot_channels and self.bot_channels[default[0]]:
                         c = guild.get_channel(self.bot_channels[default[0]][0])
                     else:

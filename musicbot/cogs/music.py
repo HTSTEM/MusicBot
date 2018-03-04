@@ -103,7 +103,11 @@ class Music:
 
             player = None
             try:
-                player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
+                if ctx.typing is not None:
+                    async with ctx.typing():
+                        player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
+                else:
+                    player = await YTDLSource.from_url(url, None, loop=self.bot.loop)
                 found = True
             except youtube_dl.utils.DownloadError:
                 self.bot.logger.warn('Download error. Skipping.')
@@ -850,6 +854,7 @@ class Music:
             channel = ctx.voice_client.channel
             source = ctx.voice_client.source
             await ctx.voice_client.disconnect()
+            await asyncio.sleep(0.5)
         else:
             channel = ctx.bot.get_channel(ctx.bot.config['default_channels'][ctx.guild.id])
             source = None
