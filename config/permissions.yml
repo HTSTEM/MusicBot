@@ -69,6 +69,16 @@ users:
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
 roles:
+  # administrators
+  184766731561074698:
+    # all the perms
+    whitelist:
+      - bot
+      - player
+      - moderation
+      - comp
+      - developer
+      
   # moderators
   191344863038537728:
     # give mods all perms except owner
@@ -77,7 +87,6 @@ roles:
       - player
       - moderation
       - comp
-      - git
     # idk, do we want to give mods perms to use all songs?
 
   # event team
