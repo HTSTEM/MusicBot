@@ -62,14 +62,6 @@ users:
     max_songs_queued: 65
     max_playlist_length: 65
     pledge: 5
-  319350638024720384: # Space Witch
-    max_songs_queued: 45
-    max_playlist_length: 45
-    pledge: 3
-  198191547970355200: # sills dog
-    max_songs_queued: 25
-    max_playlist_length: 25
-    pledge: 1
   193874867324583936: # Eli / anonymouse
     max_songs_queued: 25
     max_playlist_length: 25
