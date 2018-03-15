@@ -26,11 +26,6 @@ bot_channels:
 # This is the location of the bot's credentials. See creds.yml.template
 creds_file: config/creds.yml
 
-# This is the change that a jingle will play instead of an auto-playlist
-# song.
-# The chance is `1/jingle_chance`
-jingle_chance: 5
-
 # These are the people the bot DMs when something goes wrong
 # Add yourself here if you want to know when something goes wrong
 developers:

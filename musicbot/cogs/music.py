@@ -35,7 +35,7 @@ class QueueLimitError(commands.CommandNotFound): pass
 class Music:
     def __init__(self, bot):
         self.bot = bot
-        self.jingle_last = False
+        # self.jingle_last = False
 
     # Callbacks:
     def music_finished(self, e, ctx):
@@ -94,13 +94,7 @@ class Music:
 
         found = False
         while not found and not self.bot.queues[ctx.guild.id]:
-            if (not self.jingle_last) and (not bool(random.randint(0, self.bot.config['jingle_chance'] - 1))):
-                url = random.choice(self.bot.jingles)
-                self.jingle_last = True
-            else:
-                url = random.choice(self.bot.autoplaylist)
-                self.jingle_last = False
-
+            url = random.choice(self.bot.autoplaylist)
             player = None
             try:
                 if ctx.typing is not None:
@@ -403,7 +397,7 @@ class Music:
                     pass
 
         await ctx.send('Oh well :frowning:')
-
+    '''
     @category('music')
     @commands.command()
     @commands.guild_only()
@@ -411,7 +405,7 @@ class Music:
     @commands.cooldown(2, 15, type=commands.BucketType.user)
     @checks.command_processed()
     async def jingle(self, ctx, number:int = None):
-        '''Enqueues a jingle'''
+        """Enqueues a jingle"""
         perms = await checks.permissions_for(ctx)
         # Check the queue limit before bothering to download the song
         queued = self.get_queued(ctx.author, ctx.guild.id)
@@ -430,14 +424,12 @@ class Music:
             return await ctx.send('I can\'t play a jingle that doesn\'t exist!')
 
         await ctx.invoke(self.play, url=ctx.bot.jingles[number-1])
-
-    @jingle.before_invoke
+    '''
     @search.before_invoke
     @play.before_invoke
     async def add_pending(self, ctx):
         ctx.bot.pending.add(ctx.author.id)
 
-    @jingle.after_invoke
     @search.after_invoke
     @play.after_invoke
     async def clear_pending(self, ctx):
