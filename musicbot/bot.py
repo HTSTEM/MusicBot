@@ -31,7 +31,6 @@ class MusicBot(commands.AutoShardedBot):
         self.logger = logging.getLogger('bot')
 
         self.autoplaylist = open('config/autoplaylist.txt').read().split('\n')
-        self.jingles = open('config/jingles.txt').read().split('\n')
 
         self.yaml = YAML(typ='safe')
         with open('config/config.yml') as conf_file:

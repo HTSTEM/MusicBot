@@ -32,7 +32,6 @@
 | Command     | Description                                              | Rate  | Bucket |
 |-------------|----------------------------------------------------------|------:|-------:|
 | `!dequeue`  | Remove your song(s) from the queue.                      | N/A   | N/A    |
-| `!jingle`   | Enqueues a jingle.                                       | 2/15  | User   |
 | `!like`     | 'Like' the currently playing song.                       | N/A   | N/A    |
 | `!minewhen` | Tells you when your song will play.                      | 1/30  | User   |
 | `!mylikes`  | Get a list of every song you've ever liked.              | 1/120 | User   |
@@ -97,7 +96,6 @@
 
 * Edit `config/config.yml` to fit your server's needs
 * Put your bot's token in the first line of `config/token.txt`
-* Add direct download links (one per line) to jingles in `config/jingles.txt`
 * Add the IDs of users (one per line) blacklisted from using commands to `config/blacklist.txt`
 * Add the IDs and pledge amounts of users (in YAML format) who are Patrons to `config/patrons.yml`
 * Change YouTubeDL settings like audio quality, outfiles, error handling, etc. in `config/ytdl.yml`
