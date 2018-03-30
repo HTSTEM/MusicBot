@@ -67,7 +67,7 @@ class Misc:
     @commands.cooldown(1, 15, type=commands.BucketType.user)
     async def id(self, ctx):
         '''Get your user id'''
-        await ctx.send('<@{0}>, your ID is `{0}`'.format(ctx.author.id))
+        await ctx.send(f'{ctx.author.mention}, your ID is `{ctx.author.id}`')
 
     @category('misc')
     @commands.command()
@@ -99,43 +99,14 @@ class Misc:
     @commands.cooldown(4, 60, type=commands.BucketType.guild)
     async def most_liked(self, ctx):
         '''Get the top 10 most liked songs of all time'''
-        likes = {}
-        for i in self.bot.likes:
-            for j in self.bot.likes[i]:
-                j = base64.b64decode(j.encode('ascii')).decode('utf-8')
-                if j not in likes:
-                    likes[j] = 0
-                likes[j] += 1
-        likes = list(likes.items())
-        likes.sort(key=lambda x:x[1], reverse=True)
-        msg = '**The top 10 most liked songs of all time are:**\n'
-        msg += '\n'.join('{} ({} like{})'.format(i[0], i[1], 's' if i[1] != 1 else '') for i in likes[:10])
-        await ctx.send(msg)
+        await ctx.send('All hail the Octagon with its eight fantastic sides and eight awesome angles.')
 
     @category('misc')
     @commands.command()
     @commands.cooldown(1, 60, type=commands.BucketType.guild)
     async def dump_likes(self, ctx):
         '''Get a dump of every like (all time)'''
-        likes = {}
-        for i in self.bot.likes:
-            for j in self.bot.likes[i]:
-                j = base64.b64decode(j.encode('ascii')).decode('utf-8')
-                if j not in likes:
-                    likes[j] = 0
-                likes[j] += 1
-        likes = list(likes.items())
-        likes.sort(key=lambda x:x[1], reverse=True)
-        msg = '\n'.join(f'{i[1]},{i[0]}' for i in likes)
-
-        with open('likesdump.txt', 'w') as f:
-            f.write(msg)
-
-        await ctx.send(':mailbox_with_mail:')
-        with open('likesdump.txt', 'rb') as ids_file:
-            await ctx.author.send(file=discord.File(ids_file))
-
-        os.remove('likesdump.txt')
+        await ctx.author.send('You only like octagons.')
 
     @category('misc')
     @commands.command(aliases=['permissions'])
@@ -143,39 +114,7 @@ class Misc:
     @commands.cooldown(1, 120, type=commands.BucketType.user)
     async def perms(self, ctx):
         '''View your permissions'''
-        perms = await checks.permissions_for(ctx)
-        whitelist = []
-        vc_only = []
-        perms = await checks.permissions_for(ctx)
-        cats = {}
-        for cmd in ctx.bot.commands:
-            if not hasattr(cmd, 'category'):
-                cmd.category = 'Misc'
-            if cmd.category.lower() not in cats:
-                cats[cmd.category.lower()] = []
-            cats[cmd.category.lower()].append(cmd)
-
-        for cat in perms['categories']:
-            if cat in cats:
-                for cmd in cats[cat]:
-                    for check in cmd.checks:
-                        try:
-                            if not await check(ctx):
-                                break
-                        except Exception as e:
-                            if 'user_in_vc' in e.args:
-                                vc_only.append(cmd.name)
-                            break
-                    else:
-                        whitelist.append(cmd.name)
-        msg = '```yaml\n'
-        msg += 'Command_Whitelist: {}\n'.format(', '.join(whitelist))
-        if len(vc_only)>0: msg += 'VC_only: {}\n'.format(', '.join(vc_only))
-        msg += 'Max_Song_Length: {}\n'.format(perms['max_song_length'])
-        msg += 'Max_Songs: {}\n'.format(perms['max_songs_queued'])
-        msg += 'Max_Playlist_Length: {}\n'.format(perms['max_playlist_length'])
-        msg += '```'
-        await ctx.author.send(msg)
+        await ctx.author.send('Octagon')
 
     @category('misc')
     @commands.command()
@@ -294,8 +233,8 @@ class Misc:
             else:
                 d = self.get_help(ctx, cmd, name=cmd_name)
 
-        d += '\n*Made by Bottersnike#3605 and hanss314#0128*\n*Made possible thanks to our patrons.*'
-        d += '\n*$5 patrons: Satomi, Tantusar*'
+        d += '\n*Made by octagons*\n*Made possible thanks to our octagons.*'
+        d += '\n*$5 octagons: Satomi, Tantusar*'
         return await ctx.send(d)
 
 

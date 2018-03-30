@@ -16,7 +16,7 @@ OAUTH2_CLIENT_ID = config['client_id']
 OAUTH2_CLIENT_SECRET = config['client_secret']
 
 
-REDIRECT = 'https://htcraft.ml/queue/oauth2'
+REDIRECT = 'http://localhost:8080/queue/oauth2'
 
 BASE_API_URL = 'https://discordapp.com/api'
 
@@ -79,12 +79,8 @@ def queue_requested():
         session['oauth2_state'] = state
         return redirect(authorization_url)
 
-    discord = make_session(token=session.get('oauth2_token'))
-    user = discord.get(BASE_API_URL+'/users/@me').json()
-    user_id = user['id']
-    guild = request.args.get('g')
-    key = session.get('key')
-    return render_template('queue.html', key=key, mod=str(is_mod_on_htc(guild, user_id)).lower())
+
+    return render_template('queue.html')
 
 
 @app.route('/queue', methods=['DELETE'])
