@@ -55,6 +55,7 @@ class YTDLSource(PCMVolumeTransformer):
         self.channel = None
         self.skips = []
         self.likes = []
+        self.notifications = []
 
     @classmethod
     async def get_duration(cls, url, *, data=None, loop=None):
