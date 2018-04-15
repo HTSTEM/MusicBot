@@ -32,6 +32,32 @@ def escape(string):
 #silent failure
 class QueueLimitError(commands.CommandNotFound): pass
 
+class Song(commands.Converter):
+    async def convert(self, ctx, song):
+        try:
+            song = int(song)
+            is_int = True
+        except ValueError:
+            is_int = False
+
+        if is_int:
+            if song < 1 or song >= len(ctx.bot.queues[ctx.guild.id]):
+                await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queues[ctx.guild.id])-1} or the title.')
+                raise None
+            else:
+                player = ctx.bot.queues[ctx.guild.id][song]
+
+        else:
+            for i in ctx.bot.queues[ctx.guild.id][1:]:
+                if song.lower() in i.title.lower():
+                    player = i
+                    break
+            else:
+                await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
+                return None
+
+        return player
+
 
 class Music:
     def __init__(self, bot):
@@ -776,30 +802,10 @@ class Music:
     @category('music')
     @commands.command()
     @commands.guild_only()
-    async def notify(self, ctx, *, song):
+    async def notify(self, ctx, *, song: Song):
         """Get notified when a song plays"""
-        try:
-            song = int(song)
-            is_int = True
-        except ValueError:
-            is_int = False
-
-        if is_int:
-            if song < 1 or song >= len(self.bot.queues[ctx.guild.id]):
-                await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queues[ctx.guild.id])-1} or the title.')
-                return
-            else:
-                player = self.bot.queues[ctx.guild.id][song]
-
-        else:
-            for i in self.bot.queues[ctx.guild.id][1:]:
-                if song.lower() in i.title.lower():
-                    player = i
-                    break
-            else:
-                await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
-                return
-
+        if song is None: return
+        player = song
         if not hasattr(player, 'notifications'):
             player.notifications = []
 
@@ -815,33 +821,13 @@ class Music:
     @category('moderation')
     @commands.command()
     @commands.guild_only()
-    async def remsong(self, ctx, *, song):
+    async def remsong(self, ctx, *, song: Song):
         '''Remove a song from the queue.
         `song` can either be the number of the song in the queue
         or it can be the name (or part of the name) of the song you
         wish to remove.'''
-        try:
-            song = int(song)
-            is_int = True
-        except ValueError:
-            is_int = False
-
-        if is_int:
-            if song < 1 or song >= len(self.bot.queues[ctx.guild.id]):
-                await ctx.send(f'<@{ctx.author.id}>, song must be in range 1-{len(self.bot.queues[ctx.guild.id])-1} or the title.')
-                return
-            else:
-                player = self.bot.queues[ctx.guild.id][song]
-
-        else:
-            for i in self.bot.queues[ctx.guild.id][1:]:
-                if song.lower() in i.title.lower():
-                    player = i
-                    break
-            else:
-                await ctx.send(f'<@{ctx.author.id}>, no song found matching `{song}` in the queue.')
-                return
-
+        if song is None: return
+        player = song
         self.remove_from_queue(player, ctx.guild.id)
         await ctx.send(f'<@{ctx.author.id}>, the song **{player.title}** has been removed from the queue.')
 
