@@ -805,7 +805,7 @@ class Music:
 
         if ctx.author.id in player.notifications:
             await ctx.send('You have already signed up for notifications. Removing you from notifications')
-            player.notificatons.remove(ctx.author.id)
+            player.notifications.remove(ctx.author.id)
         else:
             await ctx.send(f'You will be notified when {player.title} starts.')
             player.notifications.append(ctx.author.id)
