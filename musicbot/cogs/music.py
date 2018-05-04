@@ -636,7 +636,7 @@ class Music:
 
 
     @category('music')
-    @commands.command()
+    @commands.command(aliases=['q'])
     @commands.guild_only()
     @commands.cooldown(1, 60, type=commands.BucketType.guild)
     async def queue(self, ctx):
