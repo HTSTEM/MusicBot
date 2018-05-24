@@ -868,10 +868,10 @@ class Music:
     @commands.guild_only()
     async def disconnect(self, ctx):
         '''Disconnects the voice client'''
-        if ctx.voice_channel is None:
+        if ctx.voice_client is None:
             await ctx.send('I am not connected to a voice channel')
         else:
-            await ctx.voice_channel.disconnect()
+            await ctx.voice_client.disconnect()
             del ctx.bot.voice[ctx.guild.id]
             await ctx.send(':thumbsup: :wave:')
 
