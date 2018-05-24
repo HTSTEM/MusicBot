@@ -863,6 +863,18 @@ class Music:
 
         should_continue = True
 
+    @category('bot')
+    @commands.command()
+    @commands.guild_only()
+    async def disconnect(self, ctx):
+        '''Disconnects the voice client'''
+        if ctx.voice_channel is None:
+            await ctx.send('I am not connected to a voice channel')
+        else:
+            await ctx.voice_channel.disconnect()
+            del ctx.bot.voice[ctx.guild.id]
+            await ctx.send(':thumbsup: :wave:')
+
 
 def setup(bot):
     bot.add_cog(Music(bot))
