@@ -32,4 +32,4 @@ developers:
   - 240995021208289280
 
 # It's the prefix.. What more do I need to say?
-command_prefix: "!"
+command_prefix: ["!", "01289!!f"]
