@@ -300,7 +300,7 @@ class Music:
 
     # User commands:
     @category('music')
-    @commands.command()
+    @commands.command(aliases=['p'])
     @commands.guild_only()
     @checks.in_vc()
     @commands.cooldown(2, 15, type=commands.BucketType.user)
@@ -443,7 +443,7 @@ class Music:
         ctx.bot.pending.discard(ctx.author.id)
 
     @category('music')
-    @commands.command()
+    @commands.command(aliases=['s'])
     @commands.guild_only()
     @checks.in_vc()
     async def skip(self, ctx):
@@ -514,7 +514,7 @@ class Music:
         await ctx.send(':mailbox_with_mail:')
 
     @category('music')
-    @commands.command()
+    @commands.command(aliases=['l'])
     @commands.guild_only()
     @checks.in_vc()
     async def like(self, ctx):
