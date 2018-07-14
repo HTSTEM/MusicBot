@@ -54,18 +54,18 @@ users:
   000000000000000: {}
 
   # patrons!
-  154825973278310400: # Satomi
-    max_songs_queued: 65
-    max_playlist_length: 65
-    pledge: 5
-  193874867324583936: # Eli / anonymouse
+  207788560953114625: # Lock
     max_songs_queued: 25
     max_playlist_length: 25
     pledge: 1
-  419344717642465292: #sin
-    max_songs_queued: 65
-    max_playlist_length: 65
-    pledge: 5    
+  193874867324583936: # anonymouse
+    max_songs_queued: 25
+    max_playlist_length: 25
+    pledge: 1
+  419344717642465292: # sin
+    max_songs_queued: 25
+    max_playlist_length: 25
+    pledge: 1
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
 roles:

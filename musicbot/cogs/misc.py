@@ -295,7 +295,7 @@ class Misc:
                 d = self.get_help(ctx, cmd, name=cmd_name)
 
         d += '\n*Made by Bottersnike#3605 and hanss314#0128*\n*Made possible thanks to our patrons.*'
-        d += '\n*$5 patrons: Satomi, sin*'
+        #d += '\n*$5 patrons: none :(*'
         return await ctx.send(d)
 
 
