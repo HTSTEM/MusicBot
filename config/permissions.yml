@@ -62,7 +62,10 @@ users:
     max_songs_queued: 25
     max_playlist_length: 25
     pledge: 1
-
+  419344717642465292: # sin
+    max_songs_queued: 25
+    max_playlist_length: 25
+    pledge: 1
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
 roles:
