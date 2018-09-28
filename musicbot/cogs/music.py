@@ -296,7 +296,7 @@ class Music:
                 )
 
         game = discord.Game(name=player.title)
-        await self.bot.change_presence(game=game)
+        await self.bot.change_presence(activity=game)
 
     # User commands:
     @category('music')
