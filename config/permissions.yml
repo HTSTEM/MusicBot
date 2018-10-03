@@ -58,10 +58,6 @@ users:
     max_songs_queued: 25
     max_playlist_length: 25
     pledge: 1
-  193874867324583936: # anonymouse
-    max_songs_queued: 25
-    max_playlist_length: 25
-    pledge: 1
   419344717642465292: # sin
     max_songs_queued: 25
     max_playlist_length: 25
