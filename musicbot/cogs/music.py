@@ -295,7 +295,7 @@ class Music:
                     users
                 )
 
-        game = discord.Game(name=player.title)
+        game = discord.Activity(name=player.title, type=discord.ActivityType.listening) # could duration be added too?
         await self.bot.change_presence(activity=game)
 
     # User commands:
