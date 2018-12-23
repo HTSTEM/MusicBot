@@ -46,9 +46,12 @@ users:
       - comp
       - owner
       - git
+      - developer
+      - misc
+      - music
 
   # special bot owner field
-  owner: {}
+  owner: {140564059417346049}
 
   # use user ids
   000000000000000: {}
@@ -84,13 +87,6 @@ roles:
       - moderation
       - comp
     # idk, do we want to give mods perms to use all songs?
-
-  # event team
-  344352523466833930:
-    # adds default stuff
-    # this equals default stuff + comp stuff
-    whitelist:
-      - comp
 
   # developer
   334341418334027776:
