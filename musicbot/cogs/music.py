@@ -286,7 +286,8 @@ class Music:
             if users: users += ', you asked to be notified.'
             if player.user is None:
                 c = player.channel if player.channel is not None else ctx.channel
-                await c.send(f'Now playing: **{player.title}** '+ users)
+                if c.guild.id != 381941901462470658:
+                    await c.send(f'Now playing: **{player.title}** '+ users)
             else:
                 c = player.channel if player.channel is not None else ctx.channel
                 await c.send(
