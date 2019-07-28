@@ -61,6 +61,10 @@ users:
     max_songs_queued: 25
     max_playlist_length: 25
     pledge: 1
+  242177207311663104:
+    max_songs_queued: 65
+    max_playlist_length: 65
+    pledge: 5
 
 # add specific perms for roles
 # roles higher in the hierarchy have precedence over roles lower in the hierarchy
@@ -74,7 +78,7 @@ roles:
       - moderation
       - comp
       - developer
-      
+
   # moderators
   191344863038537728:
     # give mods all perms except owner
